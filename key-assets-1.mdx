@@ -1,0 +1,35 @@
+---
+title: "Insight: Coverage Overview"
+---
+
+### Field Definitions
+
+**FULL\_TABLE\_ID** : A concatenation of project, dataset and table name 
+
+**PROJECT\_NAME** : As defined externally
+
+**DATASET\_NAME** : As defined externally(e.g. a schema in snowflake) 
+
+**TABLE\_NAME**: As defined externally
+
+**TABLE\_TYPE** : Field values: table, view, external, wildcard\_table
+
+**SCHEMA\_MONITOR**: True where this monitors exists (regardless of its status), False otherwise.
+
+**FRESHNESS\_MONITOR**: True where the freshness detector is active, False otherwise.  
+  
+**SIZE\_MONITOR**: True where we collect size data for the table, False otherwise.
+
+**VOLUME\_MONITOR**: True where volume detector is active, False otherwise.
+
+**UNCHANGED\_SIZE\_MONITOR**: True where unchanged size detector is active, False otherwise.
+
+**FIELD\_HEALTH\_MONITOR**:True where this monitors exists (regardless of its status), False otherwise.  
+  
+**DISTRIBUTION\_MONITOR**: True where this monitors exists (regardless of its status), False otherwise.
+
+**JSON\_SCHEMA\_MONITOR**: True where this monitors exists (regardless of its status), False otherwise.
+
+**MUTED**: True where it is muted, False otherwise.
+
+**DOMAINS**: As created by the user in the UI.

@@ -1,0 +1,29 @@
+---
+title: "Insight: Table Cleanup Suggestions"
+---
+
+> 📘
+> 
+> Note
+> 
+> In this insight we only show tables that have **not** read in the last 30 days.
+
+### Field Definitions
+
+**FULL\_TABLE\_ID** : A concatenation of project, dataset and table name 
+
+**PROJECT\_NAME** : As defined externally
+
+**DATASET\_NAME** : As defined externally(e.g. a schema in snowflake) 
+
+**TABLE\_NAME**: As defined externally
+
+**TABLE\_TYPE** : Field values: table, view, external, wildcard\_table 
+
+**DAYS\_SINCE\_LAST\_WRITE**: A count of the number of days since the last update to the table.
+
+**LAST\_WRITE**: A timestamp of the last update.
+
+**TOTAL\_ROW\_COUNT**: A sum of the rows in the table.  
+  
+**TOTAL\_BYTE\_COUNT**: A sum of the bytes in the table.

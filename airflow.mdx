@@ -1,0 +1,52 @@
+---
+title: "Airflow (beta)"
+---
+
+With the Monte Carlo Airflow Integration, you can be alerted of failures, quickly determine what Airflow DAG potentially caused data-level incidents, and control Airflow with Rules and Circuit Breakers. Root cause and time to resolution can happen faster than ever when you can get visibility between Airflow and your Data Warehouse in a single pane of glass.
+
+### Setup and Getting Started
+
+1. Create the Airflow integration at [https://getmontecarlo.com/settings/integrations](https://getmontecarlo.com/settings/integrations)
+2. Set up Airflow Lineage with the [Airflow in Lineage](/docs/airflow-in-lineage) annotation setup documentation.
+3. Set up Airflow Incident and Tasks with the [Airflow Incidents and Task Observability](/docs/airflow-incidents-dags-and-tasks) callback setup documentation (strongly recommended)
+4. Use Circuit Breakers to control Airflow based on Monte Carlo rules with the [Circuit breakers (beta)](/docs/circuit-breakers) setup documentation (optional)
+
+### Airflow DAGs and Tasks in Monte Carlo Lineage
+
+Understand which Airflow Task creates the lineage between two tables in your Data Warehouse. Click into the Airflow icon to see recent DAG & Task Runs for this lineage edge.
+
+![](/images/f38e4eb-CleanShot_2023-06-06_at_14.22.562x.png)
+
+To setup Airflow Lineage, follow the [Airflow in Lineage](/docs/airflow-in-lineage) setup documentation.
+
+### Airflow DAG and Task Observability
+
+Use Monte Carlo as a single place to track and route Data Incidents by generating incidents from DAG failures. Check the status and duration of recent Airflow DAGs & Tasks relevant to the table in the Incident.
+
+![](/images/4279ea2-image.png)
+
+To setup DAG & Task Run Tracking, follow the [Airflow DAG & Task Observability](/docs/airflow-incidents-dags-and-tasks) setup documentation. It's strongly recommended to also set up the [Airflow in Lineage](/docs/airflow-in-lineage) integration in order to properly correlate DAGs with Tables.
+
+### Monte Carlo Airflow Operators for Rules & Circuit Breakers
+
+Run Monte Carlo rules or "circuit break” pipelines when data does not meet a set of quality or integrity thresholds. This can be useful for multiple purposes including, but definitely not limited to, checking if data does not meet your requirements between transformation steps, or after ETL/ELT jobs execute, but before BI dashboards are updated.
+
+![](/images/bb20c36-image.png)
+
+To setup Airflow Operators or Circuit Breakers, follow the [Circuit breakers (beta)](/docs/circuit-breakers) setup documentation.
+
+### FAQs
+
+**Why don't I have to give my Airflow credentials, as with other integrations?**
+
+Monte Carlo observes Airflow through existing query log integrations and when callbacks from Airflow report status to Monte Carlo. Monte Carlo does not reach out to gather Airflow information
+
+**Are multiple airflow instances supported?**
+
+At this time, only one airflow instance is supported.
+
+**Which Airflow providers are supported?**
+
+All providers are supported, including MWAA (AWS), Cloud Composer (GCP) and Astronomer, as well as self-managed installations.
+
+Is something missing? Request more functionality for the Monte Carlo Airflow Integration [here](https://forms.gle/MvLmhS3kHXzJanvu9).

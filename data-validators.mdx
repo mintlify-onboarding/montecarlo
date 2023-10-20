@@ -1,0 +1,264 @@
+---
+title: "Data Asset Validators"
+---
+
+> 🚧
+> 
+> Data Collector update required
+> 
+> Please note you need to update your Data Collector in order to use this feature, the minimum required version is: **13740** and supports only **Snowflake**, **BigQuery**, and **Redshift**.
+
+### What are Data Asset validators?
+
+Validators help you verify that Monte Carlo has access (permissions) to monitor a specific data asset (table, view, external table, stream, etc.). This includes metadata, query logs, and the ability to select data from the table for custom monitors.
+
+From an existing integration ("Settings" --> "Integration"), click the "debug" button on a warehouse integration.
+
+!["Settings" --> "Integrations" debug button on warehouses](/images/603010e-Screenshot_2023-08-03_at_5.18.39_PM.png)
+
+"Settings" --> "Integrations" debug button on warehouses
+
+![Monte Carlo Data Integration Validator for a specific Data Asset. A picture of the Monte Carlo UI, a form to fill in asking what data asset to test. There are text boxes and drop-downs. At the bottom there are status areas that "read out" visually the status of the validations. Then a button at the bottom to Run Test](/images/0da48c1-image.png) 
+
+### API Usage of Validators
+
+This feature is also available as an API, and the easiest way to use it is through the [API Explorer](/docs/api-explorer).
+
+#### Step 1\. Retrieve your connection ID
+
+In order to validate access to a specific data asset first you need to specify the connection you are going to use. If you haven't added an integration you'll need to do that first. See details [here](/docs/data-warehouses).
+
+You can do this by retrieving the connection UUID via the [getUser](https://apidocs.getmontecarlo.com/#query-getUser) API.
+
+Example QueryExample response
+
+`query getConnections {
+  getUser {
+    email
+    account {
+      connections {
+        uuid
+        type
+        warehouse {
+          name
+        }
+      }
+    }
+  }
+}
+`
+
+`{
+	"data": {
+		"getUser": {
+			"email": "[[email protected]](/cdn-cgi/l/email-protection)",
+			"account": {
+				"connections": [{
+					"uuid": "9b265c4d-931f-4584-99c6-42ea37155a99",
+					"type": "SNOWFLAKE",
+					"warehouse": {
+						"name": "snowflake-artemis"
+					}
+				}]
+			}
+		}
+	}
+}
+`
+
+If you prefer you can also use the [list](https://clidocs.getmontecarlo.com/#montecarlo-integrations-list) command in the Monte Carlo CLI to retrieve your connection ID (UUID). 
+
+CLI example
+
+`% montecarlo integrations list
+╒════════════════════════╤══════════════════╤══════════════════════════════════════╤═════════════════════════════════════════════════════════╕
+│ Integration            │ Name             │ ID                                   │ Connection           │ Created on (UTC)                 │
+╞════════════════════════╪══════════════════╪══════════════════════════════════════╪══════════════════════╪══════════════════════════════════╡
+│ Redshift               │ prod-redshift    │ 12345678-1234-1234-1234-123456789012 │ host: redacted       │ 2022-12-14T14:54:15.944774+00:00 │
+├────────────────────────┼──────────────────┼──────────────────────────────────────┼──────────────────────┼──────────────────────────────────┤
+│ BigQuery               │ prod-bigquery    │ 12345678-1234-1234-1234-123456789013 │ client_id: redacted  │ 2022-12-14T18:02:54.644654+00:00 │
+╘════════════════════════╧══════════════════╧══════════════════════════════════════╧══════════════════════╧══════════════════════════════════╛
+`
+
+#### Step 2\. Get the asset identification
+
+In order to validate a specific data asset you need to get the following information that identifies it:
+
+* `project`: in certain warehouses this might be referred to as `catalog` or `database`.
+* `dataset`: also called `schema` in some warehouses.
+* `assetName`: for example the table or view name.
+
+Or optionally you can construct an "asset id" (also known as "full table id") like the following: `[project]:[dataset].[asset_name]`. For example, `sales:public.sales_history`.
+
+You can also use the [getTables](https://apidocs.getmontecarlo.com/#query-getTables) API to help search for tables.
+
+#### Step 3\. Put it all together
+
+Using the connection ID and asset ID from the previous steps you can validate access with the [validateDataAssetAccess](https://apidocs.getmontecarlo.com/#query-validateDataAssetAccess) API.
+
+GraphQL exampleExample response
+
+`query validateAccess {
+  validateDataAssetAccess(
+    connectionId: "<REPLACE WITH YOUR CONNECTION ID>"
+    project: "<REPLACE WITH YOUR PROJECT/DATABASE/CATALOG NAME>"
+    dataset: "<REPLACE WITH YOUR DATASET/SCHEMA NAME>"
+    assetName: "<REPLACE WITH YOUR TABLE NAME>"
+  ) {
+    success
+    validationResults {
+      success
+      validationName
+      description
+      additionalData {
+        queriesWithResults {
+          query
+          rows
+        }
+      }
+      errors {
+        cause
+        friendlyMessage
+        resolution
+      }
+      warnings {
+        cause
+        friendlyMessage
+        resolution
+      }
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "validateDataAssetAccess": {
+      "success": true,
+      "validationResults": [
+        {
+          "success": "true",
+          "validationName": "validate_select",
+          "description": "Select",
+          "additionalData": {
+            "queriesWithResults": [
+              {
+                "query": "SELECT * FROM database.schema.table LIMIT 1;",
+                "rows": "1"
+              }
+            ]
+          },
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "success": "true",
+          "validationName": "validate_specific_table_metadata",
+          "description": "Specific Table Metadata",
+          "additionalData": {
+            "queriesWithResults": [
+              {
+                "query": "SELECT * FROM database.information_schema.tables WHERE table_schema ILIKE 'schema' AND table_name ILIKE 'table' LIMIT 1;",
+                "rows": "1"
+              }
+            ]
+          },
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "success": "true",
+          "validationName": "validate_specific_table_schema",
+          "description": "Specific Table Schema",
+          "additionalData": {
+            "queriesWithResults": [
+              {
+                "query": "SELECT * FROM database.information_schema.columns WHERE table_schema ILIKE 'schema' AND table_name ILIKE 'table' LIMIT 1;",
+                "rows": "1"
+              }
+            ]
+          },
+          "errors": [],
+          "warnings": []
+        },
+        {
+          "success": "true",
+          "validationName": "validate_query_logs",
+          "description": "Query Logs",
+          "additionalData": {
+            "queriesWithResults": [
+              {
+                "query": "SELECT * FROM database.account_usage.query_history LIMIT 1;",
+                "rows": "1"
+              }
+            ]
+          },
+          "errors": [],
+          "warnings": []
+        }
+      ]
+    }
+  }
+}
+`
+
+The result of this API includes a list of validations executed and some additional information, like the query (or queries) used. If any errors are raised (e.g. missing permissions) you'll get details about the error with resolution steps. Generally, these can be resolved by following the [Monte Carlo documentation](/docs/data-warehouses) for your warehouse.
+
+##### Optional parameters
+
+Note that you can also pass the following optional parameters to this API:
+
+* **validationNames**: A list of validations to run. By default all validations (except "specific table query logs") are executed, but you can control what validations are executed. The list of valid options for validation names are defined in the GraphQL schema:  
+   * `validate_select`: tests data from the specified table by using a SELECT query with LIMIT 1.  
+   * `validate_query_logs`: tests that query logs can be obtained for the database containing the specified table.  
+   * `validate_specific_table_metadata`: gets metadata for the specified table.  
+   * `validate_specific_table_schema`: gets the list of columns for the specified table.  
+   * `validate_specific_table_query_logs`: gets the query logs for the specified table, this might take too much time depending on the size of the database and number of query logs as it runs a query referencing the specified table in the SQL text.
+* **object\_type**: one of: `OBJECT_TYPE_TABLE`, `OBJECT_TYPE_VIEW`, `OBJECT_TYPE_EXTERNAL`, `OBJECT_TYPE_TEMP_TABLE`, `OBJECT_TYPE_WILCARD_TABLE` or `OBJECT_TYPE_SNOWFLAKE_STREAM`. Default value is `OBJECT_TYPE_TABLE`.
+
+##### Getting the list of supported validations
+
+The list of validation names listed above might change over time, you can use the [getSupportedTableValidations](https://apidocs.getmontecarlo.com/#query-getSupportedTableValidations) API to get the exact list of validations supported for a given connection.  
+For example:
+
+GraphQL exampleExample response
+
+`query getSupportedValidations {
+  getSupportedTableValidations(connectionId: "<REPLACE WITH YOUR CONNECTION ID>") {
+    supportedValidations {
+      name,
+      description
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "getSupportedTableValidations": {
+      "supportedValidations": [
+        {
+          "name": "validate_query_logs",
+          "description": "Query Logs"
+        },
+        {
+          "name": "validate_select",
+          "description": "Select"
+        },
+        {
+          "name": "validate_specific_table_metadata",
+          "description": "Specific Table Metadata"
+        },
+        {
+          "name": "validate_specific_table_schema",
+          "description": "Specific Table Schema"
+        },
+        {
+          "name": "validate_specific_table_query_logs",
+          "description": "Specific Table Query Logs"
+        }
+      ]
+    }
+  }
+}
+`

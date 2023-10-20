@@ -1,0 +1,26 @@
+---
+title: "Insight: Consumption by user"
+description: "Measured in runtime seconds for Snowflake and Redshift, and bytes scanned for BigQuery and Athena. Last 7 day totals are shown (reads & writes) and compared to the 7 days prior."
+---
+
+### Field Definitions
+
+**RESOURCE\_TYPE** : The data warehouse type
+
+**USER** : The name of the user 
+
+**IS\_BOT** : True/False boolean 
+
+**DATA\_TYPE** : The type of data that the warehouse measures consumption by (runtime or bytes) 
+
+**TOTAL\_LAST\_7\_DAYS**  : The total read and write _data type_ in the last 7 days
+
+**TOTAL\_PERCENTAGE\_CHANGE\_7\_DAYS** : The % change in the last 7 days compared to the previous 7 day period for both read and write queries
+
+**READ\_LAST\_7\_DAYS** : The total read consumption in the last 7 days, measured by the data type
+
+**READ\_PERCENTAGE\_CHANGE\_7\_DAYS** : The % change in the last 7 days compared to the previous 7 day period for read queries
+
+**WRITE\_LAST\_7\_DAYS** : The total write consumption in the last 7 days, measured by the data type
+
+**WRITE\_PERCENTAGE\_CHANGE\_7\_DAYS** : The % change in the last 7 days compared to the previous 7 day period for write queries

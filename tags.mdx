@@ -1,0 +1,43 @@
+---
+title: "Tags"
+---
+
+### Overview
+
+As part of a data governance strategy, tags may be used to organize and classify data assets. Tags are typically key-value pairs that are used to attach information, like metadata, to an asset. Tags can be used to logically group assets in a way that is meaningful to your organization.
+
+Tags can be applied directly in Monte Carlo from a data asset’s Catalog page using the UI, or via the API. They can also be applied to data assets within the source systems, for example see the [Snowflake documentation around tags](https://docs.snowflake.com/en/user-guide/object-tagging#tag-lineage).
+
+![Tags in Catalog](/images/01c5691-image.png)
+
+Tags in Catalog
+
+### Tag Import
+
+While not enabled by default, tags can be imported into Monte Carlo from your data sources where applicable. _If you are interested in having tags imported from your data sources into Monte Carlo, please let us know!_
+
+When tag import is enabled, we will collect tags from your data sources via metadata, or in the case of dbt, from the `manifest` file.
+
+When a tag has been imported from a source system, it will be indicated on the tag.
+
+![Tag imported from dbt](/images/7dec8d1-image.png)
+
+Tag imported from dbt
+
+### Frequently Asked Questions
+
+**How long does it take for a tag that was added to a data asset in the data source, to show up in Monte Carlo catalog?**
+
+Metadata collection happens hourly, so if you add a new tag to a data asset, it could take some time to see the new tag in the Monte Carlo catalog.
+
+**Where are tags retrieved from in Snowflake?**
+
+The data collector retrieves tags from the `SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES` table in Snowflake.
+
+**Will tags that have been added to Monte Carlo directly be overwritten by tags that are imported from a data source?**
+
+No, tags imported from a data source are appended to the tags added directly to Monte Carlo. If a tag exists in a data source with the same KEY name of a tag that has been added directly to Monte Carlo, the one added to Monte Carlo directly will take precedence.
+
+**If I delete a tag from a table in the data source, will it be removed from Monte Carlo?**
+
+Yes! If a tag that has been imported from a data source into Monte Carlo is removed, the change will be synced to Monte Carlo and the tag will be removed.

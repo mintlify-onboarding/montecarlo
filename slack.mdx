@@ -1,0 +1,79 @@
+---
+title: "Slack"
+description: "Integrate Monte Carlo with Slack"
+---
+
+Monte Carlo integrates directly into Slack so anomaly detections can be sent to any public channel in your workspace for quick triaging and collaboration. This guide explains how to receive Slack notifications from Monte Carlo.
+
+### To Integrate a Slack Instance, you will:
+
+1. Within Monte Carlo, access your Settings page and navigate to the **Integrations** section:
+
+![](/images/d0fa98d-Screen_Shot_2021-12-14_at_4.37.54_PM.png "Screen Shot 2021-12-14 at 4.37.54 PM.png")
+
+1. Select the **Add Slack** button:
+
+![](/images/2869ed2-Screen_Shot_2021-12-14_at_4.41.31_PM.png "Screen Shot 2021-12-14 at 4.41.31 PM.png")
+
+1. Navigate through Slack permission granting process. You may need to wait on your Slack administrator to approve the request.
+
+> 🚧
+> 
+> If you are blocked by Slack on granting permissions, you will need to contact your Slack Admin to approve Monte Carlo as a trusted integration and grant the necessary permissions.
+
+### To create Notifications to Private Channels
+
+1. The Monte Carlo user must be invited to the Private channel. Type `/invite @Monte Carlo` in the channel to invite the Monte Carlo user.
+2. The channel's ID **must be** manually entered in the **Private Channel ID** input. The integration will NOT work if you use the slack channel name instead. To get the channel ID, right-click on the channel's name and select **Open channel details** from the context menu. A dialog will open and display the channel ID in the dialog's footer.
+
+![549](/images/c1317ef-Screen_Shot_2022-05-12_at_11.31.32_AM.png "Screen Shot 2022-05-12 at 11.31.32 AM.png")
+
+Private Channel Input
+
+### Triggering Notifications
+
+Notifications are triggered automatically when any of the selected events are detected in your warehouse. If you'd like to send a notification to verify your Slack integration, you can click the `Send Test Notification` button in the Notifications settings.
+
+![](/images/ec5be3b-Screen_Shot_2022-06-29_at_9.50.59_AM.png "Screen Shot 2022-06-29 at 9.50.59 AM.png")
+
+### Incident Timeline
+
+Slack messages sent in reply to incident notifications in public and private Slack channels will be displayed in the Incident Timeline section of the Monte Carlo Incident IQ page.
+
+![752](/images/3a2f982-Screen_Shot_2022-08-08_at_1.07.16_PM.png "Screen Shot 2022-08-08 at 1.07.16 PM.png")
+
+Responding to incident messages in Slack
+
+![976](/images/6f2341b-Screen_Shot_2022-08-08_at_1.10.22_PM.png "Screen Shot 2022-08-08 at 1.10.22 PM.png")
+
+Viewing incident timeline events on the Incident IQ page
+
+### Troubleshooting
+
+**Why is my channel not appearing when configuring a new notification route?**
+
+1. Ensure the channel you intend to use is a Public channel; Private channels will not show up in the list and must be entered manually (see above).
+2. If the channel is new, make sure to refresh the channel list:
+
+![](/images/8dc0558-Screen_Shot_2022-05-12_at_10.40.16_AM.png "Screen Shot 2022-05-12 at 10.40.16 AM.png")
+
+If you are still not able to find the expected channel, please reach out to [\[email protected\]](/cdn-cgi/l/email-protection#8cfff9fcfce3fef8cce1e3e2f8e9efedfee0e3e8edf8eda2efe3e1).
+
+### Slack App Approval
+
+We are currently in the process of getting approved by the Slack app store! In the meantime, here is a list of the scopes needed for the app to work as expected:
+
+**_On behalf of the app, Monte Carlo can:_**
+
+* Join public channels in a workspace
+* Send messages as @montecarlo
+* View people in a workspace
+* View basic information about public channels in a workspace
+* View basic information about group direct messages that Monte Carlo has been added to
+* View basic information about direct messages that Monte Carlo has been added to
+* View messages and other content in public channels that Monte Carlo has been added to
+* Add shortcuts and/or slash commands that people can use
+* View emoji reactions and their associated content in channels and conversations that Monte Carlo has been added to
+* View profile details about people in a workspace
+
+**_You can view Monte Carlo's privacy policy [here](https://www.montecarlodata.com/privacy-policy/)._**

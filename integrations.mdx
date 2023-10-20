@@ -1,0 +1,576 @@
+---
+title: "Integrations"
+---
+
+The following examples are queries related to tables, warehouses, and BI tools. 
+
+Please note that the sample queries below only show a subset of the fields available for brevity. You can use introspection to see all available fields.
+
+### Warehouses:
+
+### Get the Warehouse Id (`dwId`)
+
+Your warehouse id can be retrieved using `getUser`.
+
+The warehouse uuid (referred to as `dwID`) is used in subsequent queries to specify the warehouse context.
+
+Sample QuerySample Response
+
+`query getUser {
+  getUser {
+    account {
+      warehouses {
+        uuid
+        connectionType
+      }
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "getUser": {
+      "account": {
+        "warehouses": [
+          {
+            "uuid": "dummy_warehouse_id",
+            "connectionType": "SNOWFLAKE"
+          }
+        ]
+      }
+    }
+  }
+}
+`
+
+### Get Table Metadata
+
+Table status and metadata can be retrieved using `getTable`. For multiple tables you can paginate through `getTables` instead.
+
+The `mcon` can be used in subsequent queries as a unique identifier for the asset. If you already have the `mcon` that can be used in place of the `fullTableId` in the request.
+
+Sample QuerySample Response
+
+`query getTable {
+  getTable(
+    dwId:"dummy_warehouse_id", 
+    fullTableId:"database:schema.table") {
+      mcon
+      fullTableId
+      discoveredTime
+      description
+      location
+      tableType
+      createdTime
+      status
+      freshnessAnomaly
+      sizeAnomaly
+      freshnessSizeAnomaly
+      metricAnomaly
+      dynamicTable
+      isDeleted
+  }
+}
+`
+
+`{
+  "data": {
+    "getTable": {
+      “mcon”: “dummy_table_id”
+      "fullTableId": "database:schema.table",
+      "discoveredTime": "2020-10-17T00:36:28.190057+00:00",
+      "description": null,
+      "location": null,
+      "tableType": "TABLE",
+      "createdTime": "2021-02-02T11:23:38.777000+00:00",
+      "status": "Y",
+      "freshnessAnomaly": false,
+      "sizeAnomaly": false,
+      "freshnessSizeAnomaly": false,
+      "metricAnomaly": false,
+      "dynamicTable": false,
+      "isDeleted": false
+    }
+  }
+}
+`
+
+### Get Table Schema
+
+The latest table schema (and previous versions of the schema) can be retrieved using `getTable`. These fields can be paginated through using the cursor.
+
+Sample QuerySample Response
+
+`query getTable {
+  getTable(
+    dwId:"dummy_warehouse_id", 
+    fullTableId:"database:schema.table") {
+      fullTableId
+      schemaChangeCount
+      versions (first:1) {
+        edges {
+          node {
+            fields(first:10) {
+              pageInfo {
+                endCursor
+                hasNextPage
+              }
+              edges {
+                node {
+                  name
+                  fieldType
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+}
+`
+
+`{
+  "data": {
+    "getTable": {
+      "fullTableId": "database:schema.table",
+      "schemaChangeCount": 3,
+      "versions": {
+        "edges": [
+          {
+            "node": {
+              "fields": {
+                "pageInfo": {
+                  "endCursor": ""
+                  "hasNextPage": false
+                },
+                "edges": [
+                  {
+                    "node": {
+                      "name": "ingestion_time",
+                      "fieldType": "timestamp_ltz(9)"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+`
+
+### Get Table Freshness
+
+The table's freshness graph can be retrieved using `getTable`. 
+
+Sample QuerySample Response
+
+`query getTable {
+  getTable(
+    dwId:"dummy_warehouse_id", 
+    fullTableId:"database:schema.table") {
+      fullTableId
+      mcon
+      lastUpdates (startTime: "2021-03-24T06:59:59.999Z", endTime:"2021-03-31T06:59:59.999Z") {
+        value
+        measurementTimestamp
+      }
+    }
+}
+`
+
+`{
+  "data": {
+    "getTable": {
+      "lastUpdates": [
+        {
+          "value": "2021-03-30T13:35:53+00:00",
+          "measurementTimestamp": "2021-03-31T01:17:15+00:00"
+        },
+        {
+          "value": "2021-03-30T01:34:16+00:00",
+          "measurementTimestamp": "2021-03-30T13:07:03+00:00"
+        },
+        {
+          "value": "2021-03-29T13:35:05+00:00",
+          "measurementTimestamp": "2021-03-30T00:56:15+00:00"
+        }
+      ]
+    }
+  }
+}
+`
+
+### Get Table Size
+
+The table's size (number of rows) can be retrieved using `getTable`. To query byte counts, replace **totalRowCounts** with **totalByteCounts**.
+
+Sample QuerySample Repsonse
+
+`query getTable {
+  getTable(
+    dwId:"dummy_warehouse_id", 
+    fullTableId:"database:schema.table") {
+      totalRowCounts(startTime: "2021-03-24T06:59:59.999Z", endTime:"2021-03-31T06:59:59.999Z"){
+        value
+        measurementTimestamp
+      }
+    }
+}
+`
+
+`{
+  "data": {
+    "getTable": {
+      "totalRowCounts": [
+        {
+          "value": 42,
+          "measurementTimestamp": "2021-03-31T01:17:15+00:00"
+        },
+        {
+          "value": 50,
+          "measurementTimestamp": "2021-03-31T00:16:00+00:00"
+        }
+      ]
+    }
+  }
+}
+`
+
+### Get Table Tags
+
+Table (or field) tags can be retrieved using **getObjectProperties**. Similarly, tags can be created and/or updated using **createOrUpdateObjectProperty**. These tags can be defined in the dashboard or retrieved from the warehouse. The results can be paginated through. 
+
+Sample QuerySample Repsonse
+
+`query getObjectProperties{
+  getObjectProperties(mconId:"dummy_table_id", first: 10) {
+    edges {
+      node {
+        propertyName
+        propertyValue
+        propertySource
+      }
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "getObjectProperties": {
+      "edges": [
+        {
+          "node": {
+            "propertyName": "is_important",
+            "propertyValue": "true",
+            "propertySource": SNOWFLAKE
+          }
+        }
+      ]
+    }
+  }
+}
+`
+
+> 📘
+> 
+> Using getTable
+> 
+> Please note that you can retrieve all these fields in one query (request). The separation was for demonstration purposes.
+
+### Add multiple query-engines
+
+This section outlines a) how to add a nth query-engine within a single MC warehouse and b) how to add a custom monitor to the query-engine. 
+
+This allows creating custom monitors with multiple different connections. For instance, you can now leverage a larger Snowflake warehouse or higher priority Redshift WLM queue for certain field health or sql queries that are more resource-intensive without having to increase cost or load across the board. By default the dashboard and any APIs will use the primary (i.e. first) query-engine added to a warehouse.
+
+> 📘
+> 
+> Note that you can always leverage the SDK for any of these operations!
+
+#### Adding a new query-engine
+
+Follow these steps to add a 2nd, 3rd or nth query-engine.
+
+_Step 1:_ [Get the existing warehouse ID](/docs/integrations#get-the-warehouse-id-dwid)
+
+_Step 2:_ Test the new query-engine connection based on the the type of warehouse. Save the generated key. 
+
+Example of testing a new snowflake connection
+
+`mutation testSnowflakeCredentials{
+  testSnowflakeCredentials(account:"", password:"", user:"", warehouse:""){
+    key
+    success
+    validations {
+      type
+      message
+      data {
+        database
+        table
+      }
+    }
+    warnings {
+      type
+      message
+      data {
+        database
+        table
+      }
+    }
+  }
+}
+`
+
+_Step 3:_ Save the connection
+
+Add the query-engine connection you tested in step #2 to the warehouse from step #1\. Save the generated UUID, it is necessary for any monitor APIs.
+
+Example save connection
+
+`mutation addConnection {
+	addConnection(dwId:"", connectionType:"", key:"", jobTypes:["sql_query", "json_schema"]) {
+    connection {
+      uuid
+    }
+  }
+}
+`
+
+Options:
+
+* `dwId` \- Warehouse UUID from step #1.
+* `connectionType` \- Type of connection (e.g. `snowflake` for snowflake)
+* `key` \- Key generated in step #2
+
+> 🚧
+> 
+> If the `connectionType` is a lake other than **presto** please remove `json_schema` from `jobTypes`. This feature is not supported and will result in an error.
+
+#### Add a monitor using a nth engine
+
+> 📘
+> 
+> Note that you can always leverage the SDK for any of these operations!
+
+By default the dashboard and any APIs will use the primary (i.e. first) query-engine added to a warehouse. You can create a monitor for any nth engine by specifying the `connectionID` in a request. 
+
+The following monitor types are supported:
+
+* Field Health (`createOrUpdateMonitor`)
+* Dimension Tracking (`createOrUpdateMonitor`)
+* JSON Schema Changes (`createOrUpdateMonitor`)
+* SQL Rules (`CreateOrUpdateCustomMetricRule`)
+
+> 📘
+> 
+> The term `label` or `labels` is used to refer to `audiences` in the API. `labels` and `audiences` are equivalent.
+
+Example set up for Field Health Monitor with n-th engine
+
+`mutation createOrUpdateMonitor(
+      mcon: $mcon
+      monitorType: $monitorType
+      fields: $fields
+      timeAxisName: $timeAxisName
+      timeAxisType: $timeAxisType
+      scheduleConfig: $scheduleConfig
+      uuid: $uuid
+      whereCondition: $whereCondition
+      aggTimeInterval: $aggTimeInterval
+      lookbackDays: $lookbackDays
+      segmentedExpressions: $segmentedExpressions
+      notes: $notes
+      fullTableId: $fullTableId
+      resourceId: $resourceId
+      description: $description
+      labels: $labels # labels are equivalent to audiences
+      connectionId: $connectionId
+    ) {
+      monitor {
+        id
+        uuid
+        type
+        fields
+        entities
+        timeAxisFieldName
+        timeAxisFieldType
+        aggTimeInterval
+        aggSelectExpression
+        historyDays
+        whereCondition
+        segmentedExpressions
+        fullTableId
+        notes
+        selectExpressions {
+          id
+          expression
+          dataType
+          isRawColumnName
+        }
+        scheduleConfig {
+          scheduleType
+          intervalMinutes
+          startTime
+          minIntervalMinutes
+        }
+        schedule {
+          resourceId
+        }
+      }
+    }
+  }
+`
+
+See below for example variables for the above call (note that `labels` refers to `audiences`):
+
+Example Monitor Variables
+
+`{
+  "mcon": "MCON++6cbdb767-f91b-462e-b906-81c8316d8265++0358854d-f853-45e2-9153-4f24b17ec1da++table++analytics:dbt_pc.recent_metrics",
+  "monitorType": "stats",
+  "fields": null,
+  "timeAxisType": "timestamp_ltz(9)",
+  "timeAxisName": "timestamp",
+  "scheduleConfig": {
+    "scheduleType": "LOOSE",
+    "intervalMinutes": 720
+  },
+  "aggTimeInterval": "HOUR",
+  "lookbackDays": 1,
+  "notes": "",
+  "description": "Example FH with n-th engine",
+  "labels": [],
+  "connectionId": "a0499e90-b232-453f-9b22-fdaa3c1b0ded"
+}
+`
+
+Example of custom sql rule with n-th engine
+
+`mutation createOrUpdateCustomMetricRule(
+      comparisons: $comparisons
+      customRuleUuid: $customRuleUuid
+      customSql: $customSql
+      variables: $variables
+      description: $description
+      dwId: $dwId
+      intervalMinutes: $intervalMinutes
+      startTime: $startTime
+      timezone: $timezone
+      notes: $notes
+      scheduleConfig: $scheduleConfig
+      labels: $labels # labels are equivalent to audiences
+      connectionId: $connectionId
+    ) {
+      customRule {
+        uuid
+        ruleType
+        intervalMinutes
+        startTime
+        timezone
+        description
+        creatorId
+        nextExecutionTime
+        createdTime
+        updatedTime
+        customSql
+        variables
+        comparisons {
+          comparisonType
+          fullTableId
+          field
+          metric
+          operator
+          threshold
+          baselineAggFunction
+          baselineIntervalMinutes
+          isThresholdRelative
+        }
+        notes
+      }
+    }
+  }
+`
+
+See below for example variables for the above call (note that `labels` refers to `audiences`):
+
+Example custom sql rule payload from dev
+
+`{
+  "comparisons": [
+    {
+      "comparisonType": "THRESHOLD",
+      "operator": "GT",
+      "threshold": 1
+    }
+  ],
+  "customSql": "select * from analytics.dbt_pc.client_hub limit 10",
+  "variables": "{}",
+  "description": "Example custom sql rule with non-primary engine",
+  "notes": "",
+  "dwId": "0358854d-f853-45e2-9153-4f24b17ec1da",
+  "connectionId":"a0499e90-b232-453f-9b22-fdaa3c1b0ded",
+  "intervalMinutes": 10,
+  "startTime": "2022-07-26T07:00:00.000Z",
+  "timezone": "PDT",
+  "labels": []
+}
+`
+
+##### Limitations
+
+* The nth engine must be the same warehouse type as the primary (first) i.e. mixing warehouses is not currently supported.
+* Sampling or other any frontend requests / modifications will always leverage the primary (first) engine.
+
+### BI Tools:
+
+### Add Multiple LookML Repositories
+
+In order to add more than one LookML repo, you will want to first to [create an SSH Key](/docs/looker#creating-an-ssh-key). Next, you'll pass this SSH key into the below query.
+
+Parameters:
+
+_repoUrl_: Repository URL as ssh://\[user@\]server/project.git or the shorter form \[user@\]server:project.git  
+_sshKey_: SSH Key, base64-encoded
+
+Sample QuerySample Response
+
+`mutation {
+  testLookerGitSshCredentials(
+    repoUrl: "url_here"
+    sshKey: "base64_encoded_ssh_key_here" 
+  ){
+    key
+    success
+  }
+}
+`
+
+``
+
+Once you have the returned key, you can pass this into the _addBiConnection_ function.
+
+Parameters:
+
+_connectionType_: This will be `looker-git-ssh` in this case.  
+_key_: This is the key returned from the _testLookerGitSshCredentials_ function
+
+Sample QuerySample Response
+
+`mutation{
+  addBiConnection(
+    connectionType: "looker-git-ssh"
+    key: "your_key_here"
+  ){
+    connection{
+      uuid
+    }
+  }
+}
+`
+
+``

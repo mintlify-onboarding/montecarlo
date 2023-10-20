@@ -1,0 +1,35 @@
+---
+title: "Volume Detector"
+---
+
+Monte Carlo’s volume detector looks at the size (normalized by time) of size updates to your tables. Volume data arrives from the warehouse/lake metadata and the detector alerts you when an update to the table is either too large, too small or was unexpected based on the historical patterns. 
+
+Our models take into account a 6 week moving window of training data and remove artifacts such as up/down spikes caused by measurement issues or the table creation processes. We then calculate features from the time-series which are used in order to decide the alert threshold for the table.
+
+In order to achieve faster model updating based on the patterns we see our volume model is re-trained with new data every 6H.
+
+This detector also supports [maintenance windows](/docs/detectors-overview#maintenance-windows) which allow our models to remove bad data periods from the training window in order to achieve better quality detections without being affected by the bad data period.
+
+It is also possible to change the detector sensitivity yourselves!
+
+### Fine Tuning the Models
+
+The current and historical thresholds for Monte Carlo's automatic volume detector can be seen in the catalog page for each table.
+
+If the detector status is active it will have a purple band on the right edge of graph which indicates the expected time frame for the next size update to this table and the expected size of the table after that update. If the next size update brings the table size outside the expected window, the detector will raise an alert.
+
+The threshold and expected size change are also available in text form to the right of the size graph.
+
+By clicking the edit icon next to the `Volume change sensitivity` section you will be able to change the model’s sensitivity which will either increase or decrease the confidence interval. By default all thresholds are set to `Medium` sensitivity.
+
+![3084](/images/fc55a89-Untitled_4.png "Untitled (4).png")
+
+Volume Detector on Volume tab in Assets detail page
+
+_Note that these changes can take up to 12 hours to update our models._
+
+#### What are the effects of each sensitivity level:
+
+* **High** \- The model will alert more quickly, sacrificing our ability to check if the size returns to normal in the next measurement, will alert on changes that are slightly larger / smaller than usual and will alert on any unexpected deletion.
+* **Medium** \- The default state, model will wait a small amount of time to see if the size returns to normal on the next measurement before alerting, will alert on changes that larger / small then usual and will alert on any unexpected deletion which is not very small
+* **Low** \- The model will alert more slowly, sacrificing speed in order to reduce alert noise, we check if the size returns to normal in the next 2 measurements, will alert on changes that are significantly larger / small then usual and will alert only on big unexpected deletions.

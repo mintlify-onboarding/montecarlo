@@ -1,0 +1,26 @@
+---
+title: "Field Profiling"
+---
+
+Field Profiling provides a mechanism to view the metrics captured by Field Health monitors for each enabled field an easy to digest table format. These metrics can be used to better understand the nature of the data in a table to spot inconsistencies, make decisions about what monitors to apply and generally understand how the underlying data is structured.
+
+### Configuring Field Profiling for table fields
+
+Field profiles are enabled when a [Field Health monitor](/docs/field-health-metrics) is applied to fields in a table. The configuration of the Field Health monitor will impact how the metrics are collected (read more below).
+
+To enable field profiling on fields, [follow the steps outlined here](/docs/field-health-metrics#configuring-a-field-health-monitor).
+
+### Calculating field profile metrics
+
+The metrics displayed in the profile will be impacted by how the underlying Field Health monitor is configured. For example, if a Field Health monitor is configured to monitor for anomalies using All Records, the metrics will be calculated across all records. If instead, a Field Health monitor is configured to filter for recent data using a timestamp column, only the most recent added records will be used to calculate the metric.
+
+### Included metrics
+
+To simplify the UX, we display a subset of collected metrics. View the table below to see which metrics are collected for each type of field.
+
+| Field data type | Supported metrics                                         |
+| --------------- | --------------------------------------------------------- |
+| Text            | % null% uniqueMin lengthMax lengthAvg length              |
+| Numeric         | % null% uniqueMin valueMax valueAvg value% zero% negative |
+| Datetime        | % unique% null                                            |
+| Boolean         | % unique% null                                            |

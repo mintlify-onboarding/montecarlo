@@ -1,0 +1,58 @@
+---
+title: "Upgrading the Collector"
+---
+
+If you host a Data Collector you might need to occasionally upgrade it. Usually this is necessary when infrastructure changes are made, or if you disabled remote upgrades.
+
+These upgrades can be performed via the [Monte Carlo UI](/docs/upgrading-the-data-collector#upgrading-a-data-collector-via-the-ui) or [CLI](/docs/upgrading-the-data-collector#upgrading-a-data-collector-via-the-cli).
+
+## Upgrading a Data Collector via the UI
+
+To perform an upgrade:
+
+1. Navigate to [settings/integrations/collectors](https://getmontecarlo.com/settings/integrations/collectors) and select the more options icon (Kebab Menu).
+
+![Monte Carlo Settings tabs](/images/c81e17c-Screenshot_2023-07-31_at_4.35.17_PM.png)
+
+Monte Carlo Settings Tab
+
+1. Select the "Upgrade" button and follow the on-screen instructions.
+
+![Monte Carlo Upgrade Wizard](/images/66579b1-Screenshot_2023-07-31_at_4.33.36_PM.png)
+
+Monte Carlo Upgrade Wizard
+
+And if you'd like to review the latest template you can download it by selecting the "Download Latest Template" button from the menu.
+
+If you don't see a "Kebab Menu" that means your collector is not currently eligible for UI based updates. Please follow the CLI instructions to upgrade. You might also not see this option if you are not an [Editor or Owner/Manager](/docs/authorization#managed-roles-and-groups).
+
+For more information regarding CloudFormation updates see the [here](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks.html).
+
+As always if you have any questions please let your Monte Carlo representative know or reach out to Support at [\[email protected\]](/cdn-cgi/l/email-protection#a5d6d0d5d5cad7d1e5c8cacbd1c0c6c4d7c9cac1c4d1c48bc6cac8), and we'd be happy to work with you to get you up and running!
+
+## Upgrading a Data Collector via the CLI
+
+> ❗️
+> 
+> This command performs operations in your AWS account (e.g. stack updates, gateway deployments, etc.)
+
+To perform an upgrade:
+
+1. Follow [this guide](/docs/using-the-cli) to install and configure the CLI (requires v0.9.0 or greater).
+2. Use the `upgrade` command to update your collector. See the reference guide [here](https://clidocs.getmontecarlo.com/#montecarlo-collectors-upgrade).
+
+And if you'd like to review the latest template this can be done via the [get-template](https://clidocs.getmontecarlo.com/#montecarlo-collectors-get-template) command.
+
+If you have more than one collector the IDs and other details can be echoed via the [list](https://clidocs.getmontecarlo.com/#montecarlo-collectors-list) command.
+
+As always if you have any questions please let your Monte Carlo representative know or reach out to Support at [\[email protected\]](/cdn-cgi/l/email-protection#3f4c4a4f4f504d4b7f5250514b5a5c5e4d53505b5e4b5e115c5052), and we'd be happy to work with you to get you up and running!
+
+## FAQs
+
+### What is the difference between the UI and CLI when upgrading?
+
+With the CLI, by default, only the source code of the data collector lambdas will be updated. The UI will provide a template containing both code and infrastructure changes (if any).
+
+If you'd like to apply infrastructure updates via the CLI please pass the `--update-infra` flag.
+
+Consider that some Monte Carlo features are only available on latest versions of both the infrastructure and code.

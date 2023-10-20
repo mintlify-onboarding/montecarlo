@@ -1,0 +1,27 @@
+---
+title: "Insight: Dimension Tracking Suggestions"
+---
+
+### Field Definitions
+
+**FULL\_TABLE\_ID**: A concatenation of project, dataset and table name 
+
+**PROJECT\_NAME** : As defined externally
+
+**DATASET\_NAME** : As defined externally (e.g. a schema in snowflake) 
+
+**TABLE\_NAME**: As defined externally
+
+**TABLE\_TYPE** : Field values: table, view, external, wildcard\_table .
+
+**FIELD**: The name of the field
+
+**TYPE**: The field type
+
+**TABLE\_IMPORTANCE\_SCORE** : A score from 0-1 expressed as a decimal, this is score is based off number of reads, number of users (query executors), degree connectivity (i.e., table’s # of parent/child tables), update periodicity and age & freshness. 
+
+[![docs.getmontecarlo.com](/images/e42fb99-small-Monte_Carlo_Logo_Secondary.png)docs.getmontecarlo.comKey Assets Importance Score](https://docs.getmontecarlo.com/docs/key-assets-importance-score)
+
+**FIELD\_SCORE**: The field importance score based on field names NLP. Field values: High / medium  
+  
+**DOMAINS**: As created by the user in the UI.

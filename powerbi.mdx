@@ -1,0 +1,75 @@
+---
+title: "Power BI"
+---
+
+## Overview
+
+Monte Carlo collects various assets from Power BI in order to document downstream lineage from your data storage. At a high-level, Monte Carlo collects:
+
+* Datasets
+* Dashboards
+* Reports
+
+To document your Power BI assets in Lineage, Monte Carlo:
+
+1. Scans all Power BI **Workspaces** that are available to the [Service Principal](#creating-a-service-principal-recommended) you create for Monte Carlo.
+2. Fetches the **Datasets**, **Dashboards**, and **Reports** available from each Workspace.
+3. For each **Dashboard Tile** (on a **Dashboard**) and **Report**, parse the Dataset used.
+4. For each **Dataset**, parse the Tables or SQL Query used. Both **Direct Data Sources** and **Native Queries** and are supported.
+
+### Caveats
+
+* Only tables from Google BigQuery, Snowflake, Databricks, and Amazon Redshift are supported as of now. Please reach out if you are using tables from another data source and we can get this configured.
+* Inactive and Personal Workspaces will not be collected by default. Please reach out if you would like to enable collecting these Workspaces.
+* **Dataflows** are not yet supported. Please reach out if you are using Dataflows and would be interested in support.
+
+---
+
+## Connecting Power BI
+
+This guide explains how to create a user for Monte Carlo on Power BI.
+
+> 📘
+> 
+> Service principal credentials required
+> 
+> To complete this guide, you will need a Service Principal's credentials.
+
+To review all steps necessary to integrate a BI tool with Monte Carlo, please see [here](/docs/bi-tools).
+
+### 1\. Creating a Monte Carlo User on Power BI
+
+There are two access options with Power BI:
+
+1. **Service Principal (Recommended)**: With this option, Monte Carlo requires the Service Principal's client ID, client secret and tenant id to access the appropriate Power BI APIs.
+2. **Primary User ([Classic workspaces only](https://learn.microsoft.com/en-us/power-bi/collaborate-share/service-create-the-new-workspaces))**: With this option, Monte Carlo requires a Primary User's (previously referred to as a "Master User") credentials to access the Power BI APIs.
+
+#### Option 1: Creating a Service Principal \[Recommended\]
+
+Detailed documentation on how to create a service principal can be found: [Power BI - Credential Creation Process](/docs/power-bi-credential-creation-process).
+
+It is recommended to follow the detailed instructions above. In summary, to create a Service Principal:
+
+1. Sign into your Microsoft Azure account
+2. Create an Azure AD app
+3. Create an Azure AD security group
+4. Enable the Power BI service admin settings
+5. Add the service principal to your workspace (note this step must be done for every workspace!)
+
+#### Option 2: Creating a Primary User
+
+MS Azure customers with Classic Workspaces can follow the [steps outlined here](https://learn.microsoft.com/en-us/power-bi/developer/embedded/embed-sample-for-customers?tabs=net-core) to generate a Primary User with the appropriate permissions. 
+
+### 2\. Configure a Power BI Integration in Monte Carlo
+
+To configure a new Power BI integration, visit the "Integrations" tab within "Settings" in your Monte Carlo account and follow these steps:
+
+1. Select the "Power BI" from the New Integration button under Business Intelligence connections
+2. Enter the appropriate Service Principal credentials (or Primary User credentials)  
+Note: You can find your tenant ID in the Overview tab within your Azure account portal.
+
+![](/images/5af478f-Settings_2022-10-03_at_4.10.33_PM.jpg "Settings 2022-10-03 at 4.10.33 PM.jpg")
+
+![](/images/1466bd4-Screen_Shot_2022-10-03_at_1.06.46_PM.png "Screen Shot 2022-10-03 at 1.06.46 PM.png")
+
+1. Click connect and confirm that no connection errors exist.

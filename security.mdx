@@ -1,0 +1,48 @@
+---
+title: "Security and Compliance"
+---
+
+Designed by security industry veterans, the Monte Carlo platform can meet stringent privacy and security standards. 
+
+### Highlights
+
+* Monte Carlo only extracts metadata, query logs and aggregated statistics into its cloud service. In particular, Monte Carlo can support a setup where no individual records or PII are ever taken out of your environment.
+* Monte Carlo uses read-only access via APIs and/or dedicated service accounts and allows granular permissions to datasets of your choice.
+* Monte Carlo's can be configured in a [customer-hosted architecture](/docs/platform-architecture#customer-hosted-agent--object-storage-deployment) that allows you to run its collector on your own cloud infrastructure so you never have to expose any of your data warehouses, data lakes and BI tools to Monte Carlo's cloud.
+
+![Monte Carlo Cloud Deployment](/images/e64f320-1.svg)
+
+Monte Carlo Cloud Deployment
+
+### Compliance
+
+* Monte Carlo maintains a SOC 2 Type II / Type III on our [Trust Center](https://trust.montecarlodata.com) (Security, Availability and Confidentiality criteria).
+* Monte Carlo will sign NDAs and/or [DPAs](https://www.montecarlodata.com/data-processing-addendum/) where appropriate.
+* Monte Carlo primarily collects metadata, logs, and metrics for the purpose of identifying data reliability issues. However, we acknowledge that the service may collect and process personal data as part of query logs or through other data sampling search functionality that you initiate within the Monte Carlo platform. If any such data is passed to Monte Carlo, it is used for the sole purpose of identifying data reliability issues. More information about the information Monte Carlo collects can be found on our [Technical and Organizational Security Measures](https://www.montecarlodata.com/technical-and-organizational-security-measures/) page.
+
+### Security and privacy practices
+
+Monte Carlo's team implements industry best practices across the board to protect the security of its application, and the data privacy of its customers. The following are only some of the elements of our security program and system architecture. A comprehensive list of our security controls can be found on our [Trust Center](https://trust.montecarlodata.com).
+
+* Processing is conducted on secure servers hosted on Amazon Web Services (AWS). All storage systems are encrypted, and all servers are tightly access controlled and audited. Data is encrypted at rest and in-transit at all times.
+* In cases where debugging or maintenance work is required, a minimal number of engineers will be permitted to access the data necessary for this purpose. All employees use encrypted laptops and are required to remove data from their devices when their debugging session is complete. Laptop security policies are enforced using MDM.
+* Monte Carlo will access your environment from a single source IP dedicated to you, allowing you to protect access to your data resources at the network level.
+* An annual penetration test is performed to validate Monte Carlo's posture and identify vulnerabilities. Our latest [penetration test](https://trust.montecarlodata.com/resources/YzJlMjIyYWMtNWRhMC00ODRlLWEyMzItZjMxODVmNWViYTRj) and [remediation test](https://trust.montecarlodata.com/resources/ZWZjZmIwZGYtNGQ2ZC00ZmNiLTk3ZWUtZGNjOGMzNmEyYzBl) reports can be found on our [Trust Center](https://trust.montecarlodata.com).
+* Monte Carlo's service runs on highly available and highly redundant cloud services provided by Amazon Web Services, primarily in the US-East01 region.
+* Access to all critical systems and production environments is protected using strong passwords and multi-factor authentication. Whenever possible, SSO is used for centralized access control. Access is reviewed prior to being granted and then quarterly thereafter.
+* Monte Carlo provides customers with the opportunity to use Generative AI technology within the Monte Carlo platform via OpenAI. OpenAI is available for customers to troubleshoot the creation of SQL queries for custom monitors to provide relevant detection and alerting for Data Observability issues.  
+   * Where used, OpenAI is only aware of content that is entered by the customer as well as a limited subset of customer metadata necessary for the AI to suggest corrections or enhancements to the SQL queries. In all Generative AI use cases within the Monte Carlo platform, no customer data entered into the OpenAI platform can be used for current or future model training by OpenAI.  
+   * Monte Carlo customers may disable the Generative AI features for their account at any time by reaching out to Monte Carlo's Customer Support team.
+
+### Information Monte Carlo collects
+
+The following information may be processed and stored by Monte Carlo:
+
+| Data Type             | Details                                                                                                                                                                                                                                                                                                | Purpose                                                                                                                                                          | Stored on      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| Metadata              | Information about tables, schemas, data freshness and volume, names and attributes of BI reports/dashboards, and other such attributes of customer data assets. These data are collected directly from customer warehouses, lakes, and BI tools via APIs, JDBC connections, and other methods.         | Build a catalog of warehouse, lake and BI objects along with schema information in order for Monte Carlo to provide the data observability reports and services. | Cloud service  |
+| Metrics               | Row counts, byte counts, last modification date and other similar table-level metrics. These data are collected directly from customer warehouses, lakes, and BI tools via APIs, JDBC connections, and other methods.                                                                                  | Track freshness, volume and other aspects of data health and distribution.                                                                                       | Cloud service  |
+| Query logs            | History of queries, as well as metadata about them (timestamp, user performing the query, errors if any, etc). These data are collected directly from customer warehouses, lakes, and BI tools via APIs, JDBC connections, and other methods.                                                          | Track lineage, usage analytics and query history to help with troubleshooting and prevention use cases.                                                          | Cloud service  |
+| Aggregated statistics | Aggregated statistical measures of the data in selected tables. Statistics may include null rates, distinct values, row counts, percentiles, and other similar metrics. These data are collected directly from customer warehouses, lakes, and BI tools via APIs, JDBC connections, and other methods. | Track data health and corruption using ML-based anomaly detection as well as customer-provided rules.                                                            | Cloud service  |
+| Application Data      | Customer accounts, user settings, configurations, IP address, incidents, and other elements necessary to set up the Service.                                                                                                                                                                           | This information is generated as users sign up and interact with the Service and for user authentication.                                                        | Cloud service  |
+| Data Sampling         | A sample set of individual values or data records from the customer tenant in clear text form that are associated with a data reliability incident detected by Monte Carlo.                                                                                                                            | Help users quickly identify the nature of data issues and their root cause.                                                                                      | Object storage |

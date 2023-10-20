@@ -1,0 +1,77 @@
+---
+title: "Insight: Field importance scores"
+description: "Fields with a calculated importance score based on BI usage, explicit and implicit lineage usage and number of read queries"
+---
+
+### Field defintions
+
+**PROJECT\_NAME**: As defined 
+
+**DATASET\_NAME**: As defined (e.g. a schema in snowflake) 
+
+**TABLE\_NAME**: As defined
+
+**TABLE\_TYPE** : Field values: table, view, external, wildcard\_table
+
+**FIELD**: As defined
+
+**NUM\_SELECT\_QUERIES**: The log base 2 of the distinct read queries on this field
+
+**NUM\_EXPLICIT\_EDGES**: Count of the direct downstream connections this field has (select X from table)
+
+**NUM\_IMPLICIT\_EDGES**: Count of the in-direct downstream connections this field has (select \* from table)
+
+**NUM\_EXPLICIT\_BI\_EDGES**: Count of the downstream dashboard fields that use this field
+
+**NUM\_UNIQUE\_BI\_DEPENDENCIES**: Count of the distinct dashboards that use this field
+
+**IMPORTANCE\_SCORE**: The normalized (0-1) global (full warehouse) importance score of this field
+
+**LOCAL\_IMPORTANCE\_SCORE**: The normalized (0-1) local (intra-table) importance score of this field
+
+**IS\_IMPORTANT**: True if this field designated as important globally, False otherwise. 
+
+**IS\_LOCALLY\_IMPORTANT**: True if this field designated as important locally, False otherwise. 
+
+**IS\_USED**: True if this field used by any downstream tables/dashboards or has read queries using it, False otherwise. 
+
+### Some explanation on the field level importance score
+
+**A field’s importance score is based on the following parameter’s:**
+
+1. The number of direct downstream fields (select X from table)
+2. The number of in-direct downstream fields (select \* from table)
+3. The number of downstream dashboard fields
+4. The number of unique downstream dashboards
+5. The number of distinct read queries in the last 2 days
+
+> 🚧
+> 
+> Please note
+> 
+> If the field is stale, newly created, or not used then its score is set to zero. The score is **only** calculated for fields where we were able to parse the usage of the field and so only. on fields that MC get metadata and query data about the table. Tables that were not queried in the last 30 days can be found in the “Cleanup Suggestions” insight.  
+> Also, the number of downstream connections is calculated only up to 3 layers down.
+
+**How is the score calculated?**
+
+* The score is automatically set to zero if the field is not used in any ETL process and was not queried by ad hoc users in the last 2 days.
+* The score is relative in nature, each field is scored in respect to other fields found within the same warehouse and relative to fields in the same table based on the scoring parameters(explicit selects, implicit selects, dashboard fields, dashboards, read queries).  
+_Due to having many read queries and those being mostly ad-hoc we take the log2 of the number of reads as the value_
+
+_raw\_importance\_score_ \= 0.1   _num reads + 0.25_  implicit selects + 0.75   _explicit selects + 3_  downstream BI fields + 20 \* num distinct dashboards
+
+We then take the raw score and perform a dense\_rank and perform MinMax scaling so that fields which are not used get importance\_score=0 and the most important fields get _importance\_score_\=1.
+
+_Local importance score_ is the intra table normalized importance score so all field importance scores in the table are divided by the MAX score for a field in that same table.
+
+**A field is designated as important if it fits one of the following criteria:**
+
+* Used explicitly in a dashboard
+* Is in the top 30% of fields by importance score
+
+**A field is designated as locally important if it fits one of the following criteria:**
+
+* It is globally important
+* Is in the top 80% of fields by importance score globally and top 50% locally
+* Is used by at least 3 downstream fields explicitly
+* Was queried explicitly at least 256 (2\*\*8) times in the last 2 days.

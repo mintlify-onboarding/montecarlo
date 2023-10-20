@@ -1,0 +1,246 @@
+---
+title: "Databricks"
+---
+
+This document walks through the steps to monitor a Databricks environment with Monte Carlo. The order of operations is important and it is strongly recommended to adhere to the documented sequence. These steps need to be repeated for each Databricks Workspace that you would like to observe with Monte Carlo.
+
+Please note the Table of Contents to the right for the full outline of steps.
+
+### 0\. Pre-requisites
+
+Upgrade your data collector. As of August 2023, v14887 or higher has the latest generation of Databricks collection.
+
+### 1\. Create a Personal Access Token or Service Principal
+
+Creating a Personal Access Token is the simplest option to connect to Databricks. Databricks recommends using a Service Principal for API access though but it requires the Databricks CLI in order to create a Token.
+
+#### Option 1: Creating a Service Principal (Recommended)
+
+This option only is available if you are using Unity Catalog as Service Principals are a Unity Catalog feature.
+
+1. As a **Databricks account admin**, login to the Databricks Account Console, click on **User Management**, and the **[Service Principals](https://accounts.cloud.databricks.com/users/serviceprincipals)** tab.
+2. Click **Add service principal**, enter a **Name** for the service principal, and click **Add**.
+3. Ensure that the Service Principal has **Allow cluster creation (if using Cluster-based connection), Databricks SQL access, and Workspace access** Entitlements.
+4. Follow the [Databricks documentation](https://docs.databricks.com/en/dev-tools/service-principals.html#step-4-generate-a-databricks-personal-access-token-for-the-databricks-service-principal) for creating a Service Principal Token (requires Databricks APIs) and save that Token.
+
+#### Option 2: Creating a Personal Access Token (Not recommended)
+
+1. You must be an Admin in the Databricks Workspace (admin access is required to generate the resources listed in step 4).
+2. In your Databricks workspace, click your Databricks username in the top bar, and then select **User Settings** from the drop down.
+3. On the **Access tokens** tab, click **Generate new token**.
+4. Enter a comment (`monte-carlo-metadata-collection`) that helps you to identify this token in the future and create a token with no lifetime by leaving the **Lifetime (days)** box empty. Click Generate.
+5. Copy/save the displayed **Token**, and then click Done.
+
+### 2\. Grant permissions
+
+Configure permissions depending on the type of metastore. If the workspace has catalogs in UC and not UC, both need to be configured.
+
+#### Unity Catalog
+
+Grant permissions to the Service Principal to read the Catalogs. This will cascade to all schemas within. In UC, the `SELECT` privilege implies `USE`:
+
+SQL
+
+`GRANT SELECT ON CATALOG <CATALOG> TO <monte_carlo_service_principal>;
+`
+
+For details, see [Databricks documentation](https://docs.databricks.com/en/data-governance/unity-catalog/manage-privileges/index.html).
+
+See FAQ if the command returns a "Privilege SELECT is not applicable" error.
+
+#### Hive metastore
+
+Grant permissions to the Service Principal to read the Catalogs - the most common scenario is that only one catalog is present, `hive_metastore`. Permissions will cascade to all schemas within. In the Hive mestastore, the `SELECT` privilege requires `USAGE`:
+
+SQL
+
+`GRANT USAGE, READ_METADATA, SELECT ON CATALOG <CATALOG> TO <monte_carlo_service_principal>;
+`
+
+For details, see [Databricks documentation](https://docs.databricks.com/en/sql/language-manual/sql-ref-privileges-hms.html).
+
+### 3\. Create a SQL Warehouse or Cluster for Metadata Collection
+
+Adding the Metadata Connection allows Monte Carlo to gather metadata on a periodic basis. Monte Carlo supports metadata collection through **SQL Warehouse**, **All-purpose Clusters** and **Job Clusters**. If using Job Clusters, you must build the connection with an All-purpose Cluster (as specified below) and then optionally swap to a Job Cluster.
+
+A SQL Warehouse \[BETA\] is recommended because it has better cost and availability, is quicker to spin up and terminate and requires less infrastructure to work. If you prefer to use an All-Purpose Cluster, or do not have access to SQL Warehouses in Databricks, please use **Option 2**.
+
+> 🚧
+> 
+> Serverless SQL Warehouses and external Hive metastores
+> 
+> A Serverless SQL Warehouse [**does not work**](https://docs.databricks.com/en/sql/admin/serverless.html#workspace-requirements) with an external Hive metastore. It works if Glue is the external metastore though.
+
+#### Option 1: Creating a SQL Warehouse (Recommended)
+
+1. Follow [these steps](https://docs.databricks.com/sql/admin/sql-endpoints.html#create-a-sql-warehouse) to create a SQL Warehouse.  
+a. For environments with 10,000 tables or fewer Monte Carlo recommends starting with a `2X-Small`. The `Serverless` type is recommended for cost efficiency reasons, but `Pro` is also supported. Most Metadata operations are executed in the driver, so a `2X-Small` should be enough, but a larger SQL Warehouse might be required depending on the number and size of Delta tables. Please reach out to your account representative for help right-sizing!
+2. Save the **Warehouse ID**.
+3. Start the SQL Warehouse.
+
+#### Option 2: Creating a Cluster (Not recommended)
+
+1. Follow [these](https://docs.databricks.com/clusters/create.html) steps to create an all-purpose cluster in your workspace.  
+a. For environments with 10,000 tables or fewer Monte Carlo recommends using an `i3.xlarge` node type. Most Metadata operations are executed in the driver, so it is recommended to disable autoscaling and initially only use 1 Worker node. More workers might be required depending on the number and size of Delta tables. Please reach out to your account representative for help right-sizing!  
+b. A Databricks runtime version with Spark >= `3.0` is required.  
+c. Please add `spark.databricks.isv.product MonteCarlo+ObservabilityPlatform` to the cluster config.  
+d. Avoid using "Single User" access mode, as it will prevent the metadata collection job to work with any other user in case credentials are updated in the future.
+2. Navigate to the Cluster page, and copy/save the **Cluster ID**, which can be found at the end of the URL: `https://<databricks-instance>/#/setting/clusters/<cluster-id>`. For more details, see the [Databricks documentation](https://docs.databricks.com/workspace/workspace-details.html#cluster-url-and-id).
+3. Start the cluster.
+4. **Optional: Change to a Job Cluster**  
+Because we are only running the metadata collection job through the metadata connection, we can switch the cluster used on the job to a Job cluster. [Migrating the Databricks Metadata Job to a Job Cluster](/docs/migrating-the-databricks-metadata-job-to-a-job-cluster)
+
+### 4\. Create a SQL Warehouse or Cluster for a Query Engine
+
+A SQL Warehouse \[BETA\] is recommended as the method for Monte Carlo to execute queries on Databricks because it has better cost and availability, and additionally is quicker to spin up for running queries. If you prefer to use an All-Purpose Cluster, or do not have access to SQL Warehouses in Databricks, please follow the [Spark](/docs/spark) guide.
+
+> 📘
+> 
+> Can I use the same SQL Warehouse / Cluster for both connections?
+> 
+> While it is possible to use the same cluster or SQL warehouse for both metadata and  
+> query engine connections, because of the differences in requirements, we recommend using a different SQL Warehouse / Cluster for each connection.
+
+#### Option 1: Creating a SQL Warehouse (Recommended)
+
+1. Follow [these steps](https://docs.databricks.com/sql/admin/sql-endpoints.html#create-a-sql-warehouse) to create a SQL Warehouse.  
+a. The size of the SQL Warehouse depends on the number of monitors and data size, Monte Carlo recommends starting with `2X-Small` and scaling afterwards as needed. The `Serverless` type is recommended for cost efficiency reasons, but `Pro` is also supported.
+2. Save the **Warehouse ID**.
+3. Start the SQL Warehouse.
+
+#### Option 2: Creating a Cluster (Not recommended)
+
+Differently than the metatadata collection, a job cluster is not supported for the SQL engine connection. 
+
+1. Follow [these](https://docs.databricks.com/clusters/create.html) steps to create an all-purpose cluster in your workspace.  
+a. The size of the All-pupose Cluster depends on the number of monitors and data size, Monte Carlo recommends starting with the `i3.2xlarge` node type for the driver and worker and scaling afterwards as needed.  
+b. A Databricks runtime version with Spark >= `3.0` is required.  
+c. Please add `spark.databricks.isv.product MonteCarlo+ObservabilityPlatform` to the cluster config.  
+d. Avoid using "Single User" access mode, as it will prevent the metadata collection job to work with any other user in case credentials are updated in the future.
+2. Navigate to the Cluster page, and copy/save the **Cluster ID**, which can be found at the end of the URL: `https://<databricks-instance>/#/setting/clusters/<cluster-id>`. For more details, see the [Databricks documentation](https://docs.databricks.com/workspace/workspace-details.html#cluster-url-and-id).
+3. Start the cluster.
+
+### 5\. Verify data access
+
+Confirm that this SQL Warehouse or cluster has access to the catalogs, schemas, and tables that need to be monitored.
+
+To check this, you can run the following commands in the Databricks SQL editor (for SQL Warehouse) or a notebook attached to your new all-purpose cluster. If all of the commands work and show the objects you expect, this cluster is configured correctly for the current user. Note this does not guarantee though the the job will work with the token configured in Monte Carlo if the token is from a different user. If it doesn't show the expected objects, this may be an issue with permissions or the settings on the cluster. Ensure that the SQL Warehouse / cluster is connecting to the correct metastore.
+
+SQL
+
+`SHOW CATALOGS
+
+SHOW SCHEMAS IN <CATALOG>
+
+SHOW TABLES IN <CATALOG.SCHEMA>
+
+DESCRIBE EXTENDED <CATALOG.SCHEMA.TABLE>
+`
+
+### 6\. \[Unity Catalog Only\]Enable System Tables
+
+Monte Carlo uses system tables to collect and present lineage. For any and all unity catalog environments, enable them and provide access to Monte Carlo.
+
+1. Follow the instructions at [https://docs.databricks.com/administration-guide/system-tables/index.html#enable-system-tables](https://docs.databricks.com/administration-guide/system-tables/index.html#enable-system-tables) to enable the system tables within Databricks. Execute the instructions for each workspace that has any Unity Catalog.
+2. Grant access for the Monte Carlo service principal to access the tables: `GRANT SELECT ON system.access.table_lineage TO <monte_carlo_user>`
+
+### 7\. Add the Connections in Monte Carlo
+
+This step uses the Monte Carlo UI to add the Connections. Please ensure the the SQL Warehouses or Clusters are turned on in order to add the connections.
+
+> 🚧
+> 
+> \[Cluster\] This creates resources in your Databricks workspace.
+> 
+> This automates the creation of a [secret](https://docs.databricks.com/security/secrets/secrets.html), [scope](https://docs.databricks.com/security/secrets/secret-scopes.html), [directory](https://docs.databricks.com/workspace/workspace-objects.html#folders-1), [notebook](https://docs.databricks.com/notebooks/index.html) and [job](https://docs.databricks.com/data-engineering/jobs/jobs.html) to enable metadata collection in your workspace. If you wish to create these resources manually instead, please reach out to your account representative.
+> 
+> None of these components are necessary if a SQL Warehouse is used.
+
+1. To add the Connections, navigate to the [Integrations](https://getmontecarlo.com/settings/integrations) page in Monte Carlo. If this page is not visible to you, please reach out to your account representative.
+2. Under the **Data Lake and Warehouses** section, click the **Create** button and **Databricks**.
+3. Use the **Create Databricks metadata collection and querying connections** button.
+4. Under **Warehouse Name**, enter the name of the connection that you would like to see in Monte Carlo for this Databricks Workspace.
+5. Under **Workspace URL**, enter the full URL of your Workspace, i.e. `https://${instance_id}.cloud.databricks.com"`. Be sure to enter the `https://`.
+6. Under **Workspace ID**, enter the Workspace ID of your Databricks Workspace. If there is `o=` in your Databricks Workspace URL, for example, `https://<databricks-instance>/?o=6280049833385130`, the number after `o=` is the Databricks Workspace ID. Here the workspace ID is `6280049833385130`. If there is no `o=` in the deployment URL, the workspace ID is `0`.
+7. Under **Personal Access or Service Principal Token**, enter the Service Principal or Personal Access Token you created in Step 1.
+8. For Metadata Collection Jobs, enter the **SQL Warehouse ID** (Step 2.1.2) or **Cluster ID** (Step 2.2.2).
+9. Under Query Engine, select the integration type that matches what you set up in Step 3 and enter the **SQL Warehouse ID** (Step 3.1.2) or **Cluster ID** (Step 3.2.2)..
+10. Enter the **SQL Warehouse ID** or **Cluster ID**.
+11. Click **Create** and validate that the connection was created successfully.
+
+**Recommended: Check the Metadata Job**  
+When the metadata connection is added, Monte Carlo will immediately start running the metadata job. Because of the way the job is constructed, we will try to gather metadata about all of the tables in the environment. Oftentimes, the permissions on the cluster prevent the metadata job from collecting information from certain tables. Its worthwhile to look at the job logs for the metadata job to see if there are any issues in collection.
+
+### Conclusion
+
+You have connected all necessary integration points to get end-to-end observability for Databricks!
+
+### FAQ
+
+**What Databricks platforms are supported?**  
+All three Databricks platforms (AWS, GCP and Azure) are supported!
+
+**Why does Monte Carlo Require multiple connections to Databricks?**  
+Because we have 2 distinct sets of operations (metadata collection, and customized monitoring) we have 2 distinct cluster size requirements. Generally, metadata collection requires different cluster configuration than running customized queries, we split the connections to allow for connecting to different clusters (or warehouses) tuned to each need.
+
+**What Databricks APIs does Monte Carlo access?**  
+If connecting via SQL Warehouses, no API access is needed.
+
+If connecting with Clusters, when creating the metadata connection, and running metadata collection, Monte Carlo will need access to certain Databricks APIs. These APIs needed on initial setup are:
+
+* /api/2.0/workspace/mkdirs
+* /api/2.0/workspace/import
+* /api/2.0/secrets/put
+* /api/2.0/secrets/scopes/create
+* /api/2.1/jobs/create
+
+The APIs needed for continuous operation are:
+
+* /api/2.1/jobs/runs/get
+* /api/2.1/jobs/runs/get-output
+* /api/2.1/jobs/run-now
+* /api/2.0/clusters/get
+* /api/2.0/clusters/start
+
+**What about my non Delta tables?**  
+Like with Delta tables you can opt into field health, dimension, custom SQL and SLI monitors.
+
+**How do I connect to multiple Databricks workspaces?**  
+Connect to multiple workspaces with a separate connection per-workspace. You'll give each a separate name, and there will be a collector-notebook created in each workspace.
+
+ **How do I handle a "Cannot make databricks job request for a DC with disabled remote updates" error?**  
+If you have disabled [remote updates](/docs/deployment#advanced-options) on your Data Collector we cannot automatically provision resources in your Databricks workspace using the CLI. Please reach out to your account representative for details on how to create these resources manually.
+
+ **How do I handle a "A Databricks connection already exists" error?**  
+This means you have already connected to Databricks. You cannot have more than one Databricks metastore or Databricks delta integration.
+
+**How do I handle a "Scope monte-carlo-collector-gateway-scope already exists" error?**  
+This means a scope with this name already exists in your workspace. You can specify creating a scope with a different name using the `--databricks-secret-scope` flag. 
+
+Alternatively, after carefully reviewing usage, you can delete the scope via the Databricks CLI/API. Please ensure you are not using this scope elsewhere as any secrets attached to the scope are not recoverable. See details [here](https://docs.databricks.com/security/secrets/secret-scopes.html#delete-a-secret-scope).
+
+**How do I handle a "Path (/monte\_carlo/collector/integrations/collection.py) already exists" error?**  
+This means a notebook with this name already exists in your workspace. If you can confirm this is a notebook provisioned by Monte Carlo and there are no existing jobs you should be able to delete the notebook via the Databricks CLI/API. See details [here](https://docs.databricks.com/notebooks/notebooks-manage.html#delete-a-notebook). Otherwise please reach out to your account representative.
+
+**How do I retrieve job logs?**
+
+1. Open your Databricks workspace.
+2. Select Workflows from the sidebar menu.
+3. Select Jobs from the top and search for a job containing the name `monte-carlo-metadata-collection`.
+4. Select the job.
+5. Select any run to review logs for that particular execution. The jobs should all show `Succeeded` for the status, but for partial failures (e.g. S3 permission issues) the log output will contain the errors and overall error counts.
+
+**I received a "Privilege SELECT is not applicable" error granting permissions in Unity Catalog. What should I do?**
+
+If the command results in an error like the one below, your UC metastore was created during the UC public preview period. 
+
+`Privilege SELECT is not applicable to this entity [...:CATALOG/CATALOG_STANDARD]. If this seems unexpected, please check the privilege version of the metastore in use [0.1].
+`
+
+Follow Databricks [instructions](https://docs.databricks.com/en/data-governance/unity-catalog/manage-privileges/upgrade-privilege-model.html) to upgrade the privilege model to 1.0 or configure permissions according to the old model.
+
+### [](#section-)
+
+### Advanced Options
+
+In general, using this Databricks connection type will be sufficient. If your Databricks environment is connecting to an external metastore (Glue or Hive), and you wish to connect Monte Carlo directly to that metastore, we can still gather freshness and volume information on Delta Tables in the Databricks environment. Ask your Monte Carlo representative for more details.

@@ -1,0 +1,25 @@
+---
+title: "Insight: Rule and SLI Results"
+---
+
+### Field Definitions
+
+**RULE\_DESCRIPTION** : As defined by the user in the UI or via Monitors as Code
+
+**RULE\_UUID**: Unique identifier for the custom rule
+
+**GENERATED\_BY\_RULE\_UUID**: Unique identifier of the parent custom rule if variables were used, otherwise identical to `RULE_UUID`
+
+**MONITOR\_TYPE** : The monitor type
+
+**LABELS**: Labels (/audiences) associated with the rule
+
+**TABLES**: Comma-delimited list of tables associated with the rule
+
+**RUNNING\_TIME** : A timestamp that the monitor ran 
+
+**QUERY\_VALUE** : Null for SLI, 0 when custom rule has passed, number of records returned otherwise
+
+**THRESHOLD**: Threshold used for breach evaluation, if appropriate
+
+**PASS\_OR\_BREACH** : A pass / breach boolean.

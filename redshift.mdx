@@ -1,0 +1,53 @@
+---
+title: "Redshift"
+---
+
+To review all steps necessary to integrate a data warehouse with Monte Carlo, please see [here](/docs/data-warehouses).
+
+### Creating a service account
+
+> 📘
+> 
+> Admin credentials required
+> 
+> To make the read only service user for Monte Carlo, you will need admin credentials to your Redshift cluster.
+
+Please use the following SQL snippet to create a service account for Monte Carlo:
+
+SQL
+
+`CREATE USER <username> PASSWORD ‘<password>’ SYSLOG ACCESS UNRESTRICTED
+GRANT SELECT ON svv_table_info to <username>
+GRANT SELECT ON ALL TABLES IN SCHEMA <schema_name> [, …] to <username>
+GRANT USAGE ON SCHEMA <schema_name> [, …] to <username>
+GRANT USAGE ON SCHEMA <external_schema> [, …] to <username>
+ALTER DEFAULT PRIVILEGES FOR USER <user_creating_tables> [, …] IN SCHEMA <schema_name> [, …] GRANT SELECT ON TABLES TO <username>
+`
+
+Before using the snippet, you will need to populate the following:
+
+* **<username>**: Service account username, typically "monte\_carlo".
+* **<password>**: Strong password to be used by the service account user.
+* **<schema\_name>**: Redshift schema(s) to be monitored. Please note you can provide a list of schemas in a single statement.
+* **<external\_schema>**: Redshift Spectrum schema(s) – where external tables are defined – to be monitored. Please note you can provide a list of schemas in a single statement.
+* **<user\_creating\_tables>**: Redshift user(s) that create/update tables and external tables, typically the user(s) used by your ETL jobs. Please note you can provide a list of such users in a single statement.
+
+Please note:
+
+* **syslog** permissions allow Monte Carlo to to read query logs from all users.
+* **select** permissions on **svv\_table\_info** allow Monte Carlo to to read metadata about tables in your warehouse.
+* **select** and **usage** permissions on schemas allow Monte Carlo to track health for tables in the given schemas.
+* **usage** permissions on external schemas allow Monte Carlo to to track health for external tables in the given schemas.
+* Default privileges set for ETL users make sure that Monte Carlo maintains access to tables as ETL jobs run and update/create tables.
+
+To limit collection by schema, use [Project and Dataset Filtering](/docs/project-and-dataset-filtering)
+
+### FAQs
+
+#### Why am I missing views in Monte Carlo?
+
+If you are using late binding views in your pipeline, please note that Monte Carlo will not pull in these views by default, meaning they will be unavailable to set advanced monitors on. Since these views only exist at the moment they are referenced, there is no data to collect from the cluster's system level views during our hourly collections. You can tell you are using a late binding view if the statement `with no schema binding` exists in the view definition. Please see the [Redshift documentation for more information](https://docs.aws.amazon.com/redshift/latest/dg/r%5FCREATE%5FVIEW.html).
+
+If setting monitors on these views is important to you, Monte Carlo does have the ability to ingest them! However, the way we collect these views is slightly different than the way we collect the rest of the cluster metadata due to the aforementioned reasoning, and so one side effect of enabling this on your collection jobs is catalog bloat. Historically, when we have enabled this type of collection for users, we have seen the amount of cluster resources we had to use to collect metadata increase.
+
+If you are interested in this functionality or want to learn more about your options, please reach out to your Monte Carlo representative or [\[email protected\]](/cdn-cgi/l/email-protection#aad9dfdadac5d8deeac7c5c4decfc9cbd8c6c5cecbdecb84c9c5c7) for more information.

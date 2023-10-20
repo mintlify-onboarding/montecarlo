@@ -1,0 +1,81 @@
+---
+title: "Tableau"
+description: "Authenticate to Tableau and integrate views and workbooks with Monte Carlo"
+---
+
+### Tableau Version Support
+
+Monte Carlo supports integrating with both Tableau Online and Tableau Server. Tableau Server requires version 2019.3 or later.
+
+## Setup Overview
+
+> 📘
+> 
+> Admin credentials required
+> 
+> To complete this guide, you will need Tableau admin credentials.
+
+To review all steps necessary to integrate a BI tool with Monte Carlo, please see [here](/docs/bi-tools).
+
+To connect Monte Carlo to Tableau, you must first create a Personal Access Token in Tableau. Once you have a Personal Access token, you can then add the integration in Monte Carlo.
+
+### Creating a Personal Access Token
+
+To create a PAT:
+
+1. Go to "My Account Settings".
+2. Click on the "Users" tab, then in the settings pane you can make a Personal Access Token.
+3. Give your token a name and hit "Create new token". **Make sure you copy the token secret because it will only be shown to you once.**
+
+_If you are integrating with multiple sites, please use a separate PAT for each_
+
+### Add the Tableau Integration
+
+In the "Settings" tab of your Monte Carlo workspace, please provide the following details to validate and complete the integration.
+
+Pick the "Tableau" BI connection:
+
+![](/images/b9fa8ff-Screen_Shot_2022-01-27_at_3.49.38_PM.png "Screen Shot 2022-01-27 at 3.49.38 PM.png")
+
+Provide the personal access token:
+
+* **Token Name** and **Token Value**: Please provide the credentials that were created while making the token.
+
+![](/images/19f33ea-image.png)
+
+* **Server Name** and **Site Name**: To find out your server and site names, please visit your Tableau account in your browser, and check the URL in your browser’s address bar. For example:
+
+| URL                                                                                                                          | Server name                                                                            | Site name     |
+| ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------- |
+| [http://acmecorp.com/#/site/MarketingTeam/projects](http://acmecorp.com/#/site/MarketingTeam/projects)                       | [http://acmecorp.com/](http://acmecorp.com/)                                           | MarketingTeam |
+| [https://prod-useast-a.online.tableau.com/#/site/dev/projects](https://prod-useast-a.online.tableau.com/#/site/dev/projects) | [https://prod-useast-a.online.tableau.com/](https://prod-useast-a.online.tableau.com/) | dev           |
+
+> 📘
+> 
+> Default Site
+> 
+> If you do not have a site name or are on the default site, you can leave "Site Name" blank.
+
+If you are in the onboarding wizard, click on "Tableau" and follow the same instructions as above:
+
+![](/images/99f52a6-Screen_Shot_2022-01-27_at_3.50.58_PM.png "Screen Shot 2022-01-27 at 3.50.58 PM.png")
+
+## Tableau Functionality
+
+Read more about BI integrations in Monte Carlo at [Overview: BI](/docs/bi-tools)
+
+### Data Quality Warnings
+
+From a Table-Asset or an Incident page, with Reports Affected, you can set a [Tableau Data Quality Warning](https://help.tableau.com/current/online/en-us/dm%5Fdqw.htm) on any Tableau Data Source.
+
+![](/images/b45b788-image.png)
+
+It will show up in Tableau like this:
+
+![](/images/1b9c289-image_25.png) 
+
+And then edit the warning afterwards
+
+![](/images/dce1845-CleanShot_2023-09-12_at_10.25.212x.png) 
+
+The warnings will automatically clean-up and expire approximately 24 hours after you set or edit them.

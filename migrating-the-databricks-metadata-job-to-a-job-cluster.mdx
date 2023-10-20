@@ -1,0 +1,27 @@
+---
+title: "Migrating the Databricks Metadata Job to a Job Cluster"
+---
+
+1. In your Databricks Workspace, go to the **Workflows** pane.
+2. Click the Monte Carlo **Job** \- it should be prefixed with `monte-carlo-metadata-collection`
+![3268](/images/0382d63-Screen_Shot_2023-01-10_at_5.43.26_PM.png "Screen Shot 2023-01-10 at 5.43.26 PM.png") 
+1. On the right pane, under **Compute**, click the **Swap** button.
+2. In the pop-up box, click **New job cluster**.
+![990](/images/bee1f27-Screen_Shot_2022-11-07_at_3.16.37_PM.png "Screen Shot 2022-11-07 at 3.16.37 PM.png") 
+1. Create the job cluster with your desired settings. If you prefer the most inexpensive recommendations, see below. If the job is taking too long at these settings, we can up the cluster size or number of workers.  
+   1. **Nodes**: Single node  
+   2. **Node type**: i4i.large (cheapest AWS cluster available)  
+   3. **Important** 🚨: Under **Advanced options**, on the **Spark** tab, append these two arguments under **Spark config**:  
+   JSX  
+   `spark.databricks.clusterSource API  
+   spark.databricks.hive.metastore.client.pool.size 40  
+   spark.databricks.isv.product MonteCarlo+ObservabilityPlatform  
+   `
+![3246](/images/bc8708c-Screen_Shot_2022-11-08_at_10.30.15_AM.png "Screen Shot 2022-11-08 at 10.30.15 AM.png") 
+1. Click **Confirm** and then **Update**.
+2. Under Permissions, make sure the Service Principal or User (for Personal Access Token) is selected as `Is Owner`.
+3. Verify that the job is able to run with the permissions available.
+4. Run the following command with the montecarlo cli  
+   1. CLI  
+   `montecarlo integrations update --connection-id <connection_id> --changes '{"uses_job_cluster": true}'  
+   `

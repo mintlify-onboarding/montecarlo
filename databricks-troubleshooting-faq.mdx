@@ -1,0 +1,68 @@
+---
+title: "Troubleshooting & FAQ: Databricks"
+---
+
+**What Databricks platforms are supported?**  
+All three Databricks platforms (AWS, GCP and Azure) are supported!
+
+**What about Delta Lake?**  
+Delta Tables are supported and delta size and freshness metrics are monitored with automated monitors. You can also opt in to any field health, dimension, custom SQL and SLI monitors as well. See [here](/docs/monitors-overview) for additional details.
+
+**What about my non Delta tables?**  
+Like with Delta tables you can opt into field health, dimension, custom SQL and SLI monitors.
+
+**How many Databricks workspaces are supported?**  
+We can support multiple workspaces by setting up additional integrations. If you are using the unity catalog, you only need to set up a single connection to that catalog, even if there are multiple workspaces connected to it.
+
+**How do I exclude schemas from collection?**  
+[Project and Dataset Filtering](/docs/project-and-dataset-filtering)
+
+**Are there any limitations?**
+
+* Volume is shown in bytes not rows. Please contact us if you're interested in rows.
+* Freshness SLOs with Glue or an external Hive Metastore are not supported.
+* Table and Field lineage are only available with Unity Catalog. Please contact us; there is a private preview to use.
+
+**Can I use another Query Engine instead of Databricks SQL?**  
+Yes, you can use any of the supported Query Engines under the Data Lakes documentation.
+
+**What is the minimum Data Collector version required?**  
+The Databricks integration requires at least `v3071` of the Data Collector. You can use the Monte Carlo CLI to verify the current version of your Data Collector and [upgrade](/docs/upgrading-the-data-collector) if necessary.
+
+Example of listing collector details
+
+`$ montecarlo collectors list
+`
+
+If the Data Collector you are using is out-of-date you will see a "Databricks operations require DC v3071 or above" error during onboarding.
+
+ **How do I handle a "Cannot make databricks job request for a DC with disabled remote updates" error?**  
+If you have disabled [remote updates](/docs/deployment#advanced-options) on your Data Collector we cannot automatically provision resources in your Databricks workspace using the CLI. Please reach out to your account representative for details on how to create these resources manually.
+
+ **How do I handle a "A Databricks connection already exists" error?**  
+This means you have already connected to Databricks. You cannot have more than one Databricks metastore or Databricks delta integration.
+
+**How do I handle a "Scope monte-carlo-collector-gateway-scope already exists" error?**  
+This means a scope with this name already exists in your workspace. You can specify creating a scope with a different name using the `--databricks-secret-scope` flag. 
+
+Alternatively, after carefully reviewing usage, you can delete the scope via the Databricks CLI/API. Please ensure you are not using this scope elsewhere as any secrets attached to the scope are not recoverable. See details [here](https://docs.databricks.com/security/secrets/secret-scopes.html#delete-a-secret-scope).
+
+**How do I handle a "Path (/monte\_carlo/collector/integrations/collection.py) already exists" error?**  
+This means a notebook with this name already exists in your workspace. If you can confirm this is a notebook provisioned by Monte Carlo and there are no existing jobs you should be able to delete the notebook via the Databricks CLI/API. See details [here](https://docs.databricks.com/notebooks/notebooks-manage.html#delete-a-notebook). Otherwise please reach out to your account representative.
+
+**How do I retrieve job logs?**
+
+1. Open your Databricks workspace.
+2. Select Workflows from the sidebar menu.
+3. Select Jobs from the top and search for a job containing the name `monte-carlo-metadata-collection`.
+4. Select the job.
+5. Select any run to review logs for that particular execution. The jobs should all show `Succeeded` for the status, but for partial failures (e.g. S3 permission issues) the log output will contain the errors and overall error counts.
+
+**I received a "Privilege SELECT is not applicable" error granting permissions in Unity Catalog. What should I do?**
+
+If the command results in an error like the one below, your UC metastore was created during the UC public preview period. 
+
+`Privilege SELECT is not applicable to this entity [...:CATALOG/CATALOG_STANDARD]. If this seems unexpected, please check the privilege version of the metastore in use [0.1].
+`
+
+Follow Databricks [instructions](https://docs.databricks.com/en/data-governance/unity-catalog/manage-privileges/upgrade-privilege-model.html) to upgrade the privilege model to 1.0 or configure permissions according to the old model.

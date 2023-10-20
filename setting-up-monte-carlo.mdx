@@ -1,0 +1,27 @@
+---
+title: "Setting Up Monte Carlo"
+---
+
+### Overview
+
+In order for Monte Carlo to work, the system needs to be able to:
+
+* Collect metadata from your data warehouses and lakes so it can see what data exists and how it is organized
+* Ingest query logs from your data warehouse or lake so that it can understand how data is moving through your environments
+* Run queries against your data to aggregate/ derive a handful of metrics and statistics used for anomaly detection
+* Access metadata from your BI tools to display information about your reports and dashboards, such as titles and authors
+
+To accomplish these goals, Monte Carlo uses the following architecture, which involves a data collector being installed in your own AWS environment. The data collector connects to your systems in order to perform the actions outlined above, and the necessary information is sent back to Monte Carlo to power anomaly detection, alerts and the dashboard.
+
+![2550](/images/c7f0d0e-20.09.29_Monte_Carlo_Architecture.png "20.09.29_Monte Carlo Architecture.png")
+
+Architecture overview
+
+### Setup process
+
+A typical Monte Carlo setup will include the following steps:
+
+1. Creating a Monte Carlo account (3 minutes)
+2. [Deploying Monte Carlo's collector](/docs/deployment) (10 minutes)
+3. Connecting with your [data warehouse](/docs/data-warehouses) (20 minutes) or [data lake](/docs/data-lakes) (several hours)
+4. Connecting with your [BI tool](/docs/bi-tools) (10 minutes)

@@ -1,0 +1,190 @@
+---
+title: "PII Filtering"
+description: "Introduced in: CLI v0.39.0, pycarlo v0.4.0, Data Collector v13075"
+---
+
+PII (Personal Identifiable Information) Filtering provides a way to filter sensitive data before it reaches Monte Carlo's servers.
+
+Filtering is performed by redacting data upon collection by or submission to Monte Carlo. Our integrations will match private or sensitive data and replace them with a placeholder text indicating it was filtered.
+
+### How is data identified as sensitive?
+
+Monte Carlo supports a set of standard rules defined through regular expressions to identify sensitive data; if a given rule is enabled for the account and there’s a text matching it, the matching fragment will be replaced by the following text “<filtered:filter\_name>” where filter\_name will be the rule name, for example "email\_address".
+
+### How is data redacted?
+
+#### Query Logs
+
+Let’s suppose the following SQL Query was executed on your warehouse:
+
+SQL
+
+`SELECT * FROM users WHERE email=‘[[email protected]](/cdn-cgi/l/email-protection)'
+`
+
+Monte Carlo shows that query under Query Logs for table “users”. If PII Filtering is enabled for your account and _email\_address_ rule is enabled, the Query Log in Monte Carlo will be displayed like this:
+
+SQL
+
+`SELECT * FROM users WHERE email=‘<filtered:email_address>’
+`
+
+This filter is applied inside the Data Collector component (that might be running in your infrastructure) which means sensitive data will never reach Monte Carlo infrastructure.
+
+#### Field Values
+
+The filters are also applied to values we collect in custom monitors. For example, if you have dimension tracking or field-health monitors on a field which contains content that matches the rule, we will redact it. The monitor will not work as intended, but the PII will be safeguarded.
+
+### Out of the Box PII Rules
+
+The following rules are enabled by default, this means that if you enable PII Filtering for your account as described in the next section, all rules listed below will be applied to your data automatically:
+
+* E-mail Address
+* US Social Security Number
+
+Please note you can use [getPiiFilters](https://apidocs.getmontecarlo.com/#query-getPiiFilters) query in the API to get the list of all rules in the system and if they are enabled or not for your account. Note: there is not currently a mechanism to extend out further rules -- please contact us to discuss options.
+
+### Failure Mode
+
+Monte Carlo allows you to configure what happens if an error occurs during the data filtering process. If the data is sensitive, you might prefer to ignore it and leave data without being redacted or stop the data processing in the Data Collector.  
+This behavior is controlled by the _Fail Mode_ setting that has two available values:
+
+* _OPEN_ (the default value): means data processing will not be aborted if there is an error during the PII Filtering process, an error message will be logged and the data processing will continue.
+* _CLOSE_: means data processing will stop if an error occurs during the PII Filtering process, preventing data that couldn't be checked to leave the Data Collector.
+
+### Enabling PII Filtering
+
+PII Filtering can be enabled in two ways:
+
+#### CLI
+
+You can use Monte Carlo CLI to enable PII Filtering for your account with the following command:
+
+Shell
+
+`montecarlo management configure-pii-filtering --enable
+`
+
+You can also use CLI to change the value for the Fail Mode setting:
+
+Shell
+
+`montecarlo management configure-pii-filtering --enable --fail-mode CLOSE
+`
+
+And you can check your PII Filtering settings with the _get-pii-preferences_ option:
+
+Shell
+
+`montecarlo management get-pii-preferences
+`
+
+#### API
+
+Additionally, you can use Monte Carlo API for enabling/disabling PII Filtering for your account, through the [updatePiiFilteringPreferences mutation](https://apidocs.getmontecarlo.com/#mutation-updatePiiFilteringPreferences) like in the following example:
+
+Sample QuerySample Response
+
+`mutation set_pii_prefs {
+  updatePiiFilteringPreferences(enabled:true, failMode:CLOSE) {
+    success
+  }
+}
+`
+
+`{
+  "data": {
+    "updatePiiFilteringPreferences": {
+      "success": true
+    }
+  }
+}
+`
+
+### Enabling/Disabling individual PII Rules
+
+As mentioned before, when PII Filtering is enabled for an account all rules enabled by default will be enabled for the account, this can be tweaked later by enabling/disabling PII Rules individually.  
+This can be performed using the API through the [setPiiFilterStatus mutation](https://apidocs.getmontecarlo.com/#mutation-setPiiFilterStatus) passing a list of [PiiFilterStatusPair](https://apidocs.getmontecarlo.com/#definition-PiiFilterStatusPair) objects.
+
+The following example enables the filtering for e-mail addresses (_email\_address_ rule) and disables it for Social Security Numbers (_us\_ssn_ rule):
+
+Sample QuerySample Response
+
+`mutation set_pii_filters {
+  setPiiFilterStatus(piiFilterStatusPairs: [
+    {
+      filterName: "email_address",
+      enabled: true
+    },
+    {
+      filterName: "us_ssn",
+      enabled: false
+    }
+  ])
+  {
+    success
+  }
+}
+`
+
+`{
+  "data": {
+    "setPiiFilterStatus": {
+      "success": true
+    }
+  }
+}
+`
+
+You can also use the API to get the filtering preferences:
+
+GraphQLSample Response
+
+`query getPiiFilteringPreferences {
+  getPiiFilteringPreferences {
+    enabled,
+    failMode
+  }
+}
+`
+
+`{
+  "data": {
+    "getPiiFilteringPreferences": {
+      "enabled": true,
+      "failMode": "CLOSE"
+    }
+  }
+}
+`
+
+and the status for each filter:
+
+Sample QuerySample Response
+
+`query getPiiFilters {
+  getPiiFilters {
+    name,
+    pattern,
+    enabled
+  }
+}
+`
+
+`{
+  "data": {
+    "getPiiFilters": [
+      {
+        "name": "us_ssn",
+        "pattern": "\\d{3}-\\d{2}-\\d{4}",
+        "enabled": false
+      },
+      {
+        "name": "email_address",
+        "pattern": "[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+",
+        "enabled": true
+      }
+    ]
+  }
+}
+`

@@ -1,0 +1,107 @@
+---
+title: "Authorization"
+---
+
+Monte Carlo uses group-based authorization. Users are added to one or more authorization groups, and they inherit the policy assigned to their groups.
+
+### Authorization Group Policy
+
+An authorization group policy is made up of three primary parts:
+
+* a list of group members
+* a list of permissions
+* optionally, one or more Monte Carlo domains to restrict the group to
+
+The list of permissions specifies what can be done (such as access or edit monitors), and the domain restrictions specify what parts of your data/metadata those users may access. 
+
+### Roles
+
+The list of permissions noted above are assigned to groups through roles. A role is just a named list of permissions with their desired policy effects, that is, to allow or deny the action indicated by the permission. 
+
+### Managed Roles and Groups
+
+In the current release, all roles are managed by Monte Carlo, and for each of these, there is a corresponding managed group. These managed roles and groups roughly correspond to the earlier "role" that was applied directly to users. 
+
+Note: In the UI, managed groups are often denoted with a "default group" indicator, meaning we include them by default in your account.
+
+| Managed Role    | Managed Group          | Description                                                                                                                                                                                                                    |
+| --------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Account Owner   | Account Owners         | Full account access able to do anything customers are allowed to do in the system--data-related and account settings. Ideal for data engineers or data platform owners that are responsible for the quality of data pipelines. |
+| Domains Manager | Domains Managers (All) | Allows access to all data-related features and some administrative features. Ideal for managers or team leads who will assist in administration of domains and users.                                                          |
+| Editor          | Editors (All)          | Allows viewing and editing data-related things in the system, and managing notifications settings and their API keys. Ideal for data engineers that manage pipelines and data as a part of their job duties.                   |
+| Responder       | Responders (All)       | Allows viewing data-related things in the system (read only) as well as edit rights to help with resolving incidents. Ideal for individuals who will be tasked with triaging and responding to incidents.                      |
+| Viewer          | Viewers (All)          | Allows viewing data-related things in the system (read only). Ideal for data analysts and roles that use data frequently to perform most of their job duties.                                                                  |
+| Asset Editor    | Asset Editor (All)     | Allows viewing and editing of Assets only, including adding and editing descriptions and tags. Details about incidents and monitors are not exposed.                                                                           |
+| Asset Viewer    | Asset Viewer (All)     | Allows access to view Assets only (read only). Details about incidents and monitors are not exposed.                                                                                                                           |
+
+Permissions for each managed role are as follows:
+
+![](/images/f4aeec4-Pasted_Image_9_20_23__4_18_PM.png) 
+
+All of the managed roles, except for the Account Owner and Domains Manager roles, may be assigned to custom authorization groups. This is primarily to facilitate the creation of domain-restricted groups. The managed groups have "(All)" included in the name to indicate that members of those groups have those permissions for all domains.
+
+### Creating Custom Authorization Groups
+
+Making new authorization groups is easy. You go to Settings -> Authorization Groups and click Add Group.
+
+![](/images/7751f47-back-office.png "back-office.png")
+
+The group Name is intended for use in API and declarative policies. It is a human-readable key. We will suggest one for you based on the label that you provide. The Label is what shows up in lists in the UI, and the description is there to help you and your colleagues easily remember what it is for.
+
+Note: You will need to have already created the domain (as noted in the "Restricting Users to Domains" section) so that you can select it/them here. You may select one or more to restrict users' access to those domains.
+
+### Adding Users to Authorization Groups
+
+There are two ways to add users to groups: when you invite and after they sign up. When inviting, after entering their email, you will need to select one or more authorization groups:
+
+![](/images/0374409-invite-to-group.png "invite-to-group.png")
+
+You can select a managed group, which grants the given permissions to all domains, and/or you can select one or more custom groups you have created. (See the "Permissions for Users in Multiple Groups" section for considerations when adding users to more than one group.)
+
+Once a user signs up, you can subsequently change their group membership using the edit icon. It shows the familiar list of groups that you may assign the user to.
+
+![](/images/df204a8-edit-user.png "edit-user.png")
+
+> 🚧
+> 
+> Existing API Keys
+> 
+> Please be aware that as you move users into new auth groups, existing keys will expire! You will have to make a new key if your users are joining a new group, even if the level of permissions remains the same. Please reach out to [\[email protected\]](/cdn-cgi/l/email-protection#31424441415e4345715c5e5f45545250435d5e555045501f525e5c) or your Monte Carlo representative if you have any questions.
+
+### Restricting Users to Domains
+
+Domains are conceptual partitions of your data. If you have users for whom you only want to grant access to a subset of your Monte Carlo data, then you can:
+
+1. create a domain for that subset
+2. create an authorization group and select that domain as a restriction
+3. add users to that group who should only see that data
+
+Be sure to select the appropriate role for your group to control _what_ users can see/do in relation to the selected domain. 
+
+### Permissions for Users in Multiple Groups
+
+While the permissions a user has is relatively straightforward if a user is only in one group, it can be less clear if the user is in more than one group. In general, whenever feasible, we recommend only assigning a user to multiple groups that have the same role, such as groups for different domains that have the Editor role.
+
+Permissions themselves are additive, so if a user were in a group with the Editors role as well as a group with the Viewers role, their effective permissions would be a combination of the two. In that case, the effective policy would be the more expansive Editors permissions--if the domain restrictions are the same across the groups. Permissions can still be domain restricted. So you could allow a user to only be a viewer for one domain but an editor for a different one. 
+
+#### Combination Examples
+
+Group A: Editor for Domain Y  
+Group B: Viewer for Domain Y
+
+If user is in Group A and B, they will effectively be Editor for Domain Y (because Editor has more permissions allowed). 
+
+Group C: Editor for Domain Y  
+Group D: Viewer for Domain Z
+
+If user is in Group C and D, they will be an editor for Y and and a viewer for Z--the different domain restrictions mean that the greater Editor permissions are only allowed for Y domain. 
+
+#### Impact of Managed Groups on Domain Restrictions
+
+If a user is in one of the "All" managed groups, this will give them the role's permissions for **all domains**, which will override any more specific domain restrictions applied via other groups that they are members of. If your intent is to limit a user to only specific domains, be sure they are not in any of the managed groups.
+
+### SSO Users and Authorization Groups
+
+Monte Carlo does not grant SSO users automatic group membership if they have not been invited to the account and the account has custom authorization groups. If there are no custom groups and the user has not been invited, new SSO users are added to the Viewers (All) group by default to limit their access to read only. So you may opt into assigning uninvited SSO users no access by creating a custom authorization group. 
+
+To assign SSO users to groups, account owners may either invite users beforehand and choose the appropriate group there, or they may go to the Users screen after an SSO user has joined and edit their group membership there.

@@ -1,0 +1,81 @@
+---
+title: "Monte Carlo API"
+description: "How-to Guide for Using the Monte Carlo API"
+---
+
+Where the Monte Carlo UI provides vast options for interacting with the platform, the Monte Carlo API provides users with the ability to interact with their data programmatically. Many of the options outlined in this guide are also available in the UI, but the API does allow for even more flexibility and customization in user workspaces.
+
+The following page explains how to get started with the API and the various resources at your disposal. Please see subsections for specific examples and use cases.
+
+> 👍
+> 
+> Looking for our API reference?
+> 
+> See [here](https://apidocs.getmontecarlo.com) for all GraphQL queries, mutations, and types with examples of requests and responses.
+
+> 👍
+> 
+> Looking for a way to quickly get started with the APIs?
+> 
+> Consider checking out the [API Explorer](/docs/api-explorer).
+
+### Getting Started
+
+### General Use Cases
+
+Common use cases that leverage Monte Carlo's API include:
+
+* Presenting data health metrics and incident analytics on dashboards (e.g. on DataDog)
+* Enabling automatic custom monitoring configurations when adding new tables in your ETL code
+* Handling notifications that Monte Carlo produces programmatically using webhooks
+* Augmenting the lineage that Monte Carlo automatically detects with additional resources and dependencies (e.g. external data sources, streaming sources, ML models, custom BI reports and other upstream/downstream dependencies)
+* Performing custom analysis on your data ecosystem to better understand how assets are being used, typically for capacity planning, performance optimization, data debt reduction, etc
+* Feeding additional tags and metadata into Monte Carlo’s catalog for a complete view and easier discovery
+
+### API Endpoint
+
+You will be making calls to the following endpoint:
+
+API Endpoint
+
+`https://api.getmontecarlo.com/graphql
+`
+
+### Authenticating API Calls
+
+> 📘
+> 
+> An API key is required to authenticate API calls
+> 
+> See [Getting Started](/docs/creating-an-api-token) to obtain a key
+
+To authenticate API calls, you will need to include the following headers in your request:
+
+| Key         | Value                                   |
+| ----------- | --------------------------------------- |
+| x-mcd-id    | _Key ID_ provided when creating the key |
+| x-mcd-token | _Secret_ provided when creating the key |
+
+For example, try running the following command in your terminal to test the API using your API key:
+
+Test Query
+
+`curl --location --request POST 'https://api.getmontecarlo.com/graphql' --header 'x-mcd-id: <ID>' --header 'x-mcd-token: <TOKEN>' --header 'Content-Type: application/json' --data-raw '{"query":"query getUser {  getUser {    email   firstName    lastName  }}","variables":{}}'
+`
+
+### Query Examples
+
+The subsections are divided into four groups:
+
+* [**General**](/docs/general): Queries related to users, insights, assets and more
+* [**Integrations**](/docs/integrations): Queries related to tables, warehouses, and BI tools
+* [**Lineage**](/docs/lineage): Queries related to lineage and nodes
+* [**Monitors**](/docs/monitors): Queries related to custom SQL rules, Field Health, Dimension Tracking, and JSON Schema monitors
+
+Please note that the sample queries only show a subset of the fields available for brevity. You can use our [API reference guide](https://apidocs.getmontecarlo.com) or introspection to see all available fields.
+
+> 👍
+> 
+> Questions? Feedback?
+> 
+> Feel free to contact your Monte Carlo representative to discuss how you could use the available APIs to solve your use cases!

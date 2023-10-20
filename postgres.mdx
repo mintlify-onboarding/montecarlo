@@ -1,0 +1,111 @@
+---
+title: "Postgres (beta)"
+description: "Connection overview. Requires: CLI v0.50.0 and Data Collector v14147 or newer"
+---
+
+Integrating Monte Carlo with Postgres allows you to monitor your data assets through [custom SQL monitors](/docs/creating-sql-rules), which can be created in either the [UI wizard](https://getmontecarlo.com/monitors/create/sql-rule) and/or programmatically via [monitors as code](/docs/monitors-as-code) (API/SDK too). These monitors can be used to generate [notifications](/docs/slack) (incidents) to relevant stakeholders and [circuit break](/docs/circuit-breakers) pipelines.
+
+## Integration Setup
+
+To connect Monte Carlo to a Postgres database, follow these steps:
+
+1. [Enable network connectivity](/docs/postgres#1-enable-network-connectivity) between the database and Monte Carlo's data collector.
+2. [Create a read-only service account](/docs/postgres#2-create-a-read-only-service-account) with the appropriate permissions on your database.
+3. [Provide service account credentials](/docs/postgres#3-provide-service-account-credentials-to-monte-carlo) to Monte Carlo (requires [Using the CLI](/docs/using-the-cli)).
+
+### 1\. Enable network connectivity
+
+Follow the [Network Connectivity](/docs/aws-networking-tips) guide to IP Allowlist or VPC peer to provide access to Postgres.
+
+### 2\. Create a read-only service account
+
+> 📘
+> 
+> Prerequisites
+> 
+> To create a service account, you will need admin credentials to your Postgres database.
+
+Please run the SQL snippet below on your Postgres database to create a read-only service account for Monte Carlo
+
+SQL
+
+`CREATE ROLE montecarlo WITH LOGIN PASSWORD '<PASSWORD>';
+
+-- Grant access to all current tables. Repeat for all relevant schemas (e.g. public, etc.)
+-- Select permissions are necessary to create custom SQL monitors.
+-- To get a list of all schemas available:
+---- SELECT schema_name FROM information_schema.schemata;
+
+GRANT USAGE ON SCHEMA <schema> TO montecarlo;
+GRANT SELECT ON ALL TABLES IN SCHEMA <schema> TO montecarlo;
+
+-- Grant access to all future tables. Repeat for all relevant users who create tables in each schema.
+-- Select permissions are necessary to create custom SQL monitors.
+-- To get a list of all users available:
+---- SELECT usename FROM pg_catalog.pg_user;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE <creating_user> IN SCHEMA <schema> GRANT SELECT ON TABLES TO montecarlo;
+`
+
+### 3\. Provide service account credentials to Monte Carlo
+
+1. Please follow [this](/docs/using-the-cli) guide to install and configure the CLI.
+2. Please use the command `montecarlo integrations add-postgres` to connect. For reference, see help [here](https://clidocs.getmontecarlo.com/#montecarlo-integrations-add-postgres).
+
+Example
+
+`montecarlo integrations add-postgres \
+	--host example.cluster-123456789.us-east-1.rds.amazonaws.com \
+	--user montecarlo \
+	--password -1 \
+	--database sample \
+	--name artemis-dev
+`
+
+## Monitor Support
+
+Below are the supported monitors for the SQL Server Integration today. Please reach out to your Monte Carlo representative if you have requirements for additional Monitors.
+
+| Category                    | Monitor Type         | Support                                                                             |
+| --------------------------- | -------------------- | ----------------------------------------------------------------------------------- |
+| Automated Anomaly Detection | Freshness            |                                                                                     |
+| Automated Anomaly Detection | Volume               |                                                                                     |
+| Automated Monitoring        | Schema Changes       |                                                                                     |
+| Opt-in Monitor              | SQL Rule             | ![:white-check-mark:](/images/white-check-mark.png ":white-check-mark:") |
+| Opt-in Monitor              | Field Quality Rule   |                                                                                     |
+| Opt-in Monitor              | Freshness Rule       |                                                                                     |
+| Opt-in Monitor              | Volume Rule          |                                                                                     |
+| Opt-in Monitor              | Field Health Monitor |                                                                                     |
+| Opt-in Monitor              | Dimension Tracking   |                                                                                     |
+| Opt-in Monitor              | JSON Schema Changes  |                                                                                     |
+
+## FAQs
+
+**What is the minimum supported version?**
+
+Monte Carlo supports Postgres 10 and newer.
+
+**Are cloud variants of Postgres like AWS Aurora, GCP Cloud SQL, and Azure Database supported?**
+
+Yes, AWS Aurora, GCP Cloud SQL, and Azure Database for Postgres are all supported.
+
+**What hosting solutions are supported?**  
+This integration supports any instance that is reachable from the AWS cloud (e.g. AWS hosted, site-to-site VPN with AWS, publicly accessible, etc). Please see the [networking docs](/docs/aws-networking-tips) for more detail.
+
+**How do I list all schemas (for setup)?**
+
+Run the following SQL snippet:
+
+SQL
+
+`SELECT schema_name FROM information_schema.schemata;
+`
+
+**How do I list all users (for setup)?**
+
+Run the following SQL snippet:
+
+SQL
+
+`SELECT usename FROM pg_catalog.pg_user;
+`

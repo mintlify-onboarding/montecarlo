@@ -1,0 +1,41 @@
+---
+title: "Setting up JSON Schema Monitors"
+---
+
+> 🚧
+> 
+> Last Updated: August 1, 2022
+
+> ❗️
+> 
+> Please note JSON schema monitors are not supported on Athena or Spark clusters.
+
+### Transcript
+
+Welcome to Monte Carlo University! Today, I'll be going through our JSON schema monitor. With JSON schema monitors, you can actually monitor the nested JSON within a given field in your tables. When you set this up, we will parse the current schema based on the JSON within those tables and show you that here:
+
+![1911](/images/8205765-Screen_Shot_2022-08-01_at_3.53.21_PM.png "Screen Shot 2022-08-01 at 3.53.21 PM.png")
+
+Schema of a table with JSON Monitoring Applied
+
+Over time, as we view any changes in distribution to the keys within that JSON, we will alert you in the case that the distribution changes, in the case that new keys appear, or keys that historically were available have disappeared in the newest day.
+
+When setting up these monitors, you'll choose to create a new monitor and choose to configure monitor under the JSON schema option.
+
+![527](/images/5c1ec13-Screen_Shot_2022-08-01_at_3.46.11_PM.png "Screen Shot 2022-08-01 at 3.46.11 PM.png")
+
+JSON Schema Monitor
+
+You first need to choose the table and then the field within that table that you want to monitor. Again, this will need to be a field that contains a JSON that you want to parse:
+
+![1914](/images/06082f1-Screen_Shot_2022-08-01_at_4.00.16_PM.png "Screen Shot 2022-08-01 at 4.00.16 PM.png")
+
+Column Options
+
+Once you've chosen that field, you then have the option to choose a timestamp field on the table. This is leveraged to look at the newest data added to the table over time to alert you of those changes in the actual keys within the JSON and the distribution changes as well:
+
+![1911](/images/bd6f30d-Screen_Shot_2022-08-01_at_4.01.33_PM.png "Screen Shot 2022-08-01 at 4.01.33 PM.png")
+
+Timestamp Options
+
+Hopefully this was helpful and feel free to reach out if you have any questions!

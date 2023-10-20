@@ -1,0 +1,61 @@
+---
+title: "Volume Rules"
+---
+
+Volume Rules can be used to define explicit thresholds around total table size or table growth rates that will trigger in incident when breached. 
+
+When a Volume Rule monitor is set up, Monte Carlo periodically collects metadata of the target table such as the number of rows or bytes and compares it with thresholds set in the rule. 
+
+There are two types of comparisons you can configure as part of Volume Rules, which include:
+
+1. **Total Table size comparison:** Check to see if a table has too many or too few total records or bytes
+2. **Table growth comparison:** Check to see if a table is growing too quickly, too slowly or not growing at all
+
+### Total table size comparison
+
+![2258](/images/4de36d0-Create_Volume_Rule_Monitor_2023-03-17_at_2.27.56_PM.jpg "Create Volume Rule Monitor 2023-03-17 at 2.27.56 PM.jpg") 
+
+This comparison type should be used if you want Monte Carlo to trigger an incident alert when one of the following events occurs:
+
+**Table has too many rows**  
+Select this option to get notified when the total table size (bytes or rows) increases beyond a specific threshold
+
+**Table has not enough rows**  
+Select this option to get notified when the total table size (bytes or rows) decreases below a specific threshold
+
+Note that these configurations are commonly used on tables that do not grow regularly like dimension tables or other low volume tables.
+
+### Table growth comparison
+
+This comparison type should be used when you want to observe a table's growth rather than its total size and one of the following events occurs:
+
+**Table stops growing or shrinking**  
+Select this option to get notified when no new records are added or removed from a table. To configure, you will need to select the lookback range.
+
+**Table growth is too fast**  
+Select this option to get notified when too many rows or bytes were added to a table in the given time range. To configure, you will need to select the type of metric (average, min, max or total), the number of rows or bytes and the lookback range.
+
+**Table growth is too slow**  
+Select this option to get notified when too few rows or bytes were added to a table in the given time range. To configure, you will need to select the type of metric (average, min, max or total), the number of rows or bytes and the lookback range.
+
+**Advanced**  
+For more advanced use cases, the advanced option allow you to define complex Volume Rules that include buffers, multiple periods, and more. We recommend only using this option if you are comfortable with the Volume Rule logic.
+
+> 🚧
+> 
+> Training Volume Growth rules
+> 
+> To determine whether a table breaches the defined alert condition, we need at least two size measurements at the beginning and end of the defined interval. In some advanced configuration cases involving multiple periods and longer lookback periods, more size measurements are required before the rule can start evaluating if there is a breach. 
+> 
+> If for example you configure a Volume Growth Rule with a 7 day lookback period, it will take at least 7 days before we will be able to evaluate if the table growth is breaching the threshold.
+
+### Define Schedule and Lookback range
+
+![1131](/images/3436b4c-volume_rule_timeline.gif "volume rule timeline.gif") 
+
+For Volume Growth Rules to work well, it's critical to closely review the run schedule and lookback range. To help you understand how the configuration options will impact the rule execution, we now show a dynamic timeline below the Volume graph.
+
+Additionally, we recommend keeping the following pointers in mind:
+
+* For tables that receive regular updates, it's best to match the run schedule (ex. run every 6 hours looking back 6 hours)
+* For tables that receive scheduled updates, ensure that the schedule and lookback period match the defined pattern (ex. run at 9am UTC every day looking back 2 hours) - this is often done to check that a scheduled run completed successfully

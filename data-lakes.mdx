@@ -1,0 +1,70 @@
+---
+title: "Overview: Data Lakes"
+---
+
+This document walks through the steps to monitor a Data Lake with Monte Carlo. The order of operations is important and it is strongly recommended to adhere to the documented sequence. In order to fully stand up Monte Carlo with your data lake, you'll need to integrate a Metastore and a Query Engine.
+
+### 1\. Verify Permissions in AWS
+
+Ensure you or a colleague has the correct AWS permissions to set up the necessary resources for Monte Carlo. The permissions necessary vary per data lake and whether or not you are VPC peering with Monte Carlo but at a high level are the following:
+
+* Create IAM policies and roles.
+* Create CloudFormation stacks.
+* Create SNS topic, SNS subscription and S3 Notifications (only if fetching query logs from S3 for Presto or Hive).
+* Create VPC (only if VPC Peering).
+
+### 2\. Network Connectivity
+
+Most configurations will use one of the following methods to establish network connectivity:
+
+* [IP Filtering](/docs/network-connectivity#ip-filtering)
+* [VPC Peering](/docs/network-connectivity#vpc-peering)
+
+Please note that resources like Glue and Athena are public and do not require additional networking connectivity.
+
+### 3\. Monte Carlo CLI
+
+The Monte Carlo CLI allows you to toggle on the different integration points within your Data Lake and provides the most automated experience. Install it locally by following the [Using the CLI](/docs/using-the-cli) documentation.
+
+### 4\. Metastore
+
+The first integration point for Monte Carlo is your metastore. Monte Carlo uses the objects defined in your metastore to create the Catalog of assets that can be monitored. The steps necessary vary by integration, but generally involve creating a database user, creating an AWS role, or a Spark cluster. 
+
+* [Glue](/docs/glue)
+* [Hive (metastore)](/docs/hive-mysql)
+
+### 5\. Query Engine
+
+Connecting to your Query Engine next allows Monte Carlo to run queries that granularly track data health on particular tables. Athena requires creating a Workgroup and IAM Role while Spark, Presto, and Hive require connecting to an existing cluster or creating one dedicated to Monte Carlo.
+
+* [Athena](/docs/athena)
+* [Databricks SQL Warehouse](/docs/databricks-sql-warehouse)
+* [Spark](/docs/spark)
+* [Presto](/docs/presto)
+* [Hive (SQL)](/docs/hive-sql)
+
+### 6\. Query Logs
+
+Lastly, connecting your Query Logs allows Monte Carlo to create lineage, usage analytics, and query history. Athena logs can be configured with a role (which you may have already completed in step 5) while Presto, EMR, and Hive require creating Event Notifications from the S3 Bucket where these logs are stored. SparkSQL is not yet supported.
+
+* Athena - No further action necessary if Athena was configured in step 5.
+* [S3 Events - Query Logs](/docs/s3-events-query-logs) (Presto, EMR, Hive)
+
+### Conclusion
+
+You have connected all necessary integration points to get end-to-end observability on your data lake! At this point, you can consider connecting additional integrations for BI, orchestration, and notifications.
+
+* [Overview: BI](/docs/bi-tools)
+* [dbt Integration](/docs/dbt-integration)
+* [Slack](/docs/slack) / [MS Teams](/docs/ms-teams) / [PagerDuty](/docs/pagerduty) and more.
+
+### FAQ
+
+**Can Monte Carlo monitor just Athena / Hive / etc.?**  
+Monte Carlo requires at least a metastore and a query engine to work as intended. This is because [each of these systems provides a different slice of the metadata MC leverages](/docs/data-lakes#integration-points) for data observability purposes.
+
+**What does MC need to automatically generate lineage?**  
+MC requires query logs for ETL procedures (DDL, DML). This usually means Hive or Presto logs accessible in S3, or a connection to Athena if you run ETL through Athena. MC currently does not support lineage in Spark, though a Databricks Unity-based lineage capability is coming soon for Databricks users.
+
+**What if we use multiple query engines?**  
+MC currently only supports one query engine per environment. This means that if you have multiple query engines (Spark and Athena), or have multiple accounts (like Spark clusters), we ask that you select one that suits your use case.

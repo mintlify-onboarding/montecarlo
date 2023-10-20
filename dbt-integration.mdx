@@ -1,0 +1,18 @@
+---
+title: "dbt Integration"
+---
+
+### Overview
+
+Monte Carlo's dbt integration imports manifest files and run result files in order to 
+
+1. Map dbt models to tables in your data warehouse / data lake
+2. Centralize your table metadata in one place by pulling in tags and descriptions from dbt
+3. Show associated dbt model and test run results for each incident to help you troubleshoot.
+4. [Generate incidents based on dbt model errors and test errors (New)](/docs/dbt-failures-are-monte-carlo-incidents)
+
+The following guide explains how to set up the integration.
+
+If you are using dbt Core, follow [this guide](dbt-core).
+
+If you are using dbt Cloud, follow [this guide](dbt-cloud).

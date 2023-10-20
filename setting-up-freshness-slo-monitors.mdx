@@ -1,0 +1,57 @@
+---
+title: "Setting up Freshness Rules"
+---
+
+> 🚧
+> 
+> Last Updated: August 1, 2022
+
+### Transcript
+
+Hi there! In this video, we're going to see how to create a freshness monitor, or service level indicator monitor, in Monte Carlo. We'll start by navigating to the monitor tab, and then clicking on "Create New Monitor" here, to see the list of all the available custom monitors that you can create in Monte Carlo:
+
+![1912](/images/dc9bd79-Screen_Shot_2022-08-01_at_4.15.18_PM.png "Screen Shot 2022-08-01 at 4.15.18 PM.png")
+
+Create New Advanced Monitor
+
+In this video, we're going to focus on this one - Freshness SLO:
+
+![522](/images/315f2ba-Screen_Shot_2022-08-01_at_4.15.45_PM.png "Screen Shot 2022-08-01 at 4.15.45 PM.png")
+
+Freshness SLO
+
+As you know, Monte Carlo provides freshness monitoring and alerting as part of our machine learning, out of the box detectors. However, in certain cases, this out of the box detection may not be explicit enough, and you may want to supplement it with a freshness SLO which is more tailored to your business needs.
+
+To provide a very sample use case for this monitor: imagine you are responsible for a table, which is needed to build a critical daily report or measure progress against an important KPI. This table needs to be updated every day before the report is run to ensure it's up to date with fresh data. In this case, you're going to set up a freshness SLO to ensure that you get alerted as soon as this table update hasn't occurred by the time it was expected. This way you can troubleshoot and fix the problem before the report is run with all data or notify the relevant stakeholder so they hold off from running the report until the problem is solved. 
+
+Let's see how to configure this monitor. The first thing after clicking on "Configure Monitor" will be to provide the table in which we want to configure this monitor, so I'll choose this table for example.:
+
+![1918](/images/3ec6c37-Screen_Shot_2022-08-01_at_4.31.20_PM.png "Screen Shot 2022-08-01 at 4.31.20 PM.png")
+
+Choose a Table
+
+Then the second step will be providing the schedule for this monitor which is how frequent you want this monitor to run. You will specify a number of minutes, hours, days, or weeks for the frequency. And you will also providing a start time date and time:
+
+![1917](/images/26e5e21-Screen_Shot_2022-08-01_at_4.31.41_PM.png "Screen Shot 2022-08-01 at 4.31.41 PM.png")
+
+Set the Frequency
+
+Then as well as providing a freshness breach threshold which is basically telling Monte Carlo when you want to be alerted. In this case, you can choose to be notified when the table does not update within the last, for example, number of six minutes, hours, days, or weeks:
+
+![964](/images/5d4b139-Screen_Shot_2022-08-01_at_4.32.17_PM.png "Screen Shot 2022-08-01 at 4.32.17 PM.png")
+
+Choose a Threshold
+
+So going back to our previous example, let's imagine that this important report needs to be run every morning at 11:00 AM, so I want to make sure that the table that is used to build it is updated every morning around 10:00 AM. In that case, I want to set this up so that this run is run every one day, starting, for example, I will say tomorrow at 10:30 AM, and then I want to be notified if the update hasn't happened within the previous one hour:
+
+![951](/images/3154ae1-Screen_Shot_2022-08-01_at_4.35.43_PM.png "Screen Shot 2022-08-01 at 4.35.43 PM.png")
+
+Setting Up the Example
+
+That way if Monte Carlo will be taking around 10:30 AM, I will be notified if an update hasn't happened in this table in the previous one hour. The last thing will be to provide a name for our monitor and click on "Continue":
+
+![952](/images/dc5a6a8-Screen_Shot_2022-08-01_at_4.32.41_PM.png "Screen Shot 2022-08-01 at 4.32.41 PM.png") 
+
+And that's it! We have created our Freshness SLO monitor. I hope this was helpful and please feel free to reach out to [\[email protected\]](/cdn-cgi/l/email-protection#0f7c7a7f7f607d7b4f6260617b6a6c6e7d63606b6e7b6e216c6062) or the chat bot in the lower right hand corner if you have any more questions.
+
+Thank you for watching!

@@ -1,0 +1,176 @@
+---
+title: "Quick Start Guide"
+---
+
+This guide is intended for new users to quickly acclimate themselves to your existing Monte Carlo instance. 
+
+If you'd like to learn more about setting up Monte Carlo, please visit [the setup guide](/docs/setting-up-monte-carlo).
+
+If you'd like to learn more about Monte Carlo in general, please visit [the overview here](/docs/architecture).
+
+---
+
+In your Monte Carlo instance, you'll see the sections details below. Click on each to find out more about the features included in each.
+
+1. [Assets](#1-assets) \- Single pane of glass for your data ecosystem
+2. [Incidents](#2-incidents) \- Command center for data incidents
+3. [Monitors](#3-monitors) \- Configuration for custom data monitoring
+4. [Dashboards](#4-dashboards) \- Insights and reporting on your Monte Carlo instance
+5. [Settings](#5-settings) \- Platform configurations (including notification setup)
+
+---
+
+## 1\. Assets
+
+[Click here to go to your Assets page](https://getmontecarlo.com/assets)
+
+Monte Carlo's Assets provides users with a single pane of glass to see all of the data assets that are connected to your Monte Carlo instance. All metadata about assets in the warehouse/lake as well as your BI tool are collated in Assets.
+
+To start using Assets, try typing in a data asset you are interested in (_Note:_ a data asset can be an external table, a table or a view). In this case, we are searching for a table called `subscription` in the `staging` schema. The catalog's search functionality allows you to search for keywords as well as filter by tags.
+
+![Search functionality on the Catalog page](/images/172c6bf-image.png)
+
+Search functionality on the Assets landing page
+
+Clicking on the table we are interested in, we land on the summary page for that data asset. Here you will be able to see some general information on how often the table is updated and how many rows the table has.
+
+![Summary tab of a data asset's catalog page](/images/af2daf1-image.png)
+
+Summary tab of a data asset detail page
+
+With this view, you can see all metadata Monte Carlo has collected and created about a data asset. You can answer questions like:
+
+* What data assets are upstream or downstream of this table? (See `Table Lineage` tab)
+* How are the fields in this table used upstream and downstream? (See `Field Lineage` tab)
+* How have the columns and data types in this table changed over time? (See `Schema Changes` tab)
+* What queries are being run on this table? (See `Query Logs` tab)
+* What does the freshness and update pattern look like on this data asset? (See `Freshness` and `Volume` tabs)
+* What are common patterns of columns in the table? (See `Field Profile` tab)
+* What incidents have occurred on this table? (See `Past Incidents` tab)
+* What BI reports are connected to this table? (See `Reports Affected` tab)
+* What additional monitoring does this table have? (See `Custom Monitors` tab)
+
+---
+
+## 2\. Incidents
+
+[Click here to go to your Incidents page](https://getmontecarlo.com/incidents)
+
+Incidents are data anomalies caught by Monte Carlo. You can learn more about the [types of monitoring capabilities Monte Carlo has here](/docs/monitors-overview).
+
+Monte Carlo's Incidents section is your command center for understanding what is happening in your data ecosystem as well as providing tools to perform root cause analysis and manage the incident to resolution.
+
+The landing page is a feed of all incidents. You can see some filters at the top to filter down to specific types of incidents. Each card on this page is a summary of the incident with a few quick access incident management tools. The `View Incident IQ` button will take you to the detail page for a particular incident.
+
+![Incidents feed with incident status dropdown selected](/images/a41d354-image.png)
+
+Incidents feed with incident status dropdown selected
+
+---
+
+The summary tab of the Incident IQ page for a particular incident will let you know what issues were found, what tables were impacted and what the impact of the incident is. This should be the starting point for you to perform root cause analysis. You can answer questions like:
+
+* What data assets are upstream and downstream of these incident tables? (See `Table Lineage`)
+* What queries have been run on the incident tables? (See `Query Logs` tab)
+* What specific BI reports could be impacted by this incident (See `Reports Affected` tab)
+* Is this incident similar to past incidents that have occurred on this table? (See `Past Incidents` tab)
+
+![Summary page of Incident IQ](/images/2862fd4-image.png)
+
+Summary page of Incident IQ
+
+---
+
+## 3\. Monitors
+
+[Click here to go to your Monitors page](https://getmontecarlo.com/monitors)
+
+Monitoring is the data observability layer of your data ecosystem. Monte Carlo provides base level monitoring out of the box, and also gives you the ability to opt into deeper coverage ML-based monitoring as well as the flexibility to set up monitoring based on your own custom rules. You can [find out more about monitors here](/docs/monitors-overview).
+
+In the Monitors section, you'll see a summary of your instance at the top of the page including what automated monitors you have active, and in the bottom half of the page, you will see a list of all custom monitors that you have in place in addition to the automated monitoring.
+
+Within Monitors, you will be able to perform the following actions:
+
+* View and search through your existing custom monitoring estate
+* Click into an existing monitor to see how it is configured, how it is running and what incidents it has generated
+* Create new custom monitoring
+
+![Landing page for the Monitors section](/images/41d7ffd-image.png)
+
+Landing page for the Monitors section
+
+---
+
+In the custom monitors list, you can use the carrots on either side of the monitor to click into the detail page for that monitor.
+
+Clicking the `Create Monitor` button at the top right takes you to a workflow for setting up each monitor type. To learn more about setting up these monitors, see the [Setting up monitors](/docs/advanced-concepts) section in our docs.
+
+![Monitor creation landing page in Monitors section](/images/df97e06-image.png)
+
+Monitor creation landing page in Monitors section
+
+---
+
+## 4\. Dashboards
+
+[Click here to go to your Dashboards page](https://getmontecarlo.com/dashboard)
+
+Monte Carlo provides you with a suite or reporting and insights that you can use to understand your data reliability metrics, data ecosystem health and closely govern your data warehouse usage.
+
+### Data reliability dashboard
+
+When you go to the Dashboards section, you will land on your Data Reliability dashboard. This is a high level view of your data ecosystem, including data uptime calculations that we create on your behalf. You can find out more about [the reporting in this dashboard here](/docs/data-reliability-dashboard). We recommend using this reporting to track progress towards your data quality strategy. This dashboard can answer questions like:
+
+* How long does it take my team to respond to incidents?
+* How long does it take my team to resolve incidents?
+* What percentage of my tables are incident free?
+* How many incidents are my custom monitors generating?
+
+![Data Reliability Dashboard in the Dashboards section](/images/5398701-image.png)
+
+Data Reliability Dashboard in the Dashboards section
+
+---
+
+### Table health dashboard
+
+Our Table Health dashboard allows you to search for and view groupings of data assets and see what monitoring coverage they have, as well as how many incidents were related to those data assets. This dashboard is recommended to get a summarized but actionable view of your data observability. You can use it to answer questions like:
+
+* What type of coverage do tables in a given dataset (aka schema) have?
+* Do my most important tables have the right coverage?
+* What are my noisiest tables?
+
+Note that you can click on the tool icon to the right to set a default view and even set this view as your landing page when you log into Monte Carlo.
+
+![Table Health Dashboard in the Dashboards section](/images/e2c3b69-image.png)
+
+Table Health Dashboard in the Dashboards section
+
+---
+
+### Insights reports
+
+You will find our wide variety of point-in-time insights reporting in the Incidents and Insights tab. These reports cover a broad range of insights, but can be used to perform actions like:
+
+* Track which tables we recommend removing due to low usage (see `Table Cleanup Suggestions`)
+* Track which users are consuming the most in your warehouse (see `Consumption by user`)
+* Track which queries have the heaviest consumption and which queries have deteriorating performance (See `Heavy Queries` and `Deteriorating Queries`
+
+You can see [specifications for all of the insights reports here](/docs/insights).
+
+![Incidents and Insights section of Dashboards which houses downloadable insights reports](/images/6736397-image.png)
+
+Incidents and Insights section of Dashboards which houses downloadable insights reports
+
+## 5\. Settings
+
+[Click here to go to your Settings page](https://getmontecarlo.com/settings)
+
+Our Settings section houses most configuration options available to you in terms of how your platform works. The following actions can be performed in this section:
+
+* Manage users, auth groups and SSO setup (See `Users`, `Authorization Groups`, `Single Sign On` tabs)
+* Manage the connections for integrations in your data warehouse, BI tool, data orchestrator and notification mediums (See `Integrations` tab)
+* Create and manage API keys and run API calls (See `API Access` and `API Explorer`tabs)
+* Create and manage domains, which are logical groupings of data assets (See `Domains` tab)
+* Mute noisy or unimportant datasets and tables (See `Muted Data and Filters` tab)
+* Use regex to remove unimportant nodes in your table lineage (See `Muted Data and Filters` \> `Lineage` tab)

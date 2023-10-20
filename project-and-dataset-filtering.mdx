@@ -1,0 +1,83 @@
+---
+title: "Setting up dataset/schema controls"
+---
+
+Monte Carlo supports specifying a list of projects/databases/catalogs and schemas/datasets that will be controlled in collection. 
+
+Note that by default, new schemas are automatically detected and included in the monitoring. It is recommended that the users use the CLI commands to turn them off if they do not want the new schemas to be included in the monitoring.
+
+> 📘
+> 
+> Currently supported for **Redshift**, **Databricks**, **BigQuery** and **Snowflake**
+
+> 📘
+> 
+> Changes made to data collection filtering may take up to 48 hrs to be visible through dashboard metrics and the Catalog.
+
+### CLI
+
+Management of the collection block list is supported on CLI `v0.40.0+`. View CLI docs here: [https://clidocs.getmontecarlo.com/](https://clidocs.getmontecarlo.com/#montecarlo-management)
+
+You can see which schemas and entities you already have specified to be blocked from collection using the `get-collection-block-list` command.
+
+Bash
+
+`% montecarlo management get-collection-block-list --help
+Usage: montecarlo management get-collection-block-list [OPTIONS]
+
+  List entities blocked from collection on this account.
+
+Options:
+  --resource-name TEXT  Name of a specific resource to filter by. Shows all
+                        resources by default.
+  --help                Show this message and exit.
+`
+
+You can make changes to the collection block list using the `update-collection-block-list` command.
+
+Bash
+
+`% montecarlo management update-collection-block-list --help
+Usage: montecarlo management update-collection-block-list [OPTIONS]
+
+  Update entities for which collection is blocked on this account.
+
+Options:
+  --add / --remove                Whether the entities being specified should
+                                  be added or removed from the block list.
+                                  [required]
+  --resource-name TEXT            Name of a specific resource to apply
+                                  collection block to. This option cannot be
+                                  used with 'filename'. This option requires
+                                  setting 'project'.
+  --project TEXT                  Top-level object hierarchy e.g. database,
+                                  catalog, etc. This option cannot be used
+                                  with 'filename'. This option requires
+                                  setting 'resource-name'.
+  --dataset TEXT                  Intermediate object hierarchy e.g. schema,
+                                  database, etc. This option cannot be used
+                                  with 'filename'. This option requires
+                                  setting 'resource-name', and 'project'.
+  --collection-block-list-filename TEXT
+                                  Filename that contains collection block
+                                  definitions. This file is expected to be in
+                                  a CSV format with the headers resource_name,
+                                  project, and dataset. This option cannot be
+                                  used with 'resource-name', 'dataset', and
+                                  'project'.
+  --help                          Show this message and exit.
+`
+
+* Resources are Monte Carlo integrations
+* Projects would be a metastore in Databricks (like `hive_metastore`) or database in Redshift
+* Datasets would be a schema in Databricks or Redshift
+
+![](/images/3950226-collection_blocks.gif "collection_blocks.gif")
+
+### API
+
+You can also manage, select, and specify the schema and collection block list via our GraphQL API using the following operations:
+
+* [query getCollectionBlockList](https://apidocs.getmontecarlo.com/#query-getCollectionBlockList) — shows which entities you already have specified to be blocked from collection.
+* [mutation addToCollectionBlockList](https://apidocs.getmontecarlo.com/#mutation-addToCollectionBlockList) — allows you to add or update entities specified to be blocked from collection.
+* [mutation removeFromCollectionBlockList](https://apidocs.getmontecarlo.com/#mutation-removeFromCollectionBlockList) — allows you to remove entities from the list, thereby allowing them to be discovered during the collection process.

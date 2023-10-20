@@ -1,0 +1,69 @@
+---
+title: "Presto (beta)"
+---
+
+> 📘
+> 
+> This capability is in beta
+> 
+> Certain limitations in functionality may exist.
+
+> 📘
+> 
+> Prerequisites
+> 
+> To complete this guide, you will need permissions to create a read-only user on Presto.
+
+To connect Monte Carlo to a Presto cluster to run data health SQL queries, follow these steps:
+
+1. Create a Presto cluster for Monte Carlo's data health queries using AWS EMR. Alternatively, you may use an existing cluster that you already have in your environment.
+2. Ensure that Monte Carlo's data collector has [network connectivity](/docs/network-connectivity) to the cluster (VPC peering is required in most cases).
+3. Create a read-only service account on Presto if necessary.
+4. Provide service account credentials to Monte Carlo.
+
+### Creating a service account on Presto
+
+Monte Carlo supports basic authentication or custom certificates for Presto connections. Please create a read-only user for Monte Carlo, or obtain a certificate file that enables authentication to Presto.
+
+### Providing account credentials to Monte Carlo
+
+You will provide connection details for Presto using Monte Carlo's CLI: 
+
+1. Please follow [this guide](/docs/using-the-cli) to install and configure the CLI.
+2. Please use the command `montecarlo integrations add-presto` to set up Presto connectivity. For reference, see help for this command below:
+
+Shell
+
+`$ montecarlo integrations add-presto --help
+Usage: montecarlo integrations add-presto [OPTIONS]
+
+  Setup a Presto SQL integration. For health queries.
+
+Options:
+  --host TEXT                 Hostname.  [required]
+  --port INTEGER              HTTP port.  [default: 8889]
+  --user TEXT                 Username with access to catalog/schema.
+  --password TEXT             User\'s password. If you prefer a prompt (with
+                              hidden input) enter -1
+  --catalog TEXT              Mount point to access data source.
+  --schema TEXT               Schema to access.
+  --http-scheme [http|https]  Scheme for authentication.  [required]
+  --cert-file FILE            Local SSL certificate file to upload to
+                              collector. This option cannot be used with
+                              'cert-s3'.
+  --cert-s3 TEXT              Object path (key) to a certificate already
+                              uploaded to the collector. This option cannot be
+                              used with 'cert-file'.
+  --skip-cert-verification    Skip SSL certificate verification.
+  --name TEXT                 Friendly name of the warehouse which the
+                              connection will belong to.
+  --collector-id UUID         ID for the data collector. To disambiguate
+                              accounts with multiple collectors.
+  --skip-validation           Skip all connection tests. This option cannot be
+                              used with 'validate-only'.
+  --validate-only             Run connection tests without adding. This option
+                              cannot be used with 'skip-validation'.
+  --auto-yes                  Skip any interactive approval.
+  --option-file FILE          Read configuration from FILE.
+  --help                      Show this message and exit.
+`

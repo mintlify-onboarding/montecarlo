@@ -1,0 +1,126 @@
+---
+title: "Using Data Product Dashboards"
+---
+
+## Overview
+
+Data Product Dashboards allow users to get an overview of the data quality across a selected list of assets that make up a Data Product. This dashboard enables you to build trustworthy data products by providing visibility into critical data asset health and reliability.
+
+[Click here to view your Data Product Dashboards ](https://getmontecarlo.com/dashboard/data-product)
+
+---
+
+### Creating a Data Product Dashboard
+
+Start by going to [Dashboards -> Data Product](https://getmontecarlo.com/dashboard/data-product) in Monte Carlo. In the top right, select "Create Dashboard". 
+
+Next, select a list of assets that form the core of your Data Product. These can be tables or BI Reports and Dashboards. 
+
+> 📘
+> 
+> Tip
+> 
+> Focus on selecting only the most downstream assets that serve as the core interfaces of your data product. Think of these as the last stop before the data is used by a client application or viewed by a user. 
+> 
+> Once created, the Data Product Dashboard will automatically include assets that are upstream via lineage to give you a complete picture of the overall health of your Data Product. The core assets that can be included in a Data Product is currently limited to 20.
+
+![](/images/a2a1c22-image.png) 
+
+Once you have your list of assets, select "Create Dashboard"
+
+Give the dashboard a meaningful **Name** and **Description** that can help your team identify the purpose of it in the future. 
+
+### Using a Data Product Dashboard
+
+![](/images/32871ff-screencapture-getmontecarlo-dashboard-data-product-5f6bd101-5483-4344-9687-3c4f0bcf89b8-2023-07-31-20_14_11.png) 
+
+#### Dashboard filters
+
+There are 4 main filters to control the incidents shown; Lookback Range, Incident Status, Incident Severity and Upstream Depth.
+
+**Lookback Range**
+
+Lookback Range is the date parameter filter of the detected incidents. It consists of a multi-select drop down menu that includes Today, Yesterday and Today, 7 Days, 2 Weeks, 3 Weeks, and 4 Weeks. We typically recommend using a 2-week lookback window as best practice.
+
+**Incident Status**
+
+The Incident Status filter allows a visualization of incidents that include Fixed, Expected, Investigating, No Action Needed, False Positive, and No Status. 
+
+* `Fixed`: Incident has been flagged and resolved
+* `Expected`: Change has been made with anticipation of incident
+* `Investigating`: Incident has been flagged and is under investigation
+* `No Action Needed`: Incident has been flagged and required no action
+* `False Positive`: Incident was incorrectly identified as anomalous behavior
+* `No Status`: Incident has not been flagged and needs update
+
+**Incident Severity**
+
+The Incident Severity filter allows users to place a severity level on each individual incident. Incident severity is a categorization method that you can update manually and is up to the you to define the meaning of of each level of severity. This filter displays a checkbox style menu that consists of 6 different severity options (No Severity, Sev-0, Sev-1, Sev-2, Sev-3, Sev-4).
+
+**Upstream Depth**
+
+The Upstream Depth allows you to specify how many levels of upstream tables should be included in the dashboard against the core assets included. If there are incidents that meet the filters on upstream tables, they will be included in the Incident Metrics and shown under Upstream incidents in the Assets table. 
+
+#### Incident Metrics
+
+![](/images/4c2e4f2-image.png) 
+
+**Total Incidents**
+
+The first chart shows the total incidents related to the assets included in the Data Product that match the filters set. Hovering over the time series will provide exact numbers for each point on the graph. 
+
+**By Status**
+
+This chart shows all incidents related to the assets included in the Data Product that match the filters set, distributed by their Status. 
+
+**By Severity**
+
+This chart shows all incidents related to the assets included in the Data Product that match the filters set, distributed by their Severity.
+
+#### Assets Table
+
+![](/images/627a28e-image.png)
+
+The assets table shows incidents related to the core assets included when defining the Data Product Dashboard as well as any upstream incidents if a Upstream Depth is set. If an Upstream Depth is set, all incidents on tables upstream of the core asset will be rolled into a single "Upstream incidents" row nested under the core asset they relate to. 
+
+The far left column **Incidents** shows the total incidents related to that row. The cell will also be shown in one of three colors:
+
+* Green - All incidents are in a resolved status of **Fixed**, **Expected**, **No Action Needed**, or **False Positive**.
+* Yellow - At least one incident related to this asset is in **Investigating** status.
+* Orange - At least one incident related to this asset has **No Status**.
+
+A Green check mark indicates there are no incidents for that asset that match the filters set. 
+
+> 📘
+> 
+> Tip
+> 
+> The coloring of the cell will indicate the most severe incident on the asset (ex. if there are 10 total incidents, 3 of which have been **Fixed**, 6 that are in **Investigating** status, and 1 that has **No Status**, the cell will remain orange as it is pulling the most severe status, **No Status**.
+
+The right side of the assets table has the columns SQL Rule, Freshness, Volume, Field Quality, Field Health, Dimension, Schema and dbt errors. These represent the different monitor types that Monte Carlo allows on a table. For each column, the number of incidents for each monitor type for each asset will be shown. Similar color coding of Green, Yellow and Orange is used as above with the Incidents column. 
+
+A Green check mark here indicates there are no incidents for that asset that match the filters set but there are monitors (either out-of-the-box or custom) of that type current set up and running for that asset. If there are no monitors of that type currently set up for that asset, a "+" will be shown to allow easy creation of that monitor type for that asset. 
+
+#### Viewing Incidents
+
+Clicking any number shown in the Assets Table will pull out a side drawer with all incident matching the respective number clicked. Use this side drawer to quickly examine and triage Incidents or dig deeper into them by selecting "View Incident IQ"
+
+![](/images/50131de-VAVXyzezC1.gif) 
+
+### Sharing a dashboard
+
+Once created a Data Product Dashboard can be shared with member of a Monte Carlo account. 
+
+To share, select the "Share data product" icon in the top right when viewing a Data Product Dashboard. 
+
+![](/images/214a25f-Screenshot_2023-07-31_at_9.46.25_PM.png) 
+
+Toggle the setting to "Share dashboard"
+
+![](/images/c082655-Screenshot_2023-07-31_at_9.51.03_PM.png) 
+
+Once shared, a Data Product Dashboard will show for users that have access to a Domain that has at least one of the core assets included in the definition of the Data Product. These dashboards will show under "Shared dashboards" under [Dashboards -> Data Product](https://getmontecarlo.com/dashboard/data-product)
+
+If a user is viewing the Data Product Dashboard from a Domain that does not have access to certain assets included in the dashboard or in the upstream lineage of one of the assets, these assets, and incidents related to these assets, will not be included in the Incident metrics or show in the Assets table. This will be indicated by a tooltip in the Asset Table to let the user know some asset are hidden. 
+
+![](/images/58a6227-image.png)

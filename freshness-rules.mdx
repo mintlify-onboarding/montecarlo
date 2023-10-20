@@ -1,0 +1,24 @@
+---
+title: "Freshness Rules"
+---
+
+Freshness Rules can be used to define explicit thresholds around how often a table should receive updates.
+
+When a Freshness Rule monitor is set up, Monte Carlo periodically collects metadata of the target table to determine if the table has not received an expected freshness update.
+
+### Configure a Freshness Monitor
+
+![2266](/images/22a3edc-Create_Freshness_Rule_Monitor_2023-03-17_at_3.00.39_PM.jpg "Create Freshness Rule Monitor 2023-03-17 at 3.00.39 PM.jpg") 
+
+To configure a Freshness Monitor you simply need to select one or more tables and select the lookback range within which you expect the table(s) to receive an update.
+
+### Define Schedule and Lookback range
+
+![2264](/images/af55dfb-Create_Freshness_Rule_Monitor_2023-03-17_at_3.04.16_PM.jpg "Create Freshness Rule Monitor 2023-03-17 at 3.04.16 PM.jpg") 
+
+For Freshness Rules to work well, it's critical to closely review the run schedule and lookback range.
+
+We recommend keeping the following pointers in mind:
+
+* For tables that receive regular updates, it's best to match the run schedule (ex. run every 6 hours looking back 6 hours)
+* For tables that receive scheduled updates, ensure that the schedule and lookback period match the defined pattern (ex. run at 9am UTC every day looking back 2 hours) - this is often done to check that a scheduled run completed successfully

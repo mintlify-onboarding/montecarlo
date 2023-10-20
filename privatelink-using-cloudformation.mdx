@@ -1,0 +1,82 @@
+---
+title: "PrivateLink using CloudFormation"
+description: "Alpha / early access"
+---
+
+For AWS resources (e.g. Redshift, Tableau on EC2, etc.) that are not publicly available and you would like to privately connect with a Data Collector, as if they were in the same VPC, you can leverage an endpoint service powered by [AWS PrivateLink](https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html). 
+
+This can be done via CloudFormation to automate the process and help manage resources as code and unlike [VPC peering](/docs/peering-templates) does not allow a free flow of traffic between VPCs. 
+
+In order to create and leverage an endpoint service, follow these steps - 
+
+1. Create a Service Provider CloudFormation stack
+2. Create an Endpoint Consumer CloudFormation stack
+
+> 👍
+> 
+> Check the region of your resource!
+> 
+> Endpoint services are only available within an AWS region. If your Data Collector is not deployed in the same region as Your Resource you can either (re)deploy the Data Collector, create an additional Data Collector in the matching region or peer.
+> 
+> If you have a region mismatch please let your Monte Carlo representative know or reach out to Support at [\[email protected\]](/cdn-cgi/l/email-protection#f5868085859a8781b5989a9b8190969487999a91948194db969a98), and we'd be happy to work with you to get you up and running!
+
+### Create a Service Provider CloudFormation stack
+
+1. Download and review the CloudFormation template.  
+[https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/enablement/v0/service\_provider.yaml](https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/enablement/v0/service%5Fprovider.yaml)
+2. Deploy the stack in the same AWS account and region as Your Resource. Fill in the parameters from the Data Collector and Your Resource.
+
+![1986](/images/ed89911-Screen_Shot_2022-09-26_at_3.10.24_PM.png "Screen Shot 2022-09-26 at 3.10.24 PM.png")
+
+Parameters Wizard
+
+> 📘
+> 
+> If you are a SaaS customer (i.e are not hosting the data collector) you can find the AWS account ID for where the collector is hosted [here](https://getmontecarlo.com/settings/integrations/collectors) in the stack ARN.
+> 
+> E.g. If your stack ARN is `arn:aws:cloudformation:us-east-1:0987654321:stack/example` the account ID would be `0987654321`.
+
+1. Retrieve the `ServiceEndpointName` from the stack outputs. This will be used in the next step.
+
+### Create an Endpoint Consumer CloudFormation stack
+
+> 👍
+> 
+> If you are a SaaS customer (i.e are not hosting the data collector) Monte Carlo will need to perform this step. Please let your representative know or reach out to support at [\[email protected\]](/cdn-cgi/l/email-protection#9cefe9ececf3eee8dcf1f3f2e8f9fffdeef0f3f8fde8fdb2fff3f1) with the `ServiceEndpointName` from above.
+
+1. Download and review the CloudFormation template.  
+[https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/enablement/v0/endpoint\_consumer.yaml](https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/enablement/v0/endpoint%5Fconsumer.yaml)
+2. Deploy the stack in the same AWS account and region as the Data Collector. Fill in the parameters from the Data Collector and Your Resource. If the availability zone is not supported please see troubleshooting docs [here](/docs/what-if-my-vpc-endpoint-service-does-not-support-the-availability-zone-of-the-data-collector).
+
+![1992](/images/b5ff910-Screen_Shot_2022-09-26_at_2.33.17_PM.png "Screen Shot 2022-09-26 at 2.33.17 PM.png")
+
+Parameters Wizard
+
+1. Retrieve the `ServiceEndpointDNS ` from the stack outputs. This will be used in onboarding.  
+Note that the Endpoint DNS name will be prefixed with the hosted zone ID. Please only pass the DNS name when adding a connection. For instance, if the output is `Z1HUB23UULQXV:vpce-01abc23456de78f9g-12abccd3.ec2.us-east-1.vpce.amazonaws.com` you can disregard `Z1HUB23UULQXV:`.
+
+### FAQs
+
+**Why does the "Service Provider" stack create a Network Load Balancer (NLB)?**  
+The NLB acts as the service front end for the VPC endpoint service, which is then granted to specific AWS principals. See details [here](https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-share-your-services.html).
+
+**Can we use a managed VPC endpoint instead?**  
+Absolutely! If you are using **Redshift** with RA3 nodes and cluster relocation enabled (or can enable) you can leverage a Redshift-managed VPC endpoint instead of creating an endpoint service. See details [here](https://docs.aws.amazon.com/redshift/latest/mgmt/managing-cluster-cross-vpc.html).
+
+**Does this work with Snowflake?**
+
+No. Please see Snowflake's [docs](https://docs.snowflake.com/en/user-guide/admin-security-privatelink) for setting up PrivateLink (AWS only).
+
+**How do we find the private IP of my Network Load Balancer (NLB) for further restricting the CIDR Range?**  
+Run the [describe-network-interfaces](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/describe-network-interfaces.html) command. For instance -
+
+`aws ec2 describe-network-interfaces --filters Name=description,Values="ELB <NLB-NAME-AND-ID>" --query 'NetworkInterfaces[*].PrivateIpAddresses[*].PrivateIpAddress'
+`
+
+The load balancer name and ID can be found in the the stack outputs as `ServiceLbName`.
+
+**How to handle an "VPC endpoint service does not support the availability zone (AZ) of the subnet" error?**  
+See troubleshooting docs [here](/docs/what-if-my-vpc-endpoint-service-does-not-support-the-availability-zone-of-the-data-collector).
+
+**How do we debug any connectivity issues with my endpoint service?**  
+[This](/docs/aws-networking-troubleshoot-guide-2#troubleshooting-network-issues) guide might help debug reachability. Reviewing the load balancer health check is also a good starting point.

@@ -1,0 +1,86 @@
+---
+title: "Jira"
+---
+
+Sometimes, an Incident detected by Monte Carlo may take weeks to fix, or requires work from someone outside the data team. Converting Incidents like these into issues in Jira makes it easy to track work over weeks or months, and mobilize resources from teams not in Monte Carlo. 
+
+This integration allows Monte Carlo users to easily convert an Incident into an Issue in Jira, or link an existing Issue. Multiple Jira Issues may be linked or created from a single Incident in Monte Carlo. Status updates from those Jira issues can also be synced back to the corresponding Incident in Monte Carlo.
+
+### Setup
+
+Currently, only Jira Cloud is supported. To set up this integration, an Account Owner must go to [Settings > Integrations](https://getmontecarlo.com/settings/integrations). In the Notifications and Collaboration section, click **Create** and select Jira. You will need:
+
+* **Server URL**: expressed as `https://{{companyname}}.atlassian.net/`
+* **User name**: expressed as a user email address
+* **API Token**: see [this link](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) to see how to obtain a Jira API token
+* **Display name**: this gives a superficial name to the integration within Settings, e.g. “Jira production”
+![](/images/7a6d3d6-image.png) 
+
+The Jira API token will inherit the same permissions as the user who generated it. The permissions needed for this integration to function are minimal, as Monte Carlo only needs to:
+
+* List projects
+* List issue types for a given project
+* Create Issue Project Permission
+
+To do that, the following permissions are sufficient:
+
+* Browse Projects
+* Create Issue Project Permission
+
+> 📘
+> 
+> **Note**: Monte Carlo will only have access to the projects and issue types that the user who generated the API Token has access to.
+
+### Syncing Status from Jira Issues back to Monte Carlo Incidents
+
+Syncing the status of Jira issues back to Monte Carlo Incidents is optional and requires additional configuration.
+
+**First**, map your Jira statuses to Monte Carlo statuses:
+
+* Within the integration create/edit page, toggle **Sync Jira issue status to incidents** to `on`
+* Since statuses in Jira are highly customizable, the user is asked to manually type the specific Jira statuses that should update the Incident status in Monte Carlo.
+* The status will sync when the status is updated in Jira. A status update from within Monte Carlo does not have any impact on the status of a Jira issue.
+* **Note**: if an Incident has multiple Jira issues associated with it, then Status syncing is disabled for that incident. This is to avoid conflicting status updates.
+
+![An example where the user has mapped 'Completed' and 'In progress' in Jira to 'Fixed' and 'Investigating' in Monte Carlo](/images/1a922dd-image.png)
+
+An example where 'Completed' and 'In progress' in Jira is mapped to 'Fixed' and 'Investigating' in Monte Carlo
+
+**Second**, you must configure a webhook to send Jira issue updates back to Monte Carlo:
+
+* When you first save your Jira integration after toggling **Sync Jira issue status to incidents**, you will get a webhook URL. You will also be able to see this URL if you go back to edit the Jira integration.
+* Configure a webhook to send Jira issue updates to this URL, following these [Jira docs on configuring webhooks](https://developer.atlassian.com/server/jira/platform/webhooks/)
+* When enabling the webhook, select the event `Issue: updated` to trigger the webhook to be sent.
+* Expect latency of 30-60 seconds between Jira and Monte Carlo.
+
+![After you click 'Create', you will be given a Webhook URL to sync status updates from Jira back to Monte Carlo](/images/5a8a8a1-image__60_.png)
+
+After you click 'Create', you will be given a Webhook URL to sync status updates from Jira back to Monte Carlo
+
+### Experience
+
+After the integration is set up, a user can click a button from Incident IQ that lets them create a new Jira issue or link an existing one.
+
+![1597](/images/ffe8b5b-Pasted_Image_3_21_23__5_36_PM.png "Pasted_Image_3_21_23__5_36_PM.png")
+
+The button to create or link a Jira Issue.
+
+Once clicked, a slide-out opens. If creating a new Jira issue, the user can input the Project, Issue Type, Summary, and Description. Summary and Description are pre-populated with some information about the Incident and a URL to link back to the Incident in Monte Carlo.
+
+Click Create, and the user is given a confirmation that an Issue has been created, along with a 1-click link to view the Issue in Jira. This process can be repeated to link multiple Jira issues to the Incident.
+
+![1290](/images/263a605-Pasted_Image_3_21_23__5_39_PM.png "Pasted_Image_3_21_23__5_39_PM.png")
+
+Users can easily pass information about the Incident into the Jira Issue.
+
+Once a Jira issue is created or linked to an Incident, it is visible from within Incident IQ and from the Incident Feed. There is also a filter on the Incident Feed to only see Incidents with a Jira Issue.
+
+![1-click link to the Jira issue is available from Incident IQ, along with details of the current owner and status](/images/b08f5bc-image.png)
+
+1-click link to the Jira issue is available from Incident IQ, along with details of the current owner and status
+
+Once a Jira issue is created or linked to an Incident, any Slack notifications from that Incident are updated to show that the link was made.
+
+![Once a Jira issue is created from an Incident, any Slack notifications from that Incident are updated to show an Issue was created.](/images/2abd243-small-Pasted_Image_4_25_23__8_53_AM_2.png)
+
+Notification in Slack showing that a Jira Issue was created for this Incident

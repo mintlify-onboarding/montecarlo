@@ -1,0 +1,152 @@
+---
+title: "Webhooks"
+description: "Integrate Monte Carlo with a Webhook"
+---
+
+This guide explains how to receive webhook notifications from Monte Carlo. When you receive webhooks, a signature will optionally be added so you can verify the authenticity of the calls you receive. 
+
+### Setting up webhook notifications
+
+To receive notifications from Monte Carlo via webhooks, please visit the [notification settings page](https://getmontecarlo.com/settings/notifications/settings) and follow the wizard. 
+
+When setting up webhooks, you can optionally specify a secret that will allow you to authenticate incoming calls on your webhook endpoint. Using Python 3.6, you may generate a secret like so:
+
+Python
+
+`import secrets
+secrets.token_urlsafe(42)
+`
+
+### Receiving and verifying a webhook
+
+Webhooks will be sent as a POST request of type _application/json_ to the endpoint you specify during setup. 
+
+If you provide a secret during setup, Monte Carlo uses it to generate a hash signature (HMAC SHA-512) for every call it makes to your endpoint. The signature will be sent along in the _x-mcd-signature_ header.
+
+Using AWS Lambda (with an API Gateway), you may process and verify a message like so:
+
+Python
+
+`"""
+Example MCD Webhook Signature Verification
+"""
+
+import hashlib
+import hmac
+import json
+import urllib.parse
+from typing import Dict
+
+SHARED_SIGNING_SECRET = b'<SECRET>'  # This should be an environment variable
+
+def lambda_handler(event: Dict, context: Dict) -> Dict:
+    mcd_signature = event['headers'].get('x-mcd-signature')
+    body = json.loads(event['body'])
+
+    if verify_signature(mcd_signature=mcd_signature, body=body):
+        print('Success!')
+        # business logic
+        return {'statusCode': 200}
+    return {'statusCode': 403}
+
+def verify_signature(mcd_signature: str, body: Dict) -> bool:
+    body_as_byes = urllib.parse.urlencode(body).encode('utf8')
+    computed_signature = hmac.new(SHARED_SIGNING_SECRET, body_as_byes, hashlib.sha512).hexdigest()
+    return hmac.compare_digest(computed_signature, mcd_signature)
+`
+
+> 🚧
+> 
+> SHARED\_SIGNING\_SECRET should not be embedded in your code
+> 
+> We recommend reading it from an environment variable.
+
+### Payload
+
+**Example 1: Rule breach** 
+
+JSON
+
+`{
+    "account": {
+        "id": "9a59c6f1-203a-4c72-8cd7-132db7f21b92"
+    },
+    "action": "incident",
+    "payload": {
+        "event_list": [
+            {
+                "data": {
+                    "hits": [
+                        {
+                            "field": null,
+                            "measurement_timestamp": "Jan 15, 06:10PM",
+                            "timestamp": "",
+                            "value": "50.0",
+                            "value_rounded": "50"
+                        }
+                    ],
+                    "metric_display_name": "custom_metric_1234",
+                    "rule_comparisons": [
+                        {
+                            "metric": "custom_metric_1234",
+                            "operator": ">",
+                            "threshold": "49.0"
+                        }
+                    ]
+                },
+                "rule": {
+                    "comparisons": [
+                        {
+                            "field": null,
+                            "full_table_id": null,
+                            "metric": "custom_metric_1234",
+                            "operator": "GT",
+                            "threshold": 49.0,
+                            "warehouse_uuid": "custom_metric_1234"
+                        }
+                    ],
+                    "creator_id": null,
+                    "description": "test rule",
+                    "execution_time": null,
+                    "prev_execution_time": null,
+                    "rule_type": "custom_sql",
+                    "start_time": null,
+                    "timezone": null,
+                    "uuid": "0c8e06aa-a44b-4f2d-8a37-5ed3f394431d"
+                },
+                "table_name": null
+            }
+        ],
+        "group_id": null,
+        "incident_id": "f83867b6-8f25-428b-807c-08518f63384c",
+        "url": "https://getmontecarlo.com/incidents/f83867b6-8f25-428b-807c-08518f63384c"
+    },
+    "type": "open_custom_rule_anomaly_incident",
+    "version": "v0.1"
+}
+`
+
+**Example 2: Volume anomaly** 
+
+JSON
+
+`{
+    "account": {
+        "id": "9a59c6f1-203a-4c72-8cd7-132db7f21b92"
+    },
+    "action": "incident",
+    "payload": {
+        "event_list": [
+            {
+                "event_details": "Has 42 rows vs. 101 expected",
+                "table_name": "artemis"
+            }
+        ],
+        "group_id": "zeus:ares",
+        "incident_id": "f83867b6-8f25-428b-807c-08518f63384c",
+        "url": "https://getmontecarlo.com/incidents/f83867b6-8f25-428b-807c-08518f63384c"
+    },
+    "type": "open_anomaly_incident",
+    "version": "v0.1"
+}
+`

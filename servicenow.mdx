@@ -1,0 +1,44 @@
+---
+title: "ServiceNow"
+---
+
+ServiceNow can be used as a point of triage for newly detected data issues. ServiceNow provides rich reporting and workflow capabilities to ensure nothing falls through the cracks and that all issues are addressed in a timely manner. The integration between Monte Carlo and ServiceNow is effective at sending newly identified Monte Carlo Incidents to become ServiceNow Incidents in close to real time.
+
+### Integration Setup
+
+Only the cloud version of ServiceNow is supported. To set up this integration, an Account Owner must go to [Settings > Integrations](https://getmontecarlo.com/settings/integrations). In the Notifications and Collaboration section, click **Create** and select ServiceNow. You will need:
+
+* **Instance name**: this is the `yourcompany` piece of as [https://yourcompany.service-now.com](https://yourcompany.service-now.com)
+* **User ID**: user name to log in to ServiceNow. Incidents in ServiceNow will be created using this user.
+* **Password**: password for that User ID. Here is [how to set a password in ServiceNow](https://docs.servicenow.com/en-US/bundle/vancouver-platform-security/page/integrate/authentication/task/reset-your-password.html)
+* **Display name**: this gives a superficial name to the integration within Settings, e.g. “ServiceNow production”
+
+You can integrate multiple ServiceNow environments if desired. When configuring Incidents to be sent to ServiceNow in Notification Settings, you will indicate which ServiceNow environment it should be sent to.
+
+### Notifications Setup
+
+Once setup is complete, ServiceNow is available as a recipient in Notification Settings. When Monte Carlo sends a notification to ServiceNow, it will create a ServiceNow Incident.
+
+![An example of a ServiceNow Incident created by Monte Carlo](/images/f024054-Pasted_Image_10_9_23__10_29_AM-2.png)
+
+An example of a ServiceNow Incident created by Monte Carlo
+
+When configuring notifications to be sent to ServiceNow, you have the ability to configure default values for any fields that are required to create a ServiceNow Incident. If you do not provide default values for all of your required fields, then a ServiceNow Incident will not be successfully created.
+
+When configuring default values for any required fields, format them as:
+
+* **Field names**: lower case with spaces as underscores. Example: input `Service offering` as `service_offering`
+* **Field values**: for dropdowns, input an exact match to the desired value. However, if the desired value is a reference to another table, you may need to include a reference id, like `8fa3bbe947713110cf43ad8b136d4316`
+
+You can click 'Test Notification' to send a sample payload to ServiceNow. If the test is successful, it will create an example ServiceNow incident. If it fails, the test will return an error describing which required fields need to be populated or which field values were not accepted. Note: if you've provided default values for any _non-required_ fields, the test may still be successful even if values for the _non-required_ fields are rejected.
+
+![Click the `+` button to add a default value for a required field](/images/9a2f89d-image.png)
+
+Click the `+` button to add a default value for a required field
+
+### Experience
+
+New features coming soon:
+
+* When an Incident from Monte Carlo is sent to ServiceNow, a link to the ServiceNow Incident will show on IncidentIQ and the Incident Feed.
+* In addition, you can filter on the Incident Feed just for Incidents with an associated ServiceNow Incident.

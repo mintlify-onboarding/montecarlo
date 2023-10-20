@@ -1,0 +1,122 @@
+---
+title: "Github"
+description: "Integrate Monte Carlo with your Github to gain visibility into code impact on your data"
+---
+
+## Overview
+
+The Github integration allows customers to
+
+1. **Reduce time to resolution** by easily checking potentially relevant pull requests in the context of an incident via the Incident IQ page and on top of incident charts.
+![](/images/bf9934d-Github_in_Incident_IQ.png) ![](/images/b627642-Screenshot_2023-07-26_at_6.59.29_PM.png) 
+1. **\[new!\]** **Prevent data issues** by seeing an impact report with the potentially impacted tables/reports for a pull request via a message from MC-Github bot (requires dbt integration)
+![](/images/235b28d-Impact_Analysis_in_PR.png) 
+1. Get context on tables via reviewing recent pull request history on the asset page both in list view and as visual overlay on volume charts (requires dbt integration)
+![](/images/7de92dd-Github_in_Assets.png) ![](/images/7268fe2-Screenshot_2023-07-26_at_7.03.30_PM.png) 
+
+## Leverage dbt Integrations
+
+While not mandatory, having dbt integration set up properly alongside the Github integration is highly recommended. It provides valuable information for mapping between source code, models and the actual tables. Without it, users can still leverage the Github integration to investigate code change impact on incidents, although associating PRs to tables will not be automatic and there will not be PRs mapped to the catalog/asset page for a table.
+
+[Follow docs here](/docs/dbt-integration) to set up your dbt integration.
+
+#### For customers with MC - dbt cloud integration
+
+With data collector v14050, the setup should be automatic and you can follow the Github Integration Setup steps below to enable.
+
+For earlier versions, the remote location of dbt projects needs to be configured manually (see "dbt core" below).
+
+#### For customers with MC - dbt core integration
+
+For dbt-core integrations, the remote location of each dbt project needs to be provided. You can do this by going to the Integrations settings page once you have completed the Github Integration setup below. Under Notifications and Collaboration, the GitHub integration row will show an alert requiring more Github information. Click into the editing drawer via the alert or pen icon to input the remote URL missing. 
+
+![](/images/81b0586-Screenshot_2023-06-20_at_4.15.57_PM.png)
+
+Alternatively, the remote location of each dbt project can be configured using GraphQL API:
+
+GraphQL
+
+`mutation updateDbtProjectInfo($uuid: UUID!, $remoteUrl: String, $subdirectory: String) {
+    updateDbtProjectInfo(uuid: $uuid, remoteUrl: $remoteUrl, subdirectory: $subdirectory) {
+        project {
+            uuid
+        }
+    }
+}
+`
+
+Parameters:
+
+`uuid` \- dbt project UUID
+
+`remoteUrl` \- e.g. [\[email protected\]](/cdn-cgi/l/email-protection#e4838d90a4838d908c9186ca878b89):monte-carlo-data/dbt.git
+
+`subdirectory` \- root directory of the dbt project within the repo (e.g. `analytics`). This field is needed if the dbt project is further down under dbt subdirectories, i.e. in `models`, `macros`. For projects located directly in the repo on the highest level, this field should be left empty.
+
+## Github Integration Setup
+
+You can set up the integration by installing an instance of the official MC Github App for your organization.
+
+If you manage multiple Github organizations which all have code relevant to data collected by MC, you need to install the app for each organization.
+
+> 📘
+> 
+> Permissions
+> 
+> The application requires following permissions:
+> 
+> * Read access to administration and metadata
+> * Read and write access to issues and pull requests
+> 
+> Note that the write access is **limited only to pull request comments**. It is needed by the "Downstream Impact" feature.
+
+1. In Monte Carlo, go to Settings -> Integrations
+2. In “Notifications and Collaborations” section, click on “Create” and then select “GitHub”:
+
+![](/images/7042acc-small-github_app.png)
+
+1. The page will navigate to the Github UI. Select:  
+   * the organization  
+   * (optionally) the repositories that will be accessible to MC
+2. Click on “Install and Authorize”
+3. The page will navigate back to Monte Carlo
+
+If you have the “owner” role for Github account, the integration will now appear in the Settings -> Integrations -> Notifications and Collaborations list.
+
+If you are not the “owner”, request will be sent to the Github account owner for approval. Once the owner approves, the integration will appear in the Settings -> Integrations -> Notifications and Collaborations list.
+
+Once set up, the app will start collecting pull requests that merged _after_ the integration setup time. For customers that do not have dbt integration, you will start seeing pull requests show up in incidents only if the PRs merged after integration set up _AND_ the incidents started after the PR merged. 
+
+> 🚧
+> 
+> Warnings for non Github "owner" requested setup workflow
+> 
+> If the installation request has been sent for approval to the Github account owner, the setup will be successful only if the owner is a Monte Carlo user and is signed-in to Monte Carlo at the time of approval (or performed sign-in as part of the approval flow). 
+> 
+> It could be simpler to have the Github account owner perform all the installation steps instead of going through the “installation request” flow.
+> 
+> Alternatively, once you have installed the app in your organization, you can also reach out to MC support to finalize the setup.
+
+## FAQ
+
+**Q**: I have MC-dbt core integration and I'm not sure that I filled out the remote url and subdirectory correctly in the settings page?
+
+**A**: Remote URL should be in the format of either of the following
+
+* `https://github.com/<org>/<repo> `
+* `git://github.com/<org>/<repo>.git`
+
+Subdirectory should be the root directory of the dbt models within the repo. It is only needed if the dbt project is further down the directory. For example,  
+If a model path is `analytics/models/foo/bar.sql` then subdirectory would be `analytics.` 
+
+If a model path is `models/foo/bar.sql`, then subdirectory field should be left empty.
+
+**Q**: For certain impact report in Github PR, why don't I see expected impacted models?
+
+**A**: Note that impact report is only available if i) a MC-dbt integration is setup, and ii) remote URLs and subdirectories are correctly provided for customers with MC-dbt core integration, and iii) the PR is modifying models in dbt repos included in the GitHub integration. 
+
+If the above conditions are met, it could be because the PR is creating a new model, in which case there would be no impacted assets available yet since until the model is run no query logs are available to generate lineage in MC. It could also be that the impacted model is ephemeral, which MC does not surface as impacted assets yet (but will be added soon).
+
+**Q**: I just set up the integration, why don't I see pull requests showing up yet? 
+
+**A**: after the integration is set up, MC will start collect the PRs that merged _after_ the integration setup time. MC does not have access to the historical PRs, so it might take a few hours or days for PRs to start showing up depending on how frequently your organization merge PRs. For customers without a dbt integration, since the PRs will only show up in the context of an incident, only PRs merged before the incident start time will be included in each incident (to limit the list of PRs to only ones that could have potentially led to the incident).

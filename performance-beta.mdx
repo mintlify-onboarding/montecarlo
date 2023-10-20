@@ -1,0 +1,60 @@
+---
+title: "Performance (Beta)"
+description: "Surface and troubleshoot slow performance of queries."
+---
+
+A beta version of the performance dashboard is currently available for most Snowflake, Bigquery, Redshift customers. 
+
+#### How to use the dashboard to solve performance issues
+
+The dashboard can help users proactively identify performance issues, or investigate a known performance issue. It aims to help answer questions such as 
+
+* "One of my Snowflake warehouses' cost increased this past week, I want to know what caused it."
+* "I want to identify any slow dbt models and optimize the ones that are bottlenecking my dbt job."
+* "I want to understand the experience of data product consumers and identify if any dashboard queries need to be optimized to improve the end consumers' experience."
+
+##### Example 1: Investigate high-cost queries
+
+To illustrate how to leverage the dashboard to answer some of these questions, let's take an example, "_I noticed higher costs for my Snowflake warehouse TRANSFORMING\_2 in mid-June and I wonder what caused it_". 
+
+First, I would select the one-week time period covering the cost increase, filter for queries in that warehouse TRANSFORMING\_2, set the metrics toggle on "total" (as hourly aggregation metric), and then look for the slowest queries. I noticed the runtime spikes across numerous queries on 6/15.
+
+![](/images/8faf3f4-Screenshot_2023-06-28_at_11.51.13_AM.png)
+
+In order to understand why that happened, I can click into the slowest query to see its details. In the Details view I can see via the synced volume chart that no obvious volume increase happened around that date and the table volume trend looks relatively smooth, so it's likely not caused by rows added to the table. 
+
+However, I do notice from the runtime chart breakdown that the query queue time took up most of the total runtime on that day, so the slowness is coming from queries on that warehouse being queued up. 
+
+![](/images/5db3cfb-Screenshot_2023-06-28_at_11.58.14_AM.png)
+
+I can also find the peak run of the query and dive into the metadata details for it, to check for detailed queue time info, cache scanned, partitions info etc for other insights.
+
+![](/images/99916fa-Screenshot_2023-06-28_at_12.05.42_PM.png)
+
+I might also drill into a few other slowest queries in this warehouse to see if they are all caused by queue time, then figure out if it might require upsizing the cluster or moving some of the queries to other clusters. This process helps drill into the details of a performance issue to find causes and then optimize. 
+
+##### Example 2: Investigate query performance in context of dbt job
+
+You might have noticed a query for a dbt model has slowed down recently, and you want to know if it's bottlenecking the dbt job that the model is part of. You can click into the query details drawer to identify the dbt job and the dbt job run a query is part of, and click into the dbt run to investigate. 
+
+![](/images/80bb4d2-Screenshot_2023-08-29_at_9.41.32_PM.png) 
+
+That will take you to a gantt view for the dbt job run, where you can easily see what are the upstream and downstream dependencies for the slow model. Then you can determine if any models upstream are blocking the model of interest, or if any downstream models are bottlenecked by it, so that you can decide whether you need to optimize the runtime of the model. 
+
+![](/images/179c264-Screenshot_2023-08-30_at_5.09.42_PM.png) 
+
+The gantt chart on asset page is available as long as you have dbt integration set up. The ability to link queries to dbt job runs requires query tagging per instructions [here for dbt core](/docs/dbt-core#query-tagging-to-get-performance-features), and [here for dbt cloud](/docs/dbt-cloud#query-tagging-to-get-performance-features). 
+
+##### Example 3: Understand end consumer experience
+
+If I want to know if my Looker users are experiencing long wait time when they refresh dashboards, I can leverage the Read Queries (SELECT queries) tab to identify slow queries under the "Looker" User filter. In the example below, I see a spike on Sept 13th where the 99th percentile query ran for over 500 seconds and 95th percentile ran over 300 seconds, which means users were waiting for 5min+ for the looker dashboard to refresh. The table below lists those slowest queries and I can expand each row to investigate and optimize as needed. 
+
+![](/images/4032482-Screenshot_2023-09-13_at_2.29.04_PM.png) 
+
+#### Current Limitations
+
+Given the product is in beta, there are a number of limitations that will be addressed going forward:
+
+* The queries are not filtered by domains yet
+* Only the most recent 4 weeks of queries are available currently
+* The product is currently not available for Databricks and data lakes accounts

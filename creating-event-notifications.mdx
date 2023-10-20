@@ -1,0 +1,115 @@
+---
+title: "Creating event notifications"
+---
+
+> 🚧
+> 
+> MC Hosted Collector?
+> 
+> If Monte Carlo hosts your collector, unfortunately this guide cannot be used. You must use the process outlined in [S3 Events - Query Logs](/docs/s3-events-query-logs).
+
+For resources that require configuring S3 events, the CLI can be used to automate the process.
+
+To configure events using the CLI, follow these steps -
+
+1. Follow [this guide](/docs/using-the-cli) to install and configure the CLI (requires >= `0.10.0`).
+2. Enable event collection ([airflow-logs](/docs/airflow-logs-from-s3#enable-airflow-logs-integration), [query-logs](/docs/s3-events-query-logs-1#enable-events)).
+3. [Add events](/docs/creating-event-notifications#adding-events) using `add-events` per bucket.
+
+If enabling events for `query-logs` permissions to the bucket are still required. 
+
+### Adding Events
+
+> ❗️
+> 
+> This command creates and/or updates resources in your AWS account. 
+> 
+> All such actions will echo details with the changes for your review and approval before executing.
+
+Please use the command `montecarlo integrations add-events` to configure event notifications for a bucket. 
+
+At a high level, this command does the following (i.e. automating [these](/docs/s3-events-query-logs#enable-events) steps):
+
+1. Creates an SNS topic if one does does not already exist in the account / region for Monte Carlo.
+2. Updates the policy from the topic in step 1 to allow the desired bucket to publish events.
+3. Creates or updates the SQS policy for the desired Monte Carlo event queue to allow sending message from the topic from step 1.
+4. Subscribes the desired Monte Carlo event queue to the topic from step 1.
+5. Updates or creates notification for the bucket with the topic from step 1 as the destination.
+
+All these steps are idempotent, so if a permission or resource already exists it will not be duplicated.
+
+This procedure is known as S3 SNS Fanout (`S3 -> SNS -> SQS`) and will allow you to reuse the topic.
+
+For reference, see help for this command below:
+
+HelpExamples
+
+`$ montecarlo integrations add-events --help
+Usage: montecarlo integrations add-events [OPTIONS]
+
+  Setup S3 event notifications for a lake.
+
+Options:
+  --bucket TEXT                   Name of bucket to enable events for.
+                                  [required]
+
+  --prefix TEXT                   Limit the notifications to objects starting
+                                  with a prefix (e.g. 'data/').
+
+  --suffix TEXT                   Limit notifications to objects ending with a
+                                  suffix (e.g. '.csv').
+
+  --topic-arn TEXT                Use an existing SNS topic (same region as
+                                  the bucket). Creates a topic if one is not
+                                  specified or if an MCD topic does not already
+                                  exist in the region.
+
+  --collector-aws-profile TEXT    Override the AWS profile use by the CLI for
+                                  operations on SQS/Collector. This can be
+                                  helpful if the resources are in different
+                                  accounts.
+
+  --resource-aws-profile TEXT     Override the AWS profile use by the CLI for
+                                  operations on S3/SNS. This can be helpful if
+                                  the resources are in different accounts.
+
+  --event-type [airflow-logs|metadata|query-logs]
+                                  Type of event to setup.  [default: metadata;
+                                  required]
+
+  --auto-yes                      Skip any interactive approval.  [default:
+                                  False]
+
+  --collector-id UUID             ID for the data collector. To disambiguate
+                                  accounts with multiple collectors.
+
+  --option-file FILE              Read configuration from FILE.
+  --help                          Show this message and exit.
+`
+
+`# Configure event notficiations for the entire bucket
+$ montecarlo integrations add-events --bucket sample-bucket1
+
+# Configure event notfications for s3://sample-bucket2/lake with a csv extension
+$ montecarlo integrations add-events --bucket sample-bucket2 --prefix lake --suffix .csv
+
+# Configure events for a bucket in a different account than the collector and skip any prompts
+$ montecarlo integrations add-events --bucket sample-bucket3 --collector-aws-profile vendor --resource-aws-profile ds --auto-yes
+`
+
+### FAQs
+
+**Does the bucket have to be in the same account / region as the data collector?**  
+It does not. You can specify multiple AWS accounts using the two profile flags. The region is derived.
+
+**How do I limit scope, filter, or have multiple notifications configured for a bucket?**  
+Use the `prefix` and `suffix` flags.
+
+**Can I use an existing SNS topic?**  
+Yes! Specify the ARN using the `topic-arn` flag. This topic must be in the same region as the desired S3 bucket.
+
+**Why does my subscription say "Pending confirmation"?**  
+Subscriptions across accounts may not necessarily confirm right away. Please check back in 24 hours.
+
+**How do I handle a "Configuration is ambiguously defined" error?**  
+This occurs due to an AWS limitation where multiple overlapping prefixes/suffixes are not supported. In this case, you can configure an event notification to trigger a routing Lambda that forwards the event or an SNS topic that multiple endpoints can subscribe to (fanout).

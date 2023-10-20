@@ -1,0 +1,80 @@
+---
+title: "Field Lineage"
+---
+
+### Overview
+
+The field lineage product (located in Catalog page under Fields section) aims to help users track field level dependencies among tables and reports. Monte Carlos displays 2 types of field relationships:
+
+1. **SELECT clause lineage**: field relationships defined by SQL clause `SELECT`; these are field-to-field relationships where a change in upstream field directly changes the downstream field.
+2. **Non SELECT lineage**: relationships defined by all other SQL clauses, i.e. `WHERE`; these are field-to-table relationships, where the downstream fields are often shaped by a filtering or ordering logic defined by upstream fields.  
+Please note that in the UI, for a chosen field, its upstream non-SELECT lineage fields are the filtering/ordering fields that result in the chosen field, where as its downstream non-SELECT lineage fields are the resulting fields from the filtering/ordering logic defined by the chosen field.
+
+[Here](https://www.loom.com/share/68e0b8a50d794fd7b7284b749e2709a1) is a video that explains the product.
+
+### Current Limitations
+
+Currently, there are a number of exceptions to what the field lineage tool covers. However, Monte Carlo is continuously adding coverage for these use cases and this list is shortening every week.
+
+* **Wildcard Tables:**  
+Field lineages with wildcard tables are not covered.
+* **`JOIN` \+ `USING` Clause Pair:**  
+If the fields defined following **`USING`** clause do not have prefix, those columns are not covered.
+* **BI Integrations:**  
+To enable Tableau field level lineage, please make sure your data-collector's version is equals to or above **v2530**. If Monte Carlo hosts your data collector, please reach out to your Monte Carlo representative for help.
+* **Nested Fields:**  
+Currently, nested fields are not supported in field lineage.
+
+_Field lineage with other BI tools are currently being developed and will be available soon._ 
+
+### Tips to Optimize Queries for Field Lineage
+
+Monte Carlo will be able to parse majority of your query cases. Nevertheless, following the suggestions below will help Monte Carlo most accurately capture your field lineages even in the edge cases.
+
+1. Add table prefixes when `SELECT`ing columns.  
+In complex queries with subqueries, adding prefixes to indicate table sources will help strengthen field lineage coverage by Monte Carlo.  
+Preferred:  
+SQL  
+`select a.col1 as col1,  
+		b.col2 as col2  
+from table1 as a  
+    inner join table2 as b on a.id = b.id  
+`  
+Try to avoid:  
+SQL  
+`select col1 as col1,  
+		col2 as col2  
+from table1 as a  
+    inner join table2 as b on a.id = b.id  
+`
+2. Use alias in `SELECT`ed columns.  
+Use `as` to define column names as much as possible, especially for columns that contain complex functions/expressions. This will increase accuracy of the field lineage coverage.  
+Preferred:  
+SQL  
+`select concat(a.name, b.email) as personal_info  
+from table1 as a  
+    inner join table2 as b on a.id = b.id  
+`  
+Try to avoid:  
+SQL  
+`select concat(a.name, b.email)  
+from table1 as a  
+    inner join table2 as b on a.id = b.id  
+`
+3. Specify column names when possible, instead of `SELECT *`.  
+Monte Carlo SQL parser could understand most of the complex nested `SELECT *` situations. Whenever possible, name columns instead of using `*` . Fields can be especially easily mismatched when multiple `SELECT *` exist in a query and columns from different tables have the same names.  
+Preferred:  
+SQL  
+`select a.id as a_id,  
+	b.id as b_id,  
+	a.name as a_name,  
+	b.name as b_name  
+from table1  
+`  
+Try to avoid:  
+SQL  
+`select *  
+from table1 as a  
+    inner join table2 as b on a.id = b.id  
+`  
+Note for `*` used in functions, i.e. `create or replace table final_count as select count(*) as total_count from table1` , Monte Carlo would consider every column in table1 as a source to `total_count` column in `final_count` table.

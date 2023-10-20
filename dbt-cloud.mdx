@@ -1,0 +1,157 @@
+---
+title: "dbt Cloud"
+---
+
+> 📘
+> 
+> Prerequisites
+> 
+> * requires admin privileges for the dbt Cloud account that hosts and runs your production dbt models
+> * requires Data Collector **v5169+**
+
+### Obtain a dbt Cloud API token and account ID
+
+Please follow the instructions in [dbt Cloud's API documentation](https://docs.getdbt.com/docs/dbt-cloud-apis/service-tokens) to create a dbt Cloud API token. This token will be needed when creating the integration with the Monte Carlo CLI. The token should have _read-only_ access.
+
+To obtain your dbt Cloud account ID, sign into dbt Cloud in your browser. Take note of the number directly following the `accounts` path component of the URL -- this is your account ID. For example, if the URL is `https://cloud.getdbt.com/#/accounts/1234/projects/6789/dashboard/`, the account ID is `1234`.
+
+### Create a dbt Cloud integration through the Monte Carlo UI
+
+Dbt Cloud can now be added directly through the Monte Carlo UI
+
+1. From the integration tab on the settings page scroll down to the ETL Tool Connection section and click the Create dropdown and select DBT
+
+![](/images/6439a7f-Screenshot_2023-10-03_at_1.24.43_PM.png)
+
+1. Fill out the necessary fields and any webhook information if you are using a webhook
+
+![](/images/7e3a23e-Screenshot_2023-10-03_at_1.24.55_PM.png)
+
+### Create a dbt Cloud integration with the Monte Carlo CLI
+
+1. Choose a warehouse to link with your dbt Cloud:  
+   * If you only have a single warehouse integrated with Monte Carlo, proceed to step two.  
+   * Otherwise, you will need to select a warehouse to link with the dbt Cloud integration. Use `montecarlo integrations list` to list out all available connections, and take note of the ID of the warehouse that is used as the target for your dbt Cloud production models.
+
+> 📘
+> 
+> EMEA and Single Tenant Setups
+> 
+> If you are using dbt cloud and have a single tenant setup or are based in EMEA, you will need to include `--dbt-cloud-base-url` in the command set to your base URL for the validation to work. Please refer to the [dbt documentation](https://docs.getdbt.com/dbt-cloud/api-v2#/) to obtain this. **Note**: Make sure to include the api and version in the URL you provide. For example, for the URL [https://cloud.getdbt.com](https://cloud.getdbt.com), you should provide [https://cloud.getdbt.com/api/v2](https://cloud.getdbt.com/api/v2).
+
+1. Run `montecarlo integrations add-dbt-cloud`:
+
+Shell
+
+`$ montecarlo integrations add-dbt-cloud --help
+Usage: montecarlo integrations add-dbt-cloud [OPTIONS]
+
+  Setup a dbt Cloud integration.
+
+Options:
+  --dbt-cloud-api-token TEXT   dbt Cloud API token. If you prefer a prompt
+                               (with hidden input) enter -1.  [required]
+  --dbt-cloud-account-id TEXT  dbt Cloud Account ID.  [required]
+  --dbt-cloud-base-url TEXT    dbt Cloud Base URL.
+  --webhook-hmac-secret        HMAC secret of the dbt webhook obtained
+    													 after successfully creating the webhook in dbt.
+  --webhook-id                 ID of the webhook obtained after successfully 
+                               creating the webhook in dbt.
+  --name TEXT                  Friendly name of the warehouse which the
+                               connection will belong to.
+  --collector-id UUID          ID for the data collector. To disambiguate
+                               accounts with multiple collectors.
+  --skip-validation            Skip all connection tests. This option cannot
+                               be used with 'validate-only'.
+  --validate-only              Run connection tests without adding. This
+                               option cannot be used with 'skip-validation'.
+  --auto-yes                   Skip any interactive approval.
+  --help                       Show this message and exit.
+`
+
+> 📘
+> 
+> dbt Cloud Webhooks (recommended)
+> 
+> We recommend using the webhook-based dbt cloud to Monte Carlo integration using the `--webhook-hmac-secret` and `--webhook-id` options to provide real time notifications that dbt Cloud jobs have completed and run results are available for collection by Monte Carlo. 
+> 
+> **Setup notes:**
+> 
+> 1. Upgrade Data Collector to **v14099+**
+> 2. Upgrade Monte Carlo CLI to **v0.54.2+**
+> 3. Create an outbound webhook in the Account Settings view in dbt:  
+>   1. Endpoint URL: `https://integrations.getmontecarlo.com/webhooks/dbt-cloud`  
+>   2. Events: Only `job.run.completed` is supported by Monte Carlo.
+> 4. Create an inbound webhook in Monte Carlo using the Monte Carlo CLI  
+>   1. `montecarlo integrations add-dbt-cloud --dbt-cloud-api-token <dbt api token> --dbt-cloud-account-id <dbt account id> --webhook-hmac-secret <webhook hmac secret> --webhook-id <webhook id>`
+> 
+> **IMPORTANT!** Webhooks are not yet fully supported for single-tenant dbt Cloud accounts. If you have a single-tenant account, please reach out to dbt to understand the latest feature availability as well as limitation of webhook integration.
+
+* Monte Carlo will perform a validation step to ensure that the dbt Cloud account can be successfully accessed. If validation passes, you will be prompted to create the dbt Cloud integration. If validation fails, please double-check that you provided the correct API token and account ID.
+
+At this point, the integration has been created. By default, Monte Carlo will poll your dbt Cloud account hourly to import the latest manifests and run results, across all projects and jobs.
+
+### Query Tagging To Get Performance Features
+
+Setup in this section enables MC to link your queries to dbt objects to provide additional features from the integration:
+
+* you will be able to filter for dbt jobs and models in the performance dashboard to drill into performance issues for a dbt job or model of interest
+* you will be able to identify the dbt job run for each query run from the performance dashboard details drawer
+* you will be able to leverage a dbt job gantt view in assets page to identify problematic models and queries in a job, then leverage MC's query-level metadata to investigate what caused the performance problems
+
+See how you can use those features [here](/docs/performance-beta#example-2-investigate-query-performance-in-context-of-dbt-job)
+
+To achieve those, configure your dbt project with the following macro to add additional query comments.
+
+1. In your dbt project, create a new file `macros/query_comment.sql` with these contents:
+
+macros/query\_comment.sql
+
+`{% macro query_comment(node) %}
+    {%- set comment_dict = {} -%}
+    {%- do comment_dict.update(
+        app='dbt',
+        dbt_version=dbt_version,
+        profile_name=target.get('profile_name'),
+        target_name=target.get('target_name'),
+        invocation_id=invocation_id,
+        dbt_cloud_project_id=env_var('DBT_CLOUD_PROJECT_ID', ''),
+        dbt_cloud_job_id=env_var('DBT_CLOUD_JOB_ID', ''),
+        dbt_cloud_run_id=env_var('DBT_CLOUD_RUN_ID', ''),
+        dbt_cloud_pr_id=env_var('DBT_CLOUD_PR_ID', ''),
+        dbt_cloud_git_sha=env_var('DBT_CLOUD_GIT_SHA', '')
+    ) -%}
+    {%- if node is not none -%}
+      {%- do comment_dict.update(
+        file=node.original_file_path,
+        node_id=node.unique_id,
+        node_name=node.name,
+        resource_type=node.resource_type,
+        package_name=node.package_name,
+        relation={
+            "database": node.database,
+            "schema": node.schema,
+            "identifier": node.identifier
+        }
+      ) -%}
+    {% else %}
+      {%- do comment_dict.update(node_id='internal') -%}
+    {%- endif -%}
+    {% do return(tojson(comment_dict)) %}
+{% endmacro %}
+`
+
+1. Update `dbt_project.yml` to include a query-comment configuration that references the macro you just added in step (1):
+
+dbt\_project.yml
+
+`query-comment:
+	comment: "{{ query_comment(node) }}"
+	append: true # Required for Snowflake
+`
+
+> 📘
+> 
+> query-comment
+> 
+> The `append: true` property is **REQUIRED** for Snowflake, which removes leading SQL comments from queries.

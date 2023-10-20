@@ -1,0 +1,41 @@
+---
+title: "Freshness Detector"
+---
+
+Monte Carlo’s freshness detector looks at update times of your tables coming from the warehouse/lake metadata and the detector alerts you when a table has not been updated recently enough.
+
+Our models take into account a 6 week moving window of training data, remove outliers based on the number of samples and calculate features from the time-series which are than used together with the pre-processing features into deciding the alert threshold for the table.
+
+![Freshness Sensitivity](/images/503a3e5-image.png)
+
+Freshness
+
+### Fine-Tuning the Models
+
+The current threshold for Monte Carlo's automatic freshness detector can be seen in the catalog page for each table.
+
+If the detector status is active it will have a purple band on the graph which indicates the expected time frame for the next update to this table. If the next update does not arrive by the end of the window, the detector will raise an alert.
+
+The threshold and expected update time are also available in text form to the right of the updates graph.
+
+#### Sensitivity
+
+By clicking the edit icon next to the `Freshness sensitivity` section you will be able to change the model’s sensitivity which will either increase or decrease the confidence interval. By default all thresholds are set to `Medium` sensitivity. [Learn more about sensitivity here](/docs/detectors-overview#sensitivity).
+
+_Note that these changes can take up to 12 hours to update our models._
+
+#### Adding Custom Freshness Monitoring
+
+Want to guarantee that tables are updated at a specific clock-time? \[Custom Freshness Rules\]([https://docs.getmontecarlo.com/edit/freshness-rules](https://docs.getmontecarlo.com/edit/freshness-rules)) are great for that.
+
+You can also add freshness rules to tables where you expect updates more frequently than hourly. Please talk with a Monte Carlo architect for specific sensitivity settings for rapidly-updating tables 
+
+### Maintenance Windows
+
+This detector also supports [maintenance windows](/docs/detectors-overview#maintenance-windows) which allow our models to remove bad data periods from the training window in order to achieve better quality detections without being affected by the bad data period.
+
+### Under The Hood
+
+Part of our time-series preprocessing includes classification into several categories such as: ETL / non-ETL updated tables, weekend patterned tables, and uni / multi-modal update patterns.
+
+In order to achieve faster model updating based on the patterns we see, our freshness model is re-trained with new data every 6H as well as performs a state-change detection analysis in order to find if there was a change in the update pattern. If we find such a change all the above described features are calculated only for the last 2 weeks of the training window.

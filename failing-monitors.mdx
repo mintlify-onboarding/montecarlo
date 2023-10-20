@@ -1,0 +1,25 @@
+---
+title: "Failure Notifications"
+---
+
+There are a variety of reasons a custom monitor may fail to run, such as a query time-out, insufficient permissions, or a referenced table being deleted.
+
+When creating a custom monitor, you have the option to be proactively notified when that monitor fails. To ensure that Failure Notifications for a monitor are on, go to the **Send Notifications** section of the monitor creation or edit page, and be sure the toggle is set to the right (purple).
+
+![This example is set to **off** (grey, toggle to left)](/images/9be6b27-Pasted_Image_4_14_23__10_08_AM.png)
+
+This example is set to **off** (grey, toggle to left)
+
+If the monitor fails while this option is enabled, a failure notification will be sent to same destinations that an Incident notification would be sent to.
+
+![An example of a Failure Notification in Slack for a SQL Rule](/images/c643182-Pasted_Image_9_18_23__12_59_PM.png)
+
+An example of a Failure Notification in Slack for a SQL Rule
+
+Additional details:
+
+* In September, 2023, the default setting for Failure Notifications for newly created monitors was changed from **off** to **on**  
+   * All monitors created through the Monte Carlo UI after September 21, 2023 have, by default, Failure Notifications set to **on**.  
+   * All monitors created through Monitors as Code after September 28, 2023 have, by default, Failure Notifications set to **on** unless it was specified off in the config.
+* Expect a latency of 2 to 10 minutes between when the monitor execution has failed, and when a notification will be sent.
+* Failure notifications are only sent for failures, but not for any types of [misconfigurations](/docs/misconfigured-monitors).

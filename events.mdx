@@ -1,0 +1,65 @@
+---
+title: "Insight: Events"
+---
+
+> 📘
+> 
+> Note
+> 
+> The lookback window for this insight is 180 days (the date range for the data included).
+
+### Field Definitions
+
+**TYPE**: The event type
+
+**FULL\_TABLE\_ID** : A concatenation of project, dataset and table name 
+
+**PROJECT\_NAME** : As defined externally
+
+**DATASET\_NAME** : As defined externally (e.g. a schema in snowflake) 
+
+**TABLE\_NAME**: As defined externally
+
+**TABLE\_TYPE** : Field values: table, view, external, wildcard\_table 
+
+**FIELD**: The field for metric and distribution events.
+
+**FIELD\_VAL**: The field value for distribution events.
+
+**CREATED\_AT** : The timestamp of event created time
+
+**LAST\_UPDATE**: The event start time for freshness and unchanged size events. 
+
+**ANOMALOUS\_DATA\_TIME**: The event start time for schema changes, size diff, metric and distribution events
+
+**MIN\_EXPECTED**: The minimum value that the model expected  
+  
+**EXPECTED**: The expected update time for freshness and unchanged size events.
+
+**MAX\_EXPECTED**: The maximum value that the model expected (check)
+
+**ACTUAL**: The actual value measurement (timestamp or number).
+
+**FIRST\_STATUS**: The first given status for the incident.
+
+**FIRST\_STATUS\_TIME**: The timestamp of the FIRST\_STATUS
+
+**HOURS\_TO\_FIRST\_STATUS**: The difference between FIRST\_STATUS\_TIME and CREATED\_AT. 
+
+**LAST\_STATUS**: The last given status for the incident. 
+
+**LAST\_STATUS\_TIME**: The timestamp for the LAST\_STATUS
+
+**LAST\_STATUS\_USER**: The email or username of the user who made the last incident status change
+
+**RESOLVE\_TIME**: The timestamp of the end of the event.  
+  
+**HOURS\_TO\_RESOLUTION**: The difference between RESOLVE\_TIME and CREATED\_AT.
+
+**MC\_INCIDENT\_ID**: Unique ID for the incident 
+
+**EVENT\_APP\_URL**: A link to the event in the app. 
+
+**MC\_EVENT\_ID**: Unique ID given to the event (there can be many events to one incidents
+
+**DOMAINS**: As created by the user in the UI.

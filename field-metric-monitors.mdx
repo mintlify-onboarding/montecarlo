@@ -1,0 +1,56 @@
+---
+title: "Field Metrics"
+---
+
+Field Metric monitors make it easy to add monitoring for % null, % unique, % negative, mean, median, and many other common metrics. 
+
+This monitor combines the functionality from [Field Health](/docs/field-health-metrics) and [Field Quality Rules](/docs/field-quality-monitors) into one experience. The former allowed for monitoring of metrics using automated thresholds, and the latter allowed for manual thresholds. With Field Metrics, a user has one experience that allows creation of monitors with either automated or manual thresholds. **This monitor type is only exposed to some customers but will soon be generally available.**
+
+To create a Field Metric monitor, select **Field Metrics** on the [Create Monitor](https://getmontecarlo.com/monitors/create) page or Assets page. 
+
+Then:
+
+1. **Select one or more tables or views to be monitored.** If multiple tables are selected:  
+   1. You will be required to select specific fields to monitor that must be common across all selected tables  
+   2. Only manual thresholds will be available
+2. **Select the fields to be monitored.** You can to either select  
+   1. Choose Fields – allowing you to select the exact fields to be monitored  
+   2. Important Fields – selects fields that Monte Carlo has [automatically identified as important](/docs/insight-field-importance-scores)  
+   3. All fields – selects all field in the table (limit of 300)
+3. **Select metrics and threshold.**  
+   1. Select metrics  
+         1. If you’ve selected **Choose Fields**, Monte Carlo will only present the metrics that are compatible with the selected field types. For example, Monte Carlo won’t show “Mean” if you’ve selected a Text field, because a string does not represent a numeric value.  
+         2. If you’ve selected **Important Fields** or **All Fields**, Monte Carlo will allow you to select from all metric types. If a selected metric is incompatible with a selected field, that metric simply won’t get tracked.  
+         3. Some metrics will also require you to select % Null and % Unique if you want to apply an automatic threshold, as the context of % Null and % Unique help to weed out false positives or statistically insignificant anomalies.  
+   2. If a manual threshold is selected:  
+         1. the monitor will only be able to track a single metric. If multiple metrics are selected, it will automatically switch over to automated thresholds. If you’d like to apply manual thresholds across multiple metrics, each metric must be separated out into a different monitor.  
+         2. the user can add structured filters to the monitor to select just recent data (e.g. created in the last 1 day) or for a specific segment of data.  
+   3. If **Anomalous (automated threshold)** is selected:  
+         1. Monte Carlo’s machine learning will determine an appropriate threshold for the selected metrics. Note that this option is only available when a single table has been selected.  
+         2. There are a few additional configuration options made available to the user:  
+                  1. **Aggregate metrics by**:  
+                              1. When set to **None**, all rows that pass through the filters will be bucketed into one measurement and compared against the threshold. This is the simplest way to set up this monitor.  
+                              2. When set to **Hour** or **Day**, you will select a field representing the row creation time. Measurements will be bucketed using that field into a time series of hours or days. These are then compared against the threshold, which can lead to more granular anomaly detection.  
+                  2. **Field that represents row creation time**. The user also has the option to select an existing field or compose one using SQL.  
+                  3. **Lookback period**. This is how far back each run of the monitor will query, using the “Field that represents row creation time.” For most monitors that run every 12 or 24 hours, a 2 day lookback is more than sufficient. This option is only presented when ‘Day’ is selected for aggregation.  
+                  4. **WHERE clause**. This allows the user to further filter the data.
+4. **Select a field for segmentation.** This is only available when **Anomalous (automated threshold)** is selected. Segmenting can lead to better anomaly detection and clearer root causes. Common fields to segment by include products, regions, event types, versions, and merchants.  
+   1. When a Segmentation field is selected here, Monte Carlo will calculate statistics grouped by the values in that field. This helps to isolate anomalies.  
+   2. If two fields are selected here, Monte Carlo will calculate statistics grouped by each combination of values from those multiple fields, e.g. Product='Loans' AND Region='EMEA'.  
+   3. Up to 1,000 segments can be tracked per Field Metric monitor.
+5. **Add description and notes.** These serve as a name for the monitor within the app (Description) and any additional detail you’d like passed through in notifications when the monitor detects an anomaly (Notes).
+6. **Set schedule.** A few different schedule types are available:  
+   1. **Form based.** This is appropriate for the vast majority of Field Metric monitors, and allows you to set a regular, recurring schedule (e.g. run every 12 hours starting at 7am on January 1)  
+   2. **CRON based.** Only available when a manual threshold is selected.  
+   3. **Manual triggers.** Only available when a manual threshold is selected. For use with [circuit breakers](/docs/circuit-breakers).  
+   4. **Dynamic.** Only available when Anomalous (automated threshold) is selected. This will run the monitor when Monte Carlo identifies that the table has received an update.
+7. **Send notifications.** Add the appropriate audiences so you can be notified when the monitor identifies an anomaly.
+
+For now, Incidents created by Field Metric monitors still generate Incidents bearing the names of their former monitor types. For filters in Incident Feed and Notification Settings, a Field Metric monitor with
+
+* an automated threshold correlates to “Field Health” Incidents
+* a manual thresholds correlates to “Field Quality Rule” Incidents.
+
+In the future, these will be unified into one “Field Metrics” Incident type.
+
+In addition, in [Monitors as Code](/docs/monitors-as-code-1), Field Metric monitors are still identified using their old monitor names of [Field Health](/docs/field-health-metrics) (for automated thresholds) and [Field Quality Rules](/docs/field-quality-monitors) (for manual thresholds).

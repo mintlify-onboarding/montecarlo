@@ -1,0 +1,29 @@
+---
+title: "🧑‍🎓 Monitors Overview"
+---
+
+### Monitor Types
+
+At Monte Carlo, we have:
+
+* Out of the box ML Monitors (Freshness, Volume and Schema Changes) which run hourly and check the metadata table for all tables.
+* Custom ML Monitors (Field Health, Dimension Tracking and JSON Schema) which run on a user defined schedule and use ML to catch anomalous data changes within fields.
+* Custom Rules Based Monitors (SQL, Field Quality, Referential Integrity and Comparison Rules which run on a user defined schedule and do not use Machine Learning. These are manual checks which can be used to validate ways in which you know data may break.
+
+This next section introduces these monitors at a high level and walks you through how to build each of the monitors for your own practical use case.
+
+### Monitors Best Practices
+
+When building out monitors, answer the following questions to ensure you're building monitors that will help you accomplish your business objectives. 
+
+* **Timing**: When should monitors run? When do I need to be alerted?
+* **Frequency**: How often should monitors run? How often does the table update?
+* **Coverage**: What needs to be monitored? Do I need to monitor all fields? Should I add filters?
+* **Cost**: What impact will this monitor have on warehouse sql query costs or performance?
+* **Alerting**: Who gets notified if the monitor catches an anomaly?
+* **Warehouse size**: What size warehouse is required for the query to run in under 15 minutes?
+* **Domain Coverage**: What percent of key assets within a domain have a monitor?
+* **Application**: What monitor should be applied depending on the type of table?
+* **Governance**: How will we standardize naming conventions for monitors?
+
+![](/images/11f4bfc-Best_Practices.png)

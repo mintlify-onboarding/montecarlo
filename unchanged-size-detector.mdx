@@ -1,0 +1,31 @@
+---
+title: "Unchanged Size Detector"
+---
+
+Monte Carlo’s unchanged size detector looks at the times and time intervals between size updates to your tables. Volume data arrives from the warehouse/lake metadata and the detector alerts you when a table did not change in size for a period which is unusually long. This detector will also alert if the amount of data coming in is abnormally small (under 0.1% of the median update size).
+
+Part of our time-series preprocessing includes classification into several categories such as: ETL / non-ETL updated tables, weekend patterned tables, and uni / multi-modal update patterns.
+
+Our models take into account a 6 week moving window of training data, removes outliers based on the number of samples and calculates features from the time-series which are then used together with the pre-processing features into deciding the alert threshold for the table.
+
+In order to achieve faster model updating based on the patterns we see our unchanged size model is re-trained with new data every 6H as well as performs a state-change detection analysis in order to find if there was a change in the update pattern. If we find such a change all the above described features are calculated only for the last 2 weeks of the training window.
+
+This detector also supports [maintenance windows](/docs/detectors-overview#maintenance-windows) which allow our models to remove bad data periods from the training window in order to achieve better quality detections without being affected by the bad data period.
+
+It is also possible to change the detector threshold. See below for more info.
+
+### Fine Tuning the Models
+
+The current threshold for Monte Carlo's automatic unchanged size detector can be seen in the assets detail page for each table under the `Volume` tab.
+
+If the detector status is active it will have a purple band on the right edge of graph which indicates the expected time frame for the next size update to this table. If the next size update does not arrive by the end of the window, the detector will raise an alert.
+
+The threshold and expected size update time are also available in text form to the right of the size graph.
+
+By clicking the edit icon next to the `Unchanged size sensitivity` section you will be able to change the model’s sensitivity which will either increase or decrease the confidence interval. By default all thresholds are set to `Medium` sensitivity. [Learn more about sensitivity here](/docs/detectors-overview#sensitivity).
+
+![Unchanged Size Detector on Volume tab in Assets detail page](/images/67d6b3a-image.png)
+
+Unchanged Size Detector on Volume tab in Assets detail page
+
+_Note that these changes can take up to 12 hours to update our models._

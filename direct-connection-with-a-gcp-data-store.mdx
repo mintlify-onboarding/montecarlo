@@ -1,0 +1,80 @@
+---
+title: "Create and register a GCP GCS Data Store (Beta)"
+description: "How-to create and register"
+---
+
+> 📝
+> 
+> Prerequisites
+> 
+> 1. You are an admin in GCP (for steps 1 and 2).
+> 2. You are an [Account Owner](/docs/authorization#managed-roles-and-groups) and have [installed and configured](/docs/using-the-cli) Monte Carlo's CLI (for step 3).
+
+This guide outlines how to setup a Data Store for storing troubleshooting and temporary data in your GCP cloud.
+
+## 1\. Create a GCS Bucket
+
+Use the GCP Console, CLI or favorite IaC tool to create a **new** GCS Bucket in your GCP account with no public access. Note that registration (step 3) will fail if the bucket is publicly accessible. 
+
+We strongly recommend you do not use an existing bucket or share with other jobs as Monte Carlo might overwrite existing data. And we also recommend the following settings:
+
+* Google-managed encryption
+* Expiration lifecycles. 90 days or less for all objects in the following prefixes:
+
+Prefixes
+
+`custom-sql-output-samples/
+rca
+idempotent
+`
+
+## 2\. Create an IAM Role and Service Account
+
+First, create a role in the same project as above:
+
+1. Under IAM & Admin, go to the Roles section in your Google Cloud Platform console.
+2. Click the "Create Role" button at the top of the tab.
+3. Give the new role a name. We recommend "Monte Carlo Data Store".
+4. Change the Role launch stage to "General Availability".
+5. Click "Add Permissions" and add the permissions specified below and select "Create".
+
+Policy
+
+`storage.objects.create
+storage.objects.delete
+storage.objects.get
+storage.objects.list
+storage.objects.update
+storage.buckets.get
+storage.buckets.getIamPolicy
+`
+
+Now, create a service account in the same project as above:
+
+1. Under IAM & Admin, go to the Service Accounts section in your Google Cloud Platform console.
+2. Click the "Create Service Account" button at the top of the tab.
+3. Give the account a name and continue. We recommend "monte-carlo-data-store-sa".
+4. Click "Done" to complete the creation of Monte Carlo's service account.
+5. Then navigate to the service account you just created and [create a JSON key.](https://cloud.google.com/iam/docs/keys-create-delete#creating) A JSON file will download – please keep it safe.
+
+Finally, add the role and principal to the bucket you created above: 
+
+1. Under Cloud Storage, select the bucket you created in step 1 and navigate to the Permissions tab.
+2. Select "Grant Access" and fill in the service account you just created as the principal and role you just created as the role. Save changes.
+
+## 3\. Register the Data Store using Monte Carlo's CLI
+
+After creating the bucket and role use the command `montecarlo agents register-gcs-store` to register them.
+
+For reference on this command please see [here](https://clidocs.getmontecarlo.com/#montecarlo-agents-register-gcs-store).
+
+The `bucket-name` is the bucket you created in step one and `key-file` is the service account key from step two.
+
+Example
+
+`montecarlo agents register-gcs-store \
+  --bucket-name example-bucket \
+  --key-file example.json
+`
+
+After this step is complete all integrations that you add to this Data Collector Service will automatically use this bucket for storing troubleshooting and temporary data. You can add these integrations as you normally would using Monte Carlo's UI wizard or CLI.

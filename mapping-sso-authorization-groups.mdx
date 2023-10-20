@@ -1,0 +1,49 @@
+---
+title: "Map SSO Groups to Authorization Groups"
+---
+
+You can map Groups from your SSO to [Authorization Groups](/docs/authorization#creating-custom-authorization-groups) in Monte Carlo. This can streamline the onboarding of new users, and ensure they only have access to specific Domains from the moment they log in. Mapping of SSO Groups to Authorization Groups is currently supported for Okta and AzureAD.
+
+### Configuring Okta for SSO Group mapping
+
+Check out the instructions on Okta site to [pass Group membership information in a SAML assertion](https://support.okta.com/help/s/article/How-to-pass-a-user-s-group-membership-in-a-SAML-Assertion-from-Okta?language=en%5FUS). Use 'User.Groups' as the group attribute name. This is the name that Monte Carlo will look for to determine the user groups.
+
+Here’s an example of how this mapping can be configured:
+
+![1510](/images/cd9ea72-group_attribute_statements.png "group attribute statements.png") 
+
+Make sure to only forward the necessary groups, as there is a 2048 character limit for all the groups passed in this way.
+
+### Configuring Azure AD for SSO Group mapping
+
+Check out the instructions on Microsoft Azure site to [pass Group membership information in a SAML assertion](https://learn.microsoft.com/en-us/azure/active-directory/hybrid/how-to-connect-fed-group-claims). Use 'User.Groups' as the group attribute name. This is the name that Monte Carlo will look for to determine the user groups. 
+
+Here’s an example of how this mapping can be configured:
+
+![1600](/images/5f211e0-attributes_claims.png "attributes claims.png") 
+
+By default, Azure AD passes group IDs in the claims, not group names. You will need to find the UUIDs for each of the groups you want to map and what they map to before configuring them on Monte Carlo. If you are using Active Directory synchronization, you might be able to use the 'sAMAccountName' value instead to pass the group name.
+
+Make sure to only forward the necessary groups, as there is a 2048 character limit for all the groups passed in this way.
+
+### Configuring SSO Group mapping
+
+**Pre-requirement:** SSO should already be turned on and working in your Monte Carlo environment, before adding an SSO Group to an Authorization Group
+
+**Caution:** Be careful when adding an SSO Group to an existing Authorization Group that already has users. **All pre-existing user assignments to that Authorization Group will be disregarded, in favor of group membership as set in SSO**. Pre-existing members of that Authorization Group will need to sign out and sign back in so their Authorization Group membership can be re-evaluated.
+
+**Recommendation:** create a test Authorization Group, and confirm that SSO Group mapping is working on that test group before applying it to your production Authorization Groups.
+
+Steps:
+
+1. Go to the Settings / Authorization Groups page
+2. Add or edit a group
+3. In the SSO Group field, enter the name of the group from your identity provider (Okta, Azure AD, etc).
+4. Save the group
+![459](/images/5715b79-auth_group_form_1.png "auth group form (1).png") 
+
+Once a user assigned to the SSO group on your identity provider logs in, you’ll be able to see it in the list of users associated to the new Authorization Group.
+
+![333](/images/9e99aab-user_details.png "user details.png") 
+
+Authorization Group memberships obtained through SSO Group mapping are only refreshed when the user logs in.

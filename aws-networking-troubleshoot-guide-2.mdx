@@ -1,0 +1,200 @@
+---
+title: "AWS Networking Tips"
+---
+
+This page outlines some networking tips and suggestions for successfully setting up a Monte Carlo Data Collector.
+
+### Before Data Collector deployment
+
+For any data source you plan to connect to Monte Carlo, determine if the resource is publicly or privately available. This is especially important if VPC peering is necessary, since the Data Collector VPC CIDR range cannot be changed without recreating the collector stack.
+
+Some resources like AWS Redshift have a boolean flag indicating if it is publicly available, but for others you would have to review the route table(s) associated with the subnets for the resource. Generally speaking, a public resource will have at least one route with destination `0.0.0.0/0` that has an internet gateway as a target (i.e. `igw-*`).
+
+You can also sometimes tell if the resource is private based on the IP address, though this is more of a convention. See [here](https://en.wikipedia.org/wiki/Private%5Fnetwork#Private%5FIPv4%5Faddresses) for details.
+
+### After Data Collector deployment
+
+The procedure for connecting a resource to the Data Collector depends on if the resource is publicly or privately available.
+
+#### Public - Try IP filtering
+
+1. Retrieve the Collector’s public IP [](/docs/network-connectivity#identifying-your-collectors-ip-address)address. Details [here](/docs/network-connectivity#identifying-your-collectors-ip-address).
+2. Whitelist the IP address in the relevant firewall, security group, network policy etc. Details [here](/docs/network-connectivity#ip-filtering).
+
+#### Private - Try peering
+
+> 👍
+> 
+> Don't want to worry about overlapping CIDR blocks or connecting VPCs?
+> 
+> Consider using PrivateLink! This is done by creating Network Load Balancer in your VPC as the service front end and then configuring a VPC endpoint service. 
+> 
+> See details on how to setup an endpoint service using CloudFormation [here](/docs/privatelink-using-cloudformation).
+
+1. Check for any CIDR block overlaps between the Data Collector and your resource. VPC peering is not possible when the peered VPCs use overlapping CIDR blocks. If this is the case, you may choose to use a custom CIDR block for the collector. Details [here](/docs/deployment#advanced-options). A [visual subnet calculator](https://www.davidc.net/sites/default/subnets/subnets.html) might also be helpful here.
+2. Setup peering between the collector and resource using CloudFormation. Details [here](/docs/peering-templates).
+
+##### Peering Set Up Example
+
+If curious, the following steps walk through an example of deploying a collector and setting up peering manually. This is mostly for information purposes, and we highly recommend using [CloudFormation templates for VPC peering](/docs/peering-templates) instead.
+
+1. Identify the following data source information:  
+   1. AWS account ID  
+   2. AWS account region  
+   3. VPC ID  
+   4. CIDR range of the VPC (and if there are any other existing peering connections)
+2. If the CIDR ranges overlap with the Monte Carlo default (10.0.0.0/16), the following parameters should be updated to a custom range:  
+   1. CIDR for VPC created by the Data Collector stack  
+   2. CIDR for Subnets created by the Data Collector stack
+3. Deploy the collector and wait for completion.
+4. Retrieve the following Data Collector stack outputs:  
+   1. PrivateRouteTable  
+   2. VpcId  
+   3. SecurityGroup
+5. Create a peering connection by following the steps outlined [here](https://docs.aws.amazon.com/vpc/latest/peering/create-vpc-peering-connection.html) using the values from step 1 and 4\. Specifically, the VPC from Step 4b is the requester.
+6. Update the route table from step 4a with the destination as the CIDR range given in 1d and target as the peering connection created in step 5.
+7. Accept the peering connection created in step 5 from the data source AWS account.
+8. Update any private route table(s) associated with the VPC of your data source with the destination as the VPC CIDR range specified in step 2a, and target as the accepted connection from step 7.
+9. Update the security group associated with the data source to accept inbound from the Data Collector's security group. If the your data source VPC is in a different region as the Data Collector, you will not be able to reference the security group by ID, and have to use the CIDR block of the peer VPC (i.e. the CIDR range from 2a).
+
+### Troubleshooting network issues
+
+Though each network configuration is unique, you can try the following to help debug connectivity between your resource and the Data Collector.
+
+#### Basic debugging
+
+1. Double check the connection details provided to Monte Carlo, such as host, port, database, user for typos/omissions.
+2. Confirm that the service user you created works (e.g. you are able to log in as the service user).
+3. Test reachability between the Data Collector and your resource (e.g. warehouse) using the MC network utilities in the onboarding wizard. If these tests show connectivity there is likely an issue with the host or service account access.  
+   * Test TCP Open: Tests if a destination exists and accepts requests. Opens a TCP Socket to a specific port from the collector.  
+   * Test Telnet: Checks if Telnet connection is usable from the collector.
+
+![3342](/images/881fe21-Screen_Shot_2022-01-26_at_2.47.15_PM.png "Screen Shot 2022-01-26 at 2.47.15 PM.png")
+
+Test network via the onboarding wizard
+
+These utilities are also available via the CLI or on the [integrations page](https://getmontecarlo.com/settings/integrations).
+
+> 📘
+> 
+> Try testing a public website
+> 
+> The Data Collector requires public internet access due to the way AWS connects between lambda functions without an endpoint. If your network tests are failing, try testing network connectivity to `montecarlodata.com` at port 443\. If this test is unsuccessful, you need to open the collector to the public internet; if the test returns successfully, the issue occurs in the collector's ability to reach your resource.
+
+TCP OpenTelnet
+
+`% montecarlo collectors test-tcp-open --help
+Usage: montecarlo collectors test-tcp-open [OPTIONS]
+
+  Tests if a destination exists and accepts requests. Opens a TCP Socket to a
+  specific port from the collector.
+
+Options:
+  --collector-id UUID  ID for the data collector. To disambiguate accounts
+                       with multiple collectors.
+  --host TEXT          Host to check.  [required]
+  --port INTEGER       Port to check.  [required]
+  --timeout INTEGER    Timeout in seconds.  [default: 5]
+  --option-file FILE   Read configuration from FILE.
+  --help               Show this message and exit.
+`
+
+`% montecarlo collectors test-telnet --help  
+Usage: montecarlo collectors test-telnet [OPTIONS]
+
+  Checks if telnet connection is usable from the collector.
+
+Options:
+  --collector-id UUID  ID for the data collector. To disambiguate accounts
+                       with multiple collectors.
+  --host TEXT          Host to check.  [required]
+  --port INTEGER       Port to check.  [required]
+  --timeout INTEGER    Timeout in seconds.  [default: 5]
+  --option-file FILE   Read configuration from FILE.
+  --help               Show this message and exit.
+`
+
+1. If using peering, confirm the request was accepted and the correct ranges are added to the route tables for the data source and Data Collector.  
+   * The Data Collector's route table, associated with two private subnets, should have a route to a peering connection (`pcx-*`) with the data source's CIDR block as a destination.  
+   * The data source's route table(s), associated with N private subnets, should have a route to a peering connection (`pcx-*`) with the Data Collector's CIDR block as a destination.
+2. Check security group rules attached to the data source allow inbound traffic from the correct range/security group on the proper port.
+3. Check the route table for the subnets associated with the data source allow traffic.
+4. Confirm that the network access control list for subnet allows inbound and outbound traffic from the correct IP and proper port.
+5. Check to see where there is a firewall rule blocking access.
+6. Check the CPU load in the warehouse to ensure it is not overloaded and is still running.
+
+#### Advanced debugging
+
+If the steps above do not resolve the issue you can create an EC2 instance in one of the Data Collector's private subnets to help debug further and even simulate a connection with direct access to logs. 
+
+1. Download and review the CloudFormation template.  
+[https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/enablement/v0/debug\_instance.yaml](https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/enablement/v0/debug%5Finstance.yaml)
+
+> 👍
+> 
+> This template creates an EC2 instance, and associated resources, running the latest Amazon Linux AMI without an associated SSH key. It is intended to be connected via AWS Session Manager. 
+> 
+> This requires that the Data Collector's subnet has outbound internet connectivity (enabled by default). If you deployed into an existing (i.e. customer managed) VPC without outbound internet connectivity you also have to create VPC endpoints for the following services:
+> 
+> * ssm
+> * ssmmessages
+> * ec2messages
+> 
+> Alternatively, if you have a VPN connection or Bastion that can be used too.
+
+1. Deploy the stack in the same AWS account / region as your Data Collector. Fill in the parameters.
+
+![1981](/images/4add9ac-Screen_Shot_2022-09-19_at_5.21.36_PM.png "Screen Shot 2022-09-19 at 5.21.36 PM.png")
+
+Parameters Wizard
+
+1. Select the 'Physical ID' for the 'AWS::EC2::Instance' resource after the stack is created.
+
+![2496](/images/562d888-Screen_Shot_2022-09-19_at_5.29.13_PM.png "Screen Shot 2022-09-19 at 5.29.13 PM.png")
+
+CloudFormation Resources
+
+1. Select the EC2 instance and click the 'Connect'.
+
+![2940](/images/bb86cde-Screen_Shot_2022-09-19_at_5.30.17_PM.png "Screen Shot 2022-09-19 at 5.30.17 PM.png")
+
+EC2 Instances
+
+1. Select 'Session Manager' and click the 'Connect'. This should open a connection to the instance.
+
+> 👍
+> 
+> AWS Session Manager uses the Bourne shell (sh) by default. If you’re more comfortable using bash than sh you can do so by typing `/bin/bash`. 
+> 
+> To get a list of all available shells run the following command: `sudo cat /etc/shells`
+
+![1704](/images/4d822e3-Screen_Shot_2022-09-19_at_5.31.07_PM.png "Screen Shot 2022-09-19 at 5.31.07 PM.png")
+
+Session Manager Wizard
+
+> 📘
+> 
+> Okay, I created an EC2 instance... now what?
+> 
+> You can leverage any linux commands to help test reachability. For instance: 
+> 
+> * Use **traceroute** \- Shows the path (hops) between the host and destination. Can help determine where traffic is being dropped. E.g. `tcptraceroute getmontecarlo.com 443`.
+> * Use **nslookup** \- Get domain's IP address and records. Can help determine if it is a DNS issue.  
+> E.g. `nslookup getmontecarlo.com`.
+> * Use **nmap** \- Scan for open ports. Can help determine if the port is open / correct.  
+> E.g. `nmap -sT -P0 -p 443 getmontecarlo.com` and `nmap getmontecarlo.com`.
+> * Use **ping** \- Test if an IP address exists and can accept requests. Can help determine reachability as AWS Lambda does not support ICMP. E.g. `ping getmontecarlo.com`.
+> * Use **telnet** \- Same as Data Collector network utilities. Can help determine if something is blocking the connection. Netcap can be used similarly. E.g. `telnet -4 getmontecarlo.com 443`.
+> 
+> You can also leverage any command line utilities for your warehouses (e.g. psql for Redshift) or the [AWS VPC Reachability Analyzer](https://docs.aws.amazon.com/vpc/latest/reachability/what-is-reachability-analyzer.html).
+
+### FAQs
+
+**What if we want to deploy in an existing VPC?**  
+That option is supported. See [here](/docs/network-connectivity#data-collector-deployment-into-an-existing-vpc). 
+
+**What if we want to use PrivateLink instead of of peering?**  
+No problem! See details [here](/docs/privatelink-using-cloudformation).
+
+**What if we want to use a Transit Gateway instead of peering?**  
+No problem! Monte Carlo supports these connection options. If interested, please let your Monte Carlo representative know or reach out to Support at [\[email protected\]](/cdn-cgi/l/email-protection#f88b8d8888978a8cb89597968c9d9b998a94979c998c99d69b9795), and we'd be happy to work with you to get you up and running!

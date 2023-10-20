@@ -1,0 +1,37 @@
+---
+title: "Exclusion Windows"
+---
+
+Occasionally, an undesirable gap may form in Monte Carlo's history of metadata and metrics for your tables. This is often the result of a service provider outage, or an integration issue between Monte Carlo and your data sources. These gaps are undesirable because they can reduce the sensitivity of Monte Carlo's anomaly detection.
+
+If you do not apply an exclusion window, these issues can take several weeks to fully "age out" and no longer be considered as part of the training data that informs Monte Carlo's anomaly detection.
+
+In [Settings > Muted Data and Filters > Exclusion Windows](https://getmontecarlo.com/settings/muted-data/exclusion-windows), you can add an exclusion window to proactively counteract the effects of this issue. When an exclusion window is created, the specified timeframe is removed from the training data that informs Monte Carlo's anomaly detection. This is applied for the detectors that trigger anomalies for:
+
+* Automated freshness monitoring
+* Automated volume monitoring
+* Field Health
+* Dimension Tracking
+
+Note: Exclusion Windows do not apply to the automated threshold for SQL Rules. SQL Rules will typically fail to execute in the circumstances described above, so there are no results from those timeframes to inform the anomaly detection anyway.
+
+![Exclusion windows are managed from Settings > Muted Data and Filters > Exclusion Windows](/images/61da21a-Pasted_Image_9_27_23__5_20_PM.png)
+
+Exclusion windows are managed from Settings > Muted Data and Filters > Exclusion Windows
+
+When creating an exclusion window, you can apply it to either:
+
+* An entire warehouse or source. If you only have one datasource, this is akin to applying the exclusion window globally.
+* Specific projects
+* Specific datasets
+* Specific tables
+
+Exclusion windows are most frequently applied after the issue that introduced the gap is resolved. However, they can also be applied while the issue is ongoing (in which case you'd need to guess the end time). And they can also be added for the future, typically to protect against gaps introduced by planned maintenance or downtime of your pipelines.
+
+If an exclusion window is created for an ongoing issue or a future issue, no incidents or notifications from the above detectors will be generated for the duration of the exclusion window.
+
+On the Assets page, exclusion windows are represented on the freshness and volume graphs using a crosshatch pattern.
+
+![Crosshatching on freshness and volume charts indicates the area of an exclusion window.](/images/0bc3159-Pasted_Image_9_27_23__5_18_PM.png)
+
+Crosshatching on freshness and volume charts indicates the area of an exclusion window.

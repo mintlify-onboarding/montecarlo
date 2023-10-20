@@ -1,0 +1,65 @@
+---
+title: "Misconfigured Monitors"
+---
+
+Here is a detailed guide on how to (1) check for misconfigured monitors, (2) find MC’s suggested fixes for these misconfigurations and (3) implement the suggested fixes. 
+
+### How to check the status of your monitors.
+
+Download the CSV ‘Misconfigured monitors’ from the dashboard of the app and see the ‘suggestion’ field. The monitor URL will take you directly to the monitor detail page for that specific monitor. Here you can make the changes.
+
+### Suggestions and their fixes.
+
+1. **Suggestion**: Wait.
+
+This is suggested when the monitor is less than 14 days old and is still warming up.
+
+**Action required**: none
+
+1. **Suggestion**: Change to daily.
+
+This is suggested when there is not enough data for hourly aggregation (but enough for daily); or when the data arrives late as daily aggregation has a higher look back window.
+
+**Action required**: Go to the monitor home page and select the monitor in question, then go to the monitor detail page and change the ‘aggregation window’ to daily.
+
+![1752](/images/a1f5a61-0eea2bb-Aggregation.png "0eea2bb-Aggregation.png") ![1711](/images/8e724be-837fe31-Screen_Shot_2022-01-10_at_11.52.47.png "837fe31-Screen_Shot_2022-01-10_at_11.52.47.png") 
+1. **Suggestion**: Increase look back days to X.
+
+This is suggested when the data arrives late and only when aggregation is daily or should be moved to daily. 
+
+**Action required**: Go to the monitor home page and select the monitor in question, then go to the monitor detail page and change the ‘aggregation lookback period’ to the specified days.
+
+![1752](/images/b21278a-0eea2bb-Aggregation.png "0eea2bb-Aggregation.png") ![1729](/images/ebb9667-138165f-Increase_lookback_days.png "138165f-Increase_lookback_days.png") 
+1. **Suggestion**: Switch time axis.
+
+This is suggested when the optimal time field is not being used. The optimal time field has the smallest difference between row creation time and measurement time.
+
+**Action required**: Go to the monitor home page and select the monitor in question, then go to the monitor detail page and change the timestamp (row creation time field) to the specified field.
+
+![1242](/images/c1b340a-4ce2f54-switch_time_axis.png "4ce2f54-switch_time_axis.png") ![1708](/images/bca8f21-098ac25-change_time_axis_2.png "098ac25-change_time_axis_2.png") 
+1. **Suggestion**: Change schedule to once a day at X.
+
+This is suggested when the schedule is misconfigured compared to the time that the table updates and only when the monitor is run every 24 hours. (daily).
+
+**Action required**: Go to the monitor home page and select the monitor in question, then go to the monitor detail page and change the ‘Next scheduled run’ followed by the calendar icon under ‘Monitor schedule’ as below. 
+
+![1454](/images/bb971f6-3d6a7bd-Change_schedule_to_X.png "3d6a7bd-Change_schedule_to_X.png") ![1723](/images/b1d2f2d-fe5ff89-Change_schedule_2.png "fe5ff89-Change_schedule_2.png") 
+1. **Suggestion**: Insufficient data for anomaly detection; use for analytics only.
+
+This is suggested when the data is not good enough to collect anomalies but is good enough to just collect data.
+
+**Action required**: none
+
+1. **Suggestion**: Delete monitor.
+
+This is suggested when the data is not good enough to collect anomalies or to collect data. 
+
+**Action required**: Go to the monitor home page and find the monitor in question, then select the 3 dots under ‘Action’ and select remove and then ‘Delete Monitor’.
+
+![2548](/images/17f2985-618b501-Delete_monitor.png "618b501-Delete_monitor.png") 
+1. **Suggestion**: Change rule thresholds  
+This is suggested when the rule has a high breach rate.
+
+**Action required**: Go to the monitor home page and select the monitor in question, then go to the monitor detail page. Select to edit the 'alert condition' and change the thresholds (sensitivity of the monitor).
+
+![1754](/images/1219ee1-Screen_Shot_2022-07-12_at_12.05.44.png "Screen Shot 2022-07-12 at 12.05.44.png")

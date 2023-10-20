@@ -1,0 +1,20 @@
+---
+title: "Muting"
+---
+
+When a table is **muted**, Monte Carlo:
+
+* WILL continue to collect query logs, metadata, and metrics
+* WILL continue to execute any custom monitors (though they will not generate incidents or notifications, except SQL Rules)
+* WILL continue to train our anomaly detection models, so the models are ready if ever unmuted
+* WILL NOT generate any Incidents on that table
+* WILL NOT send any notifications about that table
+
+To mute specific datasets or tables, go to [Settings > Muted Data and Filters](https://getmontecarlo.com/settings/muted-data). You have the option to fully mute the table, or mute just specific types of out-of-the-box anomalies:
+
+* Schema Changes
+* Unchanged Size
+* Freshness (note: this will mute only the out-of-the-box freshness anomalies, but _not_ mute any Freshness Rules on the table)
+* Volume (note: this will mute only the out-of-the-box volume anomalies, but _not_ mute any Volume Rules on the table)
+
+Only when the full table is muted will incidents and notifications from custom monitors also be suppressed. The exception is SQL Rules, which will continue to create incidents and notifications even if the table is muted.

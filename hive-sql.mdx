@@ -1,0 +1,56 @@
+---
+title: "Hive SQL (beta)"
+---
+
+> 📘
+> 
+> This capability is in beta
+> 
+> Certain limitations in functionality may exist.
+
+To connect Monte Carlo to a Hive to run data health SQL queries, follow these steps:
+
+1. Create a Hive cluster for Monte Carlo's data health queries using AWS EMR. Alternatively, you may use an existing cluster that you already have in your environment.
+2. Ensure that Monte Carlo's data collector has [network connectivity](/docs/network-connectivity) to the cluster (VPC peering is required in most cases).
+3. Create a service account on Hive if necessary.
+4. [Provide service account credentials](/docs/hive-sql#providing-account-credentials-to-monte-carlo) to Monte Carlo.
+
+> 📘
+> 
+> Prerequisites
+> 
+> 1. To complete this guide, you will need permissions to create users on Hive (if authentication is enabled).
+> 2. Hive version must be 2.x.
+
+### Providing account credentials to Monte Carlo
+
+You will provide connection details for Hive (SQL) using Monte Carlo's CLI: 
+
+1. Please follow [this guide](/docs/using-the-cli) to install and configure the CLI.
+2. Please use the command `montecarlo integrations add-hive` to set up Hive connectivity. For reference, see help for this command below:
+
+Shell
+
+`$ montecarlo integrations add-hive --host ec2-18-188-136-250.us-east-2.compute.amazonaws.com --port 10000 --database default --auth-mode NOSASL --help
+Usage: montecarlo integrations add-hive [OPTIONS]
+
+  Setup a Hive SQL integration. For health queries.
+
+Options:
+  --host TEXT                Hostname.  [required]
+  --database TEXT            Name of database.
+  --port INTEGER             HTTP port.  [default: 10000]
+  --user TEXT                Username with access to hive.  [required]
+  --auth-mode [SASL|NOSASL]  Hive authentication mode.  [default: SASL]
+  --name TEXT                Friendly name of the warehouse which the
+                             connection will belong to.
+  --collector-id UUID        ID for the data collector. To disambiguate
+                             accounts with multiple collectors.
+  --skip-validation          Skip all connection tests. This option cannot be
+                             used with 'validate-only'.
+  --validate-only            Run connection tests without adding. This option
+                             cannot be used with 'skip-validation'.
+  --auto-yes                 Skip any interactive approval.
+  --option-file FILE         Read configuration from FILE.
+  --help                     Show this message and exit.
+`

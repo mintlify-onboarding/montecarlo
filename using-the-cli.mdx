@@ -1,0 +1,119 @@
+---
+title: "Using the CLI"
+---
+
+> 👍
+> 
+> Looking for our CLI reference?
+> 
+> See [here](https://clidocs.getmontecarlo.com/) for documentation on all commands, options, and arguments.
+
+This guide explains basic usage of Monte Carlo's CLI. See [here](https://pypi.org/project/montecarlodata/) for additional details and examples.
+
+### Installing/Update the CLI
+
+> 👍
+> 
+> The CLI requires Python 3.7 or greater.
+
+To install or update the CLI, please run:
+
+Shell
+
+`pip install -U montecarlodata
+`
+
+And then verify the installation using:
+
+Shell
+
+`montecarlo --version
+`
+
+### Setting up the CLI
+
+To configure your CLI with your API key and other settings, please run:
+
+Shell
+
+`montecarlo configure
+`
+
+You will then be prompted to add your Monte Carlo API key & secret information.
+
+You can generate a key [here](https://getmontecarlo.com/get-token) by selecting "CREATE KEY" for either a personal or service account key:
+
+![](/images/e6d5fec-Screen_Shot_2022-12-14_at_2.55.07_PM.png "Screen Shot 2022-12-14 at 2.55.07 PM.png")
+
+You will then name your key and have the option to expire your key at varying intervals:
+
+![](/images/f53155b-Screen_Shot_2022-12-14_at_2.57.31_PM.png "Screen Shot 2022-12-14 at 2.57.31 PM.png")
+
+> ❗️
+> 
+> Careful!
+> 
+> You are only able to see the Secret once! Save that in a safe place.
+
+Choose the option you are comfortable with, and then click "CREATE". Then, input these details into your terminal. You will also be prompted to specify an AWS profile and region. This is technically optional and only necessary if you intend to interact with a Data Collector (like updated a self hosted Data Collector or auto-generating IAM roles for onboarding). If you do choose to specify a value, any AWS profiles or regions should be for the account the Data Collector is deployed in. 
+
+See [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html) for more details on AWS profiles and note that if the region is left blank it will default to `us-east-1`.
+
+After configuring you can validate your connection with:
+
+Text
+
+`montecarlo validate
+`
+
+### Documentation
+
+Documentation for commands, options, and arguments can be found [here](https://clidocs.getmontecarlo.com/).
+
+Otherwise, to get high-level help, please run:
+
+Shell
+
+`montecarlo --help
+`
+
+Similarly, you can get help for a specific set of commands:
+
+Shell
+
+`montecarlo integrations --help
+`
+
+To retrieve documentation (help text) on all commands, subcommands and options:
+
+Text
+
+`montecarlo help
+`
+
+As an example, this is how you would list all active integrations:
+
+Shell
+
+`montecarlo integrations list
+`
+
+### FAQs
+
+#### What is `aws-profile`?
+
+When you set up the CLI, you have the option to specify a default AWS profile based on your locally saved credentials to use when running commands. This flag is only important if the command you are running needs to make changes to your collector. 
+
+For example, the following command would update the collector infrastructure, which requires having local credentials saved that we can use to make those changes:
+
+Shell
+
+`montecarlo collectors upgrade --update-infra
+`
+
+This command will attempt to use the profile you specified when you initially set up your CLI. If you want to use a different set of credentials or didn't specify a profile, you would run:
+
+Shell
+
+`montecarlo collectors upgrade --update-infra --aws-profile <name_of_local_profile>
+`

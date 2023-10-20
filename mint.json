@@ -1,0 +1,113 @@
+{
+    "name": "Monte Carlo",
+    "logo": {
+      "light": "/logo/light.png",
+      "dark": "/logo/dark.png"
+    },
+    "favicon": "/favicon.png",
+    "colors": {
+      "primary": "#0073b5",
+      "light": "#278BF0",
+      "dark": "#0073b5"
+    },
+    "tabs": [
+        {
+            "name": "API Reference",
+            "url": "api-reference"
+        }
+    ],
+    "topbarCtaButton": {
+      "name": "Request a Demo",
+      "url": "https://www.montecarlodata.com/request-a-demo/"
+    },
+    "topbarLinks": [
+      {
+        "name": "Status Page",
+        "url": "https://status.getmontecarlo.com/"
+      }
+    ],
+    "anchors": [
+        {
+            "name": "Status Page",
+            "icon": "signal-bars",
+            "url": "https://status.getmontecarlo.com/"
+          },
+        {
+        "name": "API Explorer",
+        "icon": "square-terminal",
+        "url": "https://getmontecarlo.com/signin"
+      },
+      {
+        "name": "Blog",
+        "icon": "newspaper",
+        "url": "https://www.montecarlodata.com/blog/"
+      }
+    ],
+    "navigation": [
+        {
+            "group": "🧑‍🎓 Monte Carlo University",
+            "pages": [
+              "welcome",
+              {
+                "group": "Monte Carlo 101 | Platform Overview",
+                "pages": [
+                  "monte-carlo-101-the-basics",
+                  "what-is-data-observability",
+                  "what-are-domains",
+                  "what-is-a-key-asset",
+                  "the-incident-feed",
+                  "what-is-an-asset-warehouse-glossary",
+                  "lineage-1",
+                  "data-reliability-dashboard-1",
+                  "data-product-dashboard"
+                ]
+              },
+              {
+                "group": "Monte Carlo 102 | Notifications and Monitors",
+                "pages": [
+                  "monte-carlo-102",
+                  "how-to-add-an-audience",
+                  "notification-overview",
+                  "monitors-overview-1",
+                  "out-of-the-box-monitors-freshness-volume-schema",
+                  "opt-in-ml-monitors",
+                  "rules-based-monitors"
+                ]
+              },
+              {
+                "group": "Monte Carlo 103 | Automation",
+                "pages": [
+                  "monte-carlo-103-expert-level",
+                  "introduction-to-performance",
+                  "monte-carlo-api",
+                  "monitors-as-code-1",
+                  "notifications-as-code-1",
+                  "filtering-lineage-nodes",
+                  "monte-carlo-python-sdk",
+                  "integrating-airflow",
+                  "sso-user-groups-and-permissions",
+                  "filtering-vs-muting-assets",
+                  "how-to-filter-out-a-dataset",
+                  "muting-projects-datasets-or-tables"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "API Reference",
+            "pages": [
+                {
+                    "group": "Queries",
+                    "pages": [
+                        "api-reference/queries/createsqlquery"
+                    ]
+                }
+            ]
+          }
+    ],
+    "footerSocials":
+      {
+          "twitter": "https://twitter.com/montecarlodata?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Eauthor",
+          "linkedin": "https://www.linkedin.com/company/monte-carlo-data/"
+      }
+  }

@@ -1,0 +1,340 @@
+---
+title: "Presto, Hive, & EMR: Query Logs"
+---
+
+This integration allows for the collection of Query logs for Presto, Hive and Amazon EMR.
+
+During setup, the Monte Carlo CLI is used to interact with the Monte Carlo API as well as with AWS. Please follow [this guide](/docs/using-the-cli) to install and configure the CLI on your local machine.
+
+## Enable events
+
+1. Run `montecarlo integrations configure-query-log-events` with the options corresponding to your setup.
+
+Shell
+
+`% montecarlo integrations configure-query-log-events --help
+Usage: montecarlo integrations configure-query-log-events [OPTIONS]
+
+  Configure S3 query log events. For tracking data freshness and volume at
+  scale. Requires s3 notifications to be configured first.
+
+Options:
+  --connection-type [hive-s3|presto-s3]
+                                  Type of the integration.  [required]
+  --name TEXT                     Friendly name of the warehouse which the
+                                  connection will belong to.
+  --role TEXT                     Assumable role ARN to use for accessing AWS
+                                  resources.  [required]
+  --external-id TEXT              An external id, per assumable role
+                                  conditions.
+  --format-type [hive-emr|hive-native|custom]
+                                  Query log format.  [required]
+  --source-format [json|jsonl]    Query log file format. Only required when
+                                  "custom" is used.
+  --mapping-file PATH             Mapping of expected to existing query log
+                                  fields. Only required if "custom" is used.
+  --option-file FILE              Read configuration from FILE.
+  --help                          Show this message and exit.
+`
+
+Monte Carlo can currently ingest and process the following formats:
+
+1. `hive-emr`: Hive logs created by AWS EMR using its default logging configuration.
+2. `hive-native`: Hive logs using the standard format.
+3. `custom`: Presto query logs exported to S3\. The queries must be in JSON format, use `--source-format` to define if the log file contains a single query (`json`) or one query per line (`jsonl`). Use `--mapping-file` to map the log content from your format to the one expected by Monte Carlo, see below.
+
+JSON
+
+`{
+   "queryId":"20200219_173831_00731_6rarz",
+   "query":"\nselect * from some_table\n\n",
+   "sessionSchema":"default",
+   "sessionCatalog":"hive",
+   "user":"joe",
+   "userAgent":"python-requests/2.18.4",
+   "principal":null,
+   "sourceIp":"1.2.3.4",
+   "coordinatorIp":"1.2.3.5",
+   "connectorType":"pyhive",
+   "environment":"prod",
+   "startTime":1582133911984,
+   "endTime":1582134280539,
+   "outputRows":5955227,
+   "outputBytes":5884105195,
+   "writtenRows":0,
+   "writtenBytes":0,
+   "peakUserMemoryBytes":6864015462,
+   "cpuTime":1547293,
+   "queryFailureType":null,
+   "queryFailureMessage":null,
+   "queryFailureCode":null
+}
+`
+
+The easiest way to set up S3 events in AWS is using the Monte Carlo CLI, as it completely automates the infrastructure creation and policy configuration (Option 1). In case it is not possible, proceed to Option 2.
+
+## Option 1: Use the Monte Carlo CLI \[Recommended\]
+
+This option can only be used if you host your own Data Collector. If Monte Carlo hosts the Data Collector, proceed to Option 2.
+
+Run `montecarlo integrations add-events` with the necessary parameters.
+
+Shell
+
+`$ montecarlo integrations add-events --help
+Usage: montecarlo integrations add-events [OPTIONS]
+
+  Setup S3 event notifications for a lake.
+
+Options:
+  --bucket TEXT                   Name of bucket to enable events for.
+                                  [required]
+
+  --prefix TEXT                   Limit the notifications to objects starting
+                                  with a prefix (e.g. 'data/').
+
+  --suffix TEXT                   Limit notifications to objects ending with a
+                                  suffix (e.g. '.csv').
+
+  --topic-arn TEXT                Use an existing SNS topic (same region as
+                                  the bucket). Creates a topic if one is not
+                                  specified or if an MCD topic does not already
+                                  exist in the region.
+
+  --collector-aws-profile TEXT    Override the AWS profile use by the CLI for
+                                  operations on SQS/Collector. This can be
+                                  helpful if the resources are in different
+                                  accounts.
+
+  --resource-aws-profile TEXT     Override the AWS profile use by the CLI for
+                                  operations on S3/SNS. This can be helpful if
+                                  the resources are in different accounts.
+
+  --event-type [airflow-logs|metadata|query-logs]
+                                  Type of event to setup.  [default: metadata;
+                                  required]
+
+  --auto-yes                      Skip any interactive approval.  [default:
+                                  False]
+
+  --collector-id UUID             ID for the data collector. To disambiguate
+                                  accounts with multiple collectors.
+
+  --option-file FILE              Read configuration from FILE.
+  --help                          Show this message and exit.
+`
+
+## Option 2: Use the AWS UI
+
+The following steps are only required if setting up S3 events using the CLI is not possible.
+
+Some steps change the data collector infrastructure, while others create infrastructure in the AWS account hosting the data. Each step is marked with "Data account" or "Collector account". If the data collector is deployed to the same account as the data, all steps are to be executed in the same account. If the data collector is managed by Monte Carlo, please reach out to your representative to execute the "Collector account" steps.
+
+1. Retrieve the bucket ARN (Data account)
+2. Retrieve the SQS queue ARN (Collector account)
+3. Retrieve the Data Collector AWS account ID (Collector account)
+4. Create an access role (Local machine / Data account)
+5. Create a SNS Topic (Data account)
+6. Update the SQS access policy (Collector account)
+7. Create a SNS subscription (Data account)
+8. Create event notification (Data account)
+
+> 📘
+> 
+> To complete this guide, you will need admin credentials for AWS
+
+### 1\. Retrieve the bucket ARN (Data account)
+
+1. Open the S3 Console and search for the bucket that you would like to enable events for.
+2. Select the bucket.
+3. Save the bucket ARN by selecting “Copy Bucket ARN” for later. This value will be further referred as **S3\_ARN**.
+
+### 2\. Retrieve the SQS queue ARN (Collector account)
+
+1. Open the Cloudformation console and search for the Monte Carlo data collector.
+2. Select the stack.
+3. Select the “Outputs” tab.
+4. Save the Query Log Queue ARN for later (Key: **QueryLogEventQueue**). This value will be further referred as **EVENT\_QUEUE\_ARN**.
+
+### 3\. Retrieve the Data Collector AWS account ID (Collector account)
+
+If the data collector is managed by Monte Carlo, please reach out to your representative for this value instead.
+
+1. From the console, select your username in the upper right corner.
+2. Select “My Account”.
+3. Save the Account Id (without dashes) for later. This value will be further referred as **COLLECTOR\_ACCOUNT\_ID**.
+
+### 4\. Create an access role (Local machine / Data account)
+
+The following steps do not work if the account has more than one data collector. If that is the case, follow the [Creating IAM Roles](/docs/creating-iam-roles) document instead.
+
+1. Please follow [this guide](/docs/using-the-cli) to install and configure the CLI on your local machine.
+2. Create a file with the policy below, replacing the value in brackets with the **S3\_ARN** saved above. **IMPORTANT:** the resource must end in `/*`.
+
+JSON
+
+`{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "s3:GetObject",
+            "Resource": "<S3_ARN>/*"
+        }
+    ]
+}
+`
+
+1. Run `montecarlo integrations create-role FILE`. If the data account is not the same as the collector account, use `--aws-profile` to pass the data account profile.
+2. The command prints a role ARN and an external id, they are used in the next section.
+
+Shell
+
+`$ montecarlo integrations create-role --help
+Usage: montecarlo integrations create-role [OPTIONS] FILE
+
+  Create an IAM role from a policy FILE. The returned role ARN and external
+  id should be used for adding lake assets.
+
+Options:
+  --aws-profile TEXT  Override the AWS profile used by the CLI, which
+                      determines where the role is created. This can be
+                      helpful when the account that manages the asset is not
+                      the same as the collector.
+
+  --help              Show this message and exit.
+`
+
+### 5\. Create a SNS Topic (Data account)
+
+1. Open the SNS console and select “Topics”. **IMPORTANT:** Make sure you are in the same region as the bucket you want to add an event for.
+2. Select “Create Topic”.
+3. Choose "Standard" type.
+4. Enter a meaningful name.
+5. Select “Create Topic” and save the Topic ARN for later. This value will be further referred as **SNS\_ARN**.
+6. The topic you just created has an access policy. Update the policy by appending the following two policy statements, replacing values in brackets with the **SNS\_ARN**, **S3\_ARN** and **COLLECTOR\_ACCOUNT\_ID** saved above.
+7. Save.
+
+JSON
+
+`{
+	"Effect": "Allow",
+	"Principal": {
+		"AWS": "*"
+	},
+	"Action": "SNS:Publish",
+	"Resource": "<SNS_ARN>",
+	"Condition": {
+		"StringEquals": {
+			"aws:SourceArn": "<S3_ARN>"
+		}
+	}
+}
+`
+
+JSON
+
+`{ 
+  "Sid": "__dc_sub",
+	"Effect": "Allow",
+	"Principal": {
+		"AWS": "<COLLECTOR_ACCOUNT_ID>"
+	},
+	"Action": "sns:Subscribe",
+	"Resource": "<SNS_ARN>"
+}
+`
+
+### 6\. Update the SQS access policy (Collector account)
+
+If the data collector is managed by Monte Carlo these steps can be skipped by just sending the SNS Topic ARN to your representative.
+
+1. Open the SQS console.
+2. Search for the queue. The name follows this structure: {CF\_STACK}-QueryLogEventQueue-{RANDOM\_STR}
+3. Select the “Access Policy” Tab and Select “Edit”.
+
+If the access policy is empty or looks something like this:
+
+JSON
+
+`{
+  "Version": "2012-10-17",
+  "Id": "arn:aws:sqs:<region>:<account>:<name>/SQSDefaultPolicy"
+}
+`
+
+Paste the following, replacing the values in brackets with the **SNS\_ARN**, **COLLECTOR\_ACCOUNT\_ID** and **EVENT\_QUEUE\_ARN** values saved above.
+
+JSON
+
+`{
+   "Version":"2008-10-17",
+   "Statement":[
+      {
+         "Sid":"__owner",
+         "Effect":"Allow",
+         "Principal":{
+            "AWS":"arn:aws:iam::<COLLECTOR_ACCOUNT_ID>:root"
+         },
+         "Action":"SQS:*",
+         "Resource":"<EVENT_QUEUE_ARN>"
+      },
+      {
+         "Sid":"__sender",
+         "Effect":"Allow",
+         "Principal":{
+            "AWS":"*"
+         },
+         "Action":"SQS:SendMessage",
+         "Resource":"<EVENT_QUEUE_ARN>",
+         "Condition":{
+            "ArnLike":{
+               "aws:SourceArn":[
+                  "<SNS_ARN>"
+               ]
+            }
+         }
+      }
+   ]
+}
+`
+
+If the access policy already has a SID with “\_\_sender” (i.e. looks like above) append your **SNS\_ARN** to the SourceArn list instead.
+
+JSON
+
+`"aws:SourceArn": [
+    "arn:aws:sns:::existing_sns_topic",
+    "<SNS_ARN>"
+]
+`
+
+### 7\. Create a SNS subscription (Data account)
+
+1. Open the SNS console and select “Subscriptions”.
+2. Select “Create Subscription”.
+3. Select the topic ARN you saved above in the "Create a SNS Topic" subsection.
+4. Select Amazon SQS as the protocol.
+5. **IMPORTANT: Be sure to select “Enable raw message delivery”**.
+6. Select (or paste) the SQS ARN.
+7. Select “Create Subscription”.
+8. Validate the status is “Confirmed”.
+
+### 8\. Create event notification (Data account)
+
+If the integration is Hive/EMR, create one event notification for each suffix in the able below. For other integrations, create only one event notification, suffix is optional in this case.
+
+| Integration                       | Suffix                           |
+| --------------------------------- | -------------------------------- |
+| Hive / EMR(2 event notifications) | /hive.log.gz/hive-server2.log.gz |
+| Hive native(1 event notification) | Optional                         |
+| Presto                            | Optional                         |
+
+1. Open the S3 Console and search for the bucket that you would like to enable events for.
+2. Select the bucket.
+3. Select the "Properties" tab.
+4. Select “Create event notification” under Event notifications.
+5. Fill in a meaningful name.
+6. Specify a prefix and/or suffix (mandatory for Hive / EMR, optional for others).
+7. Select “All object create events” under Event types.
+8. Enter the SNS topic ARN as the Destination topic ARN. You can also choose the topic from the combo instead.

@@ -1,0 +1,72 @@
+---
+title: "Muting schemas/tables using regex"
+---
+
+This tutorial will go over the steps to mass mute schemas or tables in your Monte Carlo environment using regex. This can come in handy when you do not want to be notified about incidents from staging or dev databases/schemas, or generally to mute any patterns of tables you may not care to get alerts from.
+
+> 🚧
+> 
+> Last Updated: April 11, 2022
+
+### Transcript
+
+Today, we'll be going through how to set up a muting regex for your notifications. The first thing you'll need to do here is go to "Settings" and then "Notifications". This is where you'll notice at the top there's both "Mute Datasets" as well as "Mute Tables":
+
+![1162](/images/6872fd4-Screen_Shot_2022-04-11_at_7.20.45_PM.png "Screen Shot 2022-04-11 at 7.20.45 PM.png")
+
+Notification Settings in MC UI
+
+This is where you can look to verify whether the API call that you've made was done so successfully. In this example, I'll explicitly be looking to mute tables that have `_templates_` within the table name. In this case, we can see that there's actually a number of different warehouses that we have connected, and you can see that within the brackets in front of the table name, so we have here a warehouse name `snowflake`, as well as `sf`, and `tst snowflake` among others:
+
+![1164](/images/64b3b9f-Screen_Shot_2022-04-11_at_7.21.01_PM.png "Screen Shot 2022-04-11 at 7.21.01 PM.png")
+
+Example tables to mute
+
+For any of these regexes that you set up, this will only apply to a single warehouse, so you will need to set this up a number of times, if you want to mute the same logic across different warehouses. Examples of that could be something like any temp tables, if you wanna mute anything that has `temp_`, or `test_`, or `dev_` as simple examples.
+
+Now, to start this process, we'll actually transition here to GraphiQL, which is my tool of choice for dealing with our GraphQL endpoints. Once you've set this up, which we have more details on under the \[Montecarlo API section of our developer resources within our documentation\] ([https://docs.getmontecarlo.com/docs/using-the-api#accessing-the-api](/docs/using-the-api#accessing-the-api)), you'll then want to first run this query in order to fit out the list of warehouses and what the warehouse UUID is that you'll want to use for this call:
+
+JSON
+
+`query {
+  getUser {
+    account {
+      warehouses {
+        name
+        uuid
+      }
+    }
+  }
+}
+`
+
+In this example, if I scroll all the way down, I'll start by looking for the one that's called `snowflake` as that's the first one that snow shows up in this list. This UUID is what I'll then want to take to pass through here into the data warehouse ID of the actual mute call that we'll want to do. And then in this specific case, I want to explicitly mute anything that has `_templates_` within the table name so anything up until the `:`, and then anything up until the `.` before the table name begins, and then we'll also want anything up until `_templates_`, and then anything after `_templates` works as well. So current how this is set up, this should mute anything where `_templates_` exists somewhere within the actual table name. The mute will also want to be `true`. Then if I lock this out and run this request, this should then mute anything that I'm looking for within the response of the request:
+
+JSON
+
+`mutation {
+  toggleMuteWithRegex (
+    input: {
+	    dwId: "ab344b13-546n-34n5-j532-aa284hdb5j3b"
+    	ruleRegex: "^(.*:.*..*_templates_.*)"
+    	mute: true
+    }
+	){
+  clientMutationId
+	}
+}
+`
+
+> 📘
+> 
+> Need Help with Regex?
+> 
+> There are lots of tools to help generate regex, like this one: [https://regex101.com/](https://regex101.com/). Find your favorite, plus in a couple of full table names from Monte Carlo (database:schema.table), and check if your regex works!
+
+It will not return a `clientMutationId`, so if you later want to turn this mute off, all you have to do is change this and toggle that to `false` and run this same request, and it will turn off the existing regex that you have set up. Now, if I refresh this page and again, look for `_templates_` once this page is refreshed, I will then be able to see that in fact, those tables have been muted:
+
+![1163](/images/b4ad4b0-Screen_Shot_2022-04-11_at_7.34.01_PM.png "Screen Shot 2022-04-11 at 7.34.01 PM.png")
+
+Muted tables in MC UI
+
+Hopefully this was helpful and please feel free to reach out to [\[email protected\]](/cdn-cgi/l/email-protection#b1c2c4c1c1dec3c5f1dcdedfc5d4d2d0c3ddded5d0c5d09fd2dedc) or the chat bot in the lower right hand corner if you have any more questions!

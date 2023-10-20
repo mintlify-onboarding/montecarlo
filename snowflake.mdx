@@ -1,0 +1,243 @@
+---
+title: "Snowflake"
+---
+
+> 📘
+> 
+> Admin credentials required
+> 
+> To make the read only service user for Monte Carlo, you will need permissions to use the `ACCOUNTADMIN` role on Snowflake.
+
+This guide explains how to create a read-only service account for Monte Carlo on Snowflake.
+
+To review all steps necessary to integrate a data warehouse with Monte Carlo, please see [here](/docs/data-warehouses).
+
+### Creating a service account
+
+Please use the SQL snippet below to create a service account for Monte Carlo. Before using the snippet, you will need to populate the following:
+
+* `<monte_carlo_password>`: Strong password to be used by the service account user.
+* `<your_database>`: Snowflake database to be monitored by Monte Carlo.
+
+Please note:
+
+* If you need to monitor multiple databases in your Snowflake account, please run the snippet multiple times, changing the value of `<your_database>` on each run.
+* Monte Carlo will use an XS warehouse by default. If you expect heavy monitoring workloads, you may consider a larger warehouse, or assigning Monte Carlo's service account to an existing larger warehouse in your account. This setting can be modified later if necessary.
+* We recommend using Snowflake's worksheet interface to run the snippet. Please copy the code, make any necessary modifications and use the _All Queries_ option to run it in full.
+
+![2504](/images/edf7022-Screen_Shot_2020-12-28_at_16.31.13.png "Screen Shot 2020-12-28 at 16.31.13.png")
+
+Running the full snippet using Snowflake worksheets
+
+> ❗️
+> 
+> Schema vs Database Future Grants
+> 
+> Applying schema level future grants in a Snowflake account where there are only database future grants can break existing roles! From [Snowflake's docs](https://docs.snowflake.com/en/sql-reference/sql/grant-privilege.html#considerations):
+> 
+> "When future grants are defined at both the database and schema level, the schema level grants take precedence over the database level grants, and the database level grants are ignored. An important point to note here is that as long as there is a SCHEMA level future grants, ALL DATABASE levels will be ignored, even for the roles that are NOT defined in the SCHEMA level future grants."
+> 
+> The below script checks if there are any SCHEMA level future grants before creating new SCHEMA level grants. If there aren't any we assume you're using DATABASE level future grants, and create the new grants on the DATABASE level instead.
+> 
+> Please see here for more information: [https://community.snowflake.com/s/article/DB-Level-Future-Grants-Overridden-by-Schema-Level-Future-Grants](https://community.snowflake.com/s/article/DB-Level-Future-Grants-Overridden-by-Schema-Level-Future-Grants)
+
+SQL
+
+`` -- Configuration
+set mc_username='MONTE_CARLO';
+set mc_password='<monte_carlo_password>';
+set mc_warehouse_size='XSMALL';
+set mc_warehouse_name='MONTE_CARLO_WH';
+set mc_role_name='MONTE_CARLO_ROLE';
+set database_to_monitor='<your_database>';
+
+-- Set role for grants
+USE ROLE ACCOUNTADMIN;
+
+-- Create warehouse for Monte Carlo's monitoring workload
+CREATE WAREHOUSE IF NOT EXISTS identifier($mc_warehouse_name) WAREHOUSE_SIZE=$mc_warehouse_size INITIALLY_SUSPENDED=TRUE
+    AUTO_SUSPEND = 5 AUTO_RESUME = TRUE;
+
+-- Create the role Monte Carlo will use
+CREATE ROLE IF NOT EXISTS identifier($mc_role_name);
+
+-- Create Monte Carlo's user and grant access to role
+CREATE USER IF NOT EXISTS identifier($mc_username) PASSWORD=$mc_password DEFAULT_ROLE=$mc_role_name;
+GRANT ROLE identifier($mc_role_name) TO USER identifier($mc_username);
+
+-- Grant permissions to use the new warehouse
+GRANT OPERATE, USAGE, MONITOR ON WAREHOUSE identifier($mc_warehouse_name) TO ROLE identifier($mc_role_name);
+
+-- Grant privileges to allow access to query history
+GRANT IMPORTED PRIVILEGES ON DATABASE "SNOWFLAKE" TO ROLE identifier($mc_role_name);
+
+-- Grant metadata privileges to database to be monitored
+GRANT USAGE,MONITOR ON DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name);
+GRANT USAGE,MONITOR ON ALL SCHEMAS IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name);
+
+USE DATABASE identifier($database_to_monitor);
+CREATE OR REPLACE PROCEDURE GRANT_REFERENCES_TO_MONTE_CARLO()
+    RETURNS VARCHAR
+    LANGUAGE javascript
+EXECUTE AS CALLER
+AS
+$$ 
+
+/*
+If a Snowflake account has only database future grants, applying schema level future grants can break existing roles!
+
+"When future grants are defined at both the database and schema level, the schema level grants take precedence over
+the database level grants, and the database level grants are ignored. An important point to note here is that as
+long as there is a SCHEMA level future grants, ALL DATABASE levels will be ignored, even for the roles that are
+NOT defined in the SCHEMA level future grants."
+
+See: https://docs.snowflake.com/en/sql-reference/sql/grant-privilege.html#considerations
+
+This is why the following script checks if there are any SCHEMA level future grants before creating new SCHEMA level
+grants. If there aren't any we assume you're using DATABASE level future grants, and create the new grants on the
+DATABASE level instead.
+
+Please see here for more information: 
+https://community.snowflake.com/s/article/DB-Level-Future-Grants-Overridden-by-Schema-Level-Future-Grants
+*/
+
+snowflake.createStatement({sqlText: `use database identifier($database_to_monitor)`}).execute();
+var show_future_grants = snowflake.createStatement({sqlText: `SHOW FUTURE GRANTS IN DATABASE identifier($database_to_monitor)`}).execute();
+var schema_future_grants = snowflake.createStatement({sqlText: `select * from TABLE(RESULT_SCAN('${show_future_grants.getQueryId()}')) where "grant_on" = 'SCHEMA'`}).execute();
+if (schema_future_grants.getRowCount() > 0) {
+    var schemas_to_grant = snowflake.createStatement({ sqlText:`select * from information_schema.SCHEMATA where SCHEMA_NAME <> 'INFORMATION_SCHEMA'`}).execute();
+    var granted_schemas = "";
+    while(schemas_to_grant.next()) {
+      table_schema = schemas_to_grant.getColumnValue("SCHEMA_NAME");
+
+      snowflake.createStatement({ sqlText:`GRANT REFERENCES ON ALL TABLES IN SCHEMA ${table_schema} TO ROLE identifier($mc_role_name)`}).execute();
+      snowflake.createStatement({ sqlText:`GRANT REFERENCES ON ALL VIEWS IN SCHEMA ${table_schema} TO ROLE identifier($mc_role_name)`}).execute();
+      snowflake.createStatement({ sqlText:`GRANT REFERENCES ON ALL EXTERNAL TABLES IN SCHEMA ${table_schema} TO ROLE identifier($mc_role_name)`}).execute();
+
+      snowflake.createStatement({ sqlText:`GRANT REFERENCES ON FUTURE TABLES IN SCHEMA ${table_schema} TO ROLE identifier($mc_role_name)`}).execute();
+      snowflake.createStatement({ sqlText:`GRANT REFERENCES ON FUTURE VIEWS IN SCHEMA ${table_schema} TO ROLE identifier($mc_role_name)`}).execute();
+      snowflake.createStatement({ sqlText:`GRANT REFERENCES ON FUTURE EXTERNAL TABLES IN SCHEMA ${table_schema} TO ROLE identifier($mc_role_name)`}).execute();
+      granted_schemas += table_schema + "; "
+    }
+    return `Granted references for schemas ${granted_schemas}`;
+}
+snowflake.createStatement({ sqlText: `GRANT REFERENCES ON ALL TABLES IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name)`}).execute();
+snowflake.createStatement({ sqlText: `GRANT REFERENCES ON ALL VIEWS IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name)`}).execute();
+snowflake.createStatement({ sqlText: `GRANT REFERENCES ON ALL EXTERNAL TABLES IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name)`}).execute();
+
+snowflake.createStatement({ sqlText: `GRANT REFERENCES ON FUTURE TABLES IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name)`}).execute();
+snowflake.createStatement({ sqlText: `GRANT REFERENCES ON FUTURE VIEWS IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name)`}).execute();
+snowflake.createStatement({ sqlText: `GRANT REFERENCES ON FUTURE EXTERNAL TABLES IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name)`}).execute();
+return `Granted references for database`;
+$$;
+CALL GRANT_REFERENCES_TO_MONTE_CARLO();
+
+-- Grant read-only privileges to database to be monitored
+GRANT SELECT ON ALL TABLES IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name);
+GRANT SELECT ON ALL VIEWS IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name);
+GRANT SELECT ON ALL EXTERNAL TABLES IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name);
+GRANT SELECT ON ALL STREAMS IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name);
+
+GRANT USAGE ON FUTURE SCHEMAS IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name);
+
+USE DATABASE identifier($database_to_monitor);
+CREATE OR REPLACE PROCEDURE GRANT_SELECT_FUTURES_TO_MONTE_CARLO()
+    RETURNS VARCHAR
+    LANGUAGE javascript
+EXECUTE AS CALLER
+AS
+$$
+
+/*
+If a Snowflake account has only database future grants, applying schema level future grants can break existing roles!
+
+"When future grants are defined at both the database and schema level, the schema level grants take precedence over
+the database level grants, and the database level grants are ignored. An important point to note here is that as
+long as there is a SCHEMA level future grants, ALL DATABASE levels will be ignored, even for the roles that are
+NOT defined in the SCHEMA level future grants."
+
+See: https://docs.snowflake.com/en/sql-reference/sql/grant-privilege.html#considerations
+
+This is why the following script checks if there are any SCHEMA level future grants before creating new SCHEMA level
+grants. If there aren't any we assume you're using DATABASE level future grants, and create the new grants on the
+DATABASE level instead.
+
+Please see here for more information: 
+https://community.snowflake.com/s/article/DB-Level-Future-Grants-Overridden-by-Schema-Level-Future-Grants
+*/
+
+snowflake.createStatement({sqlText: `use database identifier($database_to_monitor)`}).execute();
+var show_future_grants = snowflake.createStatement({sqlText: `SHOW FUTURE GRANTS IN DATABASE identifier($database_to_monitor)`}).execute();
+var schema_future_grants = snowflake.createStatement({sqlText: `select * from TABLE(RESULT_SCAN('${show_future_grants.getQueryId()}')) where "grant_on" = 'SCHEMA'`}).execute();
+if (schema_future_grants.getRowCount() > 0) {
+    var schemas_to_grant = snowflake.createStatement({ sqlText:`select SCHEMA_NAME from information_schema.SCHEMATA where SCHEMA_NAME <> 'INFORMATION_SCHEMA'`}).execute();
+    var granted_schemas = "";
+    while(schemas_to_grant.next()) {
+      table_schema = schemas_to_grant.getColumnValue("SCHEMA_NAME");
+      snowflake.createStatement({ sqlText:`GRANT SELECT ON FUTURE TABLES IN SCHEMA ${table_schema} TO ROLE identifier($mc_role_name)`}).execute();
+      snowflake.createStatement({ sqlText:`GRANT SELECT ON FUTURE VIEWS IN SCHEMA ${table_schema} TO ROLE identifier($mc_role_name)`}).execute();
+      snowflake.createStatement({ sqlText:`GRANT SELECT ON FUTURE EXTERNAL TABLES IN SCHEMA ${table_schema} TO ROLE identifier($mc_role_name)`}).execute();
+      snowflake.createStatement({ sqlText:`GRANT SELECT ON FUTURE STREAMS IN SCHEMA ${table_schema} TO ROLE identifier($mc_role_name)`}).execute();
+      granted_schemas += table_schema + ";"
+    }
+    return `Granted future select for schemas ${granted_schemas}`;
+}
+snowflake.createStatement({ sqlText:`GRANT SELECT ON FUTURE TABLES IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name)`}).execute();
+snowflake.createStatement({ sqlText:`GRANT SELECT ON FUTURE VIEWS IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name)`}).execute();
+snowflake.createStatement({ sqlText:`GRANT SELECT ON FUTURE EXTERNAL TABLES IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name)`}).execute();
+snowflake.createStatement({ sqlText:`GRANT SELECT ON FUTURE STREAMS IN DATABASE identifier($database_to_monitor) TO ROLE identifier($mc_role_name)`}).execute();
+return `Granted future select for database`;
+$$;
+CALL GRANT_SELECT_FUTURES_TO_MONTE_CARLO();
+ ``
+
+### Monitoring multiple databases with Monte Carlo
+
+To monitor multiple databases, you will grant Monte Carlo's service account the necessary permissions to each of them. Monte Carlo will automatically monitor all databases to which it has access. 
+
+To grant permissions, please run the snippet in the previous section for each of the databases you would like to monitor. You will modify the _database\_to\_monitor_ parameter in each run.
+
+### Custom Monitors
+
+[More information on custom monitors in Monte Carlo](/docs/monitors-overview).
+
+We do not support custom monitors on fields and tables named with Snowflake reserved words.
+
+### Providing service account credentials during onboarding
+
+When using Monte Carlo's onboarding wizard, please provide the following details to validate and complete the integration:
+
+* **User** and **Password**: Please provide the credentials you chose while creating the service account. Alternatively, Monte Carlo supports Snowflake's [key pair authentication](https://docs.snowflake.com/en/user-guide/key-pair-auth.html) (currently only supported via CLI). Please provide **private key** and optional **private key passphrase** for the encrypted private key.
+* **Account**: This would be the part that precedes _snowflakecomputing.com_ in your Snowflake console URL. For example, if you use the URL _[https://xyz12345.us-east-1.snowflakecomputing.com/](https://xyz12345.us-east-1.snowflakecomputing.com/)_ to access Snowflake, your account name will be _xyz12345.us-east-1_.
+* **Warehouse**: Please provide the name of the warehouse you chose while creating the service account, _MONTE\_CARLO\_WH_ by default.
+
+### Removing Permissions
+
+If you want to remove permissions from a subset of warehouses, schemas, or tables, run the following commands in the appropriate database, replacing `<DATABASE>` with the database name and `<SCHEMA>` with the schema name.
+
+To revoke permissions for a schema:
+
+sql
+
+`REVOKE ALL PRIVILEGES ON SCHEMA <DATABASE>.<SCHEMA> FROM MONTE_CARLO_ROLE;
+`
+
+As this script removes the `USAGE` permission from the schema, that's enough to prevent our service account from accessing any objects (tables, views, etc.) in the schema.
+
+To revoke permissions to specific table:
+
+SQL
+
+`REVOKE ALL PRIVILEGES ON TABLE <DATABASE>.<SCHEMA>.<TABLE> FROM MONTE_CARLO_ROLE
+`
+
+To revoke access to the entire database:
+
+SQL
+
+`REVOKE ALL PRIVILEGES ON DATABASE <DATABASE> FROM MONTE_CARLO_ROLE;
+`
+
+> 📘
+> 
+> `MONTE_CARLO_ROLE` is usually the role assigned to the user used by Monte Carlo but it might need to be updated too

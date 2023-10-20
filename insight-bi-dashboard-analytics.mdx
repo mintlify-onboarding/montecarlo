@@ -1,0 +1,30 @@
+---
+title: "Insight: BI Dashboard Analytics"
+description: "This is only currently available for looker dashboards"
+---
+
+### Field Definitions
+
+**DASHBOARD\_ID**: Unique ID given to the dashboard 
+
+**DASHBOARD\_FOLDER** : As defined externally 
+
+**DASHBOARD\_NAME** : As defined externally
+
+**IMPORTANCE\_SCORE**: A score from 0-1 expressed as a decimal based on DAYS\_SINCE\_LAST\_ACCESS, usage frequency and age 
+
+**CONSIDER\_DELETING**: A true/false boolean where true = ('LAST\_ACCESSED\_AT' is null or >30 days) AND (DAYS\_SINCE\_CREATION is null or > 7)
+
+**DAYS\_SINCE\_LAST\_ACCESS**: Field displays ‘Never accessed’ or a count of days since LAST\_ACCESSED\_AT
+
+**LAST\_ACCESSED\_AT**: The timestamp of last view of the dashboard.
+
+**AVG\_DAILY\_VIEWS\_LAST\_30\_DAYS**: The average daily views in the last 30 days
+
+**TOTAL\_VIEWS\_SINCE\_CREATION**: Total views since the CREATED\_TIME
+
+**DAYS\_SINCE\_CREATION**: Count of the days since the CREATED\_TIME
+
+**CREATED\_TIME**: The timestamp the dashboard was created. 
+
+**IS\_SHARED\_DASHBOARD**: A true/false boolean

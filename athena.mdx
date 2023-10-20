@@ -1,0 +1,174 @@
+---
+title: "Athena"
+---
+
+> 📘
+> 
+> Prerequisites
+> 
+> Requires permission to create IAM roles and policies in AWS.
+
+To connect Monte Carlo to Athena for query logs and data health queries, follow these steps:
+
+1. [Install the CLI](/docs/glue#installing-the-cli), it will be used in the next steps.
+2. [Create a workgroup](/docs/athena#creating-a-workgroup-for-monte-carlo-queries) for Monte Carlo queries.
+3. [Create an IAM role](/docs/athena#creating-an-iam-role-for-athena-access) that allows Athena access for Monte Carlo's data collector.
+4. [Provide the role's information](/docs/athena#providing-role-information-to-monte-carlo) to Monte Carlo to validate and complete the integration.
+
+### Installing the CLI
+
+Please follow [this guide](/docs/using-the-cli) to install and configure the CLI.
+
+### Creating a workgroup for Monte Carlo queries
+
+Create a workgroup for Monte Carlo to use to perform queries, see instructions [here](https://docs.aws.amazon.com/athena/latest/ug/workgroups-procedure.html). An S3 location (bucket and folder) to which query results will be written must be designated. It is recommended that the bucket be in the same region as the catalog that Athena uses.
+
+### Creating an IAM role for Athena access
+
+In order to provide access to Athena, you will create an IAM role with the necessary API permissions:
+
+1. Create a JSON file on your computer with the following content, replacing the placeholders:
+
+> 👍
+> 
+> The CLI command [athena-policy-gen](/docs/auto-generating-iam-policies) can be used auto-generate this policy.
+
+* `<region>`: you can specify the Athena AWS region or `*` for the default region.
+* `<account-id>`: the Athena AWS account id.
+* `<data-bucket>` : the S3 bucket storing the data for your Athena tables - if more than one bucket, just add the others to the resource list as well.
+* `<database-name>`: you can specify one or more database names or use `*` to give Monte Carlo access to all Athena databases.
+* `<montecarlo-workgroup>`: the workgroup created on the previous step.
+* `<results-bucket>`: the bucket configured for the workgroup.
+
+JSON
+
+`{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket",
+                "s3:GetBucketLocation"
+            ],
+            "Resource": [
+                "arn:aws:s3:::<data-bucket>",
+                "arn:aws:s3:::<results-bucket>"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "s3:GetObject",
+            "Resource": [
+                "arn:aws:s3:::<data-bucket>/*",
+                "arn:aws:s3:::<results-bucket>/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "s3:PutObject",
+            "Resource": [
+                "arn:aws:s3:::<results-bucket>/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "athena:StartQueryExecution",
+                "athena:StopQueryExecution",
+                "athena:GetQueryResults"
+            ],
+            "Resource": "arn:aws:athena:<region>:<account-id>:workgroup/<montecarlo-workgroup>"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "athena:ListWorkGroups",
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "athena:ListDatabases",
+            "Resource": [
+                "arn:aws:athena:<region>:<account-id>:datacatalog/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "glue:GetDatabases",
+            "Resource": [
+                "arn:aws:glue:<region>:<account-id>:catalog",
+                "arn:aws:glue:<region>:<account-id>:database/<database-name>"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "athena:GetQueryExecution",
+                "athena:BatchGetQueryExecution",
+                "athena:ListQueryExecutions",
+                "athena:GetWorkGroup"
+            ],
+            "Resource": [
+                "arn:aws:athena:<region>:<account-id>:workgroup/*",
+                "arn:aws:athena:<region>:<account-id>:datacatalog/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "glue:GetTables",
+                "glue:GetTable",
+                "glue:GetPartitions",
+                "glue:GetPartition"
+            ],
+            "Resource": [
+                "arn:aws:glue:<region>:<account-id>:catalog",
+                "arn:aws:glue:<region>:<account-id>:database/<database-name>",
+                "arn:aws:glue:<region>:<account-id>:table/<database-name>/*"
+            ]
+        }
+    ]
+}
+`
+
+1. Please follow the steps outlined [here](/docs/creating-iam-roles) to create the create an IAM role with the policy from step 1\. The role ARN and external ID should be saved to be used in the next step.
+
+> 👍
+> 
+> Recommendation - use infrastructure as code
+> 
+> The CLI command [cf-role-gen](/docs/creating-iam-roles#generating-a-cloudformation-template-using-the-mc-cli-recommended) can be used to help create a Data Collector compatible IAM role by generating a CloudFormation template with one or more IAM policies.
+
+### Providing role information to Monte Carlo
+
+Please use the command `montecarlo integrations add-athena` to set up Athena connectivity. For reference, see help for this command below:
+
+Shell
+
+`$ montecarlo integrations add-athena --help
+Usage: montecarlo integrations add-athena [OPTIONS]
+
+  Setup an Athena integration. For query logs and health queries.
+
+Options:
+  --catalog TEXT       Glue data catalog. If not specified the AwsDataCatalog
+                       is used.
+  --workgroup TEXT     Workbook for running queries and retrieving logs. If
+                       not specified the primary is used.
+  --region TEXT        Athena cluster region. If not specified the region the
+                       collector is deployed in is used.
+  --name TEXT          Friendly name of the warehouse which the connection
+                       will belong to.
+  --role TEXT          Assumable role ARN to use for accessing AWS resources.
+                       [required]
+  --external-id TEXT   An external id, per assumable role conditions.
+  --collector-id UUID  ID for the data collector. To disambiguate accounts
+                       with multiple collectors.
+  --skip-validation    Skip all connection tests. This option cannot be used
+                       with 'validate-only'.
+  --validate-only      Run connection tests without adding. This option cannot
+                       be used with 'skip-validation'.
+  --auto-yes           Skip any interactive approval.
+  --option-file FILE   Read configuration from FILE.
+  --help               Show this message and exit.
+`

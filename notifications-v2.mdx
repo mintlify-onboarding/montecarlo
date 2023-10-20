@@ -1,0 +1,58 @@
+---
+title: "Notifications 2.0"
+---
+
+Notifications 2.0 is the next generation of Monte Carlo's notifications framework. Compared to the legacy notifications framework, 2.0 includes many improvements that simplify user experience and increase flexibility.
+
+**Notifications 2.0 is currently only available to some customers.** To those who have access, it can be centrally managed from [Settings > Notifications 2.0](https://getmontecarlo.com/settings/notifications2) within Monte Carlo.
+
+### Audiences
+
+To send notifications, first create an audience. An audience is a named group of one or more recipients. For example, an audience could include just a single Slack channel. Or it could include two Slack channels, five email addresses, a Microsoft Teams channel, and a pagerduty routing key.
+
+Audiences can either be created from within [Settings > Notifications 2.0](https://getmontecarlo.com/settings/notifications2), or from the **Send Notifications** section of custom monitor creation. They can be easily edited to add, remove, or change recipients.
+
+![The modal to create a new audience from within creating a custom monitor.](/images/3743d79-image.png)
+
+The modal to create a new audience from within creating a custom monitor.
+
+### Adding notifications to an audience
+
+Once an audience is created, it can either be added directly to custom monitors, or you can create Notification Settings for it. Click the `+` button in the **Other notifications** column in the Notifications 2.0 tab to add a Notification Setting for that audience.
+
+A Notification Setting includes options to send notifications from any of Monte Carlo's out-of-the-box monitors, dbt and Airflow failures, and daily digests.
+
+![`+` button to create a Notification Setting
+
+](/images/55c23d1-image.png)
+
+`+` button to create a Notification Setting
+
+![Notification Setting form, allowing configurations for Monte Carlo's out-of-the-box monitors, dbt and Airflow failures, and daily digests](/images/347e5d7-image.png)
+
+Notification Setting form, allowing configurations for Monte Carlo's out-of-the-box monitors, dbt and Airflow failures, and daily digests
+
+### Viewing all your audiences
+
+You can view all your audiences, and their custom monitors and other notification settings, in [Settings > Notifications 2.0](https://getmontecarlo.com/settings/notifications2). But clicking on any of the numbers in the **Custom monitors** or **Other notifications** columns, you can see details of the associated monitors and notification configurations.
+
+![](/images/958e868-image.png)
+
+### Differences between 1.0 and 2.0
+
+Notifications 2.0 has several key advantages compared to the legacy notifications framework. In 2.0, the user can:
+
+* Include one or more recipients in an audience, and easily go back to add/remove/edit the recipients
+* Create an audience from within custom monitor creation, without needing to leave the custom monitor page
+* Assign any type of notification to be sent to an audience.
+
+There are some pieces of functionality from 1.0 that are no longer supported in 2.0\. These were deprecate to reduce complexity and improve ease-of-use: 
+
+* In 2.0, the user controls where notifications for a custom monitor are sent by applying an audience.  
+   * This means there is no longer a notification form for custom monitors in Settings. Deprecated functionality from that form include:  
+         * 'Custom message' text box  
+         * AND logic between multiple audiences  
+         * 'Incident Type' filters
+* Prior to April 2023, users were allowed to create Notification Settings that included _both_ automated monitors and custom monitors. This was disallowed after April 2023, but any existing settings were left in place. These configurations cannot be recreated as-is in 2.0\. The recommended course of action is:  
+   * Recreate the setting for any automated monitors, pointing to the audience  
+   * Directly apply the audience the any monitors that would have been included in that notification setting.

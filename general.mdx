@@ -1,0 +1,124 @@
+---
+title: "General"
+---
+
+The following examples are general queries related to users, insights, assets and more.
+
+Please note that the sample queries below only show a subset of the fields available for brevity. You can use introspection to see all available fields.
+
+### User Information
+
+Get a user and their account information:
+
+Sample QuerySample Response
+
+`query getUser {
+  getUser {
+    email
+    firstName
+    lastName
+    createdOn
+    role
+    account {
+      uuid
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "getUser": {
+      "email": "[[email protected]](/cdn-cgi/l/email-protection)",
+      "firstName": "Katie",
+      "lastName": "Noonan",
+      "createdOn": "2021-05-10T00:00:00Z",
+      "role": "OWNER"
+      "account": {
+        "uuid": "<my_account_uuid>"
+      }
+    }
+  }
+}
+`
+
+### Search for Assets
+
+Assets (tables, views, reports, fields, etc.) can be searched for using `search`.
+
+These results can be paginated through and filtered by type too.
+
+Sample QuerySample Response
+
+`query search {
+  search(query: "foo", limit: 2) {
+    totalHits
+    offset
+    results {
+      mcon
+      displayName
+      objectType
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "search": {
+      "totalHits": 10,
+      "offset": 2,
+      "results": [
+        {
+          "mcon": "dummy_table_id_1",
+          "displayName": "foo:bar.baz",
+          "objectType": "table"
+        },
+        {
+          "mcon": "dummy_table_id_2",
+          "displayName": "foo:bar.qux",
+          "objectType": "table"
+        }
+      ]
+    }
+  }
+}
+`
+
+### Download Insights Reports
+
+Insights reports can be exported using the **getReportUrl** function and querying the resulting URL endpoint. The parameters correspond to reports as follows:
+
+_Key Assets_  
+insightName: key\_assets  
+reportName: key\_assets.csv
+
+_Custom Monitors_  
+insightName: monitors  
+reportName: monitors.csv
+
+_Cleanup Suggestions_  
+insightName: cleanup\_suggestions  
+reportName: cleanup\_suggestions.csv
+
+_Events_  
+insightName: events  
+reportName: events.csv
+
+_Table Read/Write Activity_  
+insightName: table\_read\_write\_stats  
+reportName: table\_read\_write\_stats.csv
+
+Sample QuerySample Response
+
+`query{
+  getReportUrl(
+    insightName: insight_name_here
+    reportName: report_name_here
+  ){
+    url
+  }
+}
+`
+
+``

@@ -1,0 +1,45 @@
+---
+title: "Importance Score Calculation"
+---
+
+## Table
+
+**A table’s importance score is based on the following parameter’s:**
+
+* The number of reads
+* The number of users (query executors)
+* The degree connectivity (i.e table’s # of parent/child tables)
+* The update periodicity
+* Age & freshness
+
+The score is only calculated for tables that are specified in the warehouse’s metadata AND have at least one read or write query in the last 30 days (if a table was not queried in the last 30 days it can be found in the “Cleanup Suggestions” insight). Moreover, if the table is stale, newly created, or (very) rarely used then its score is set to zero. 
+
+**We then divide the table/views (whose score ≠ 0) into 3 scoring groups:**
+
+* Source tables (tables that have no parent table)
+* ETL tables (tables that have both parent and child tables)
+* Analytic tables (tables that have a parent but no children and are being queried by users/BI tools)
+
+For each of these scoring groups (independently) a score is then generates for each scoring parameter (_reads_, _users_, _connectivity_, _periodicity_). Then, for each table, these scores are combined into a single importance score which ranges between 0 and 1.
+
+**How is the score calculated in details?**
+
+1. The score is automatically set to zero if the table was not queried in the last 14 days or was queried for less than 3 distinct days out of the last 30 days.
+2. The score is relative in nature, each table (or view) is scored in respect to other tables found within its “scoring group” based on the scoring parameters(_reads_, _users_, _degree of connectivity_, _periodicity_).  
+   * **Reads score** \- If the avg. number of reads (in the last 30 days) < 1 then the score is set to zero. Otherwise, the number of reads is transformed to a percentile (0-1).  
+   * **Users score** \- If the number of query executors < 3 then the score is set to zero. Otherwise, the number of users is transformed to a percentile (0-1).  
+   * **Degree score** \- If the table degree (number of direct parent or child tables) < 3 then the score is set to zero. Otherwise, the degree score is set to 0.5.  
+   * **Periodicity score -** If the table (or a view) is periodic in terms of updates then the score is set to 1.2, and 0 otherwise. As views don’t get “updates” (views are not being written to), we define a “periodic” view as a view which is connected to a periodic table.
+3. All the 4 scores mentioned above are combined into a single _importance score_ using Euclidean norm whose output is then transformed into percentiles. Therefore, the final score is between 0 and 1\.
+
+_importance\_score_ \= percentile\_rank(euclidean\_norm(_reads score_, _user score_, _degree score_, _periodicity score_)).
+
+## Looker Dashboard
+
+A Dashboard's importance score is based on the following parameters:
+
+* Number of usages recently
+* Days since last used
+* Days since created
+
+There are different weights to these parameters to score each Dashboard to a score between 0 and 1\. Dashboards are considered Important / Key Assets at a score of 0.8 or greater.

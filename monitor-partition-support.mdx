@@ -1,0 +1,72 @@
+---
+title: "Partition Filtering for Monitors"
+---
+
+When Monte Carlo writes monitor queries to execute on your warehouse or lake, it uses the time-based partitions that are known based on metadata collection. Users do not need to specify partitions when creating most monitors, as they will be automatically inferred.
+
+### Usage
+
+When creating a Field Health or Dimension Tracking Monitor, under Advanced Options there is an option to **Enable auto-partition filtering**. It is on by default if a time-based partition is detected. If no time-based partition is detected on the table, this option will not be available.
+
+![512](/images/6108623-Screenshot_2023-01-27_at_2.44.34_PM.png "Screenshot 2023-01-27 at 2.44.34 PM.png") 
+
+### Integrations Supported
+
+* [BigQuery](/docs/bigquery)
+* [Databricks](/docs/overview-databricks)
+* [Hive](/docs/hive-mysql) and [Glue](/docs/glue) Data Lakes
+
+### Types of Queries Supported
+
+Monte Carlo automatically detects and filters for date partitions for tables when writing queries for the following functionality:
+
+* Field Health Monitors
+* Dimension Tracking Monitors
+* Root Cause Analysis Queries
+
+For monitors where Monte Carlo does not write the SQL automatically (like [Custom Monitors - SQL Rules](/docs/creating-sql-rules)), this feature is not supported. It is available for Field Heath and Dimension Tracking Monitors. Monitors that use **All Records** instead of **Recent Data** are not supported.
+
+### Formats of Partitions Supported
+
+Partitions must be stored in one of the following formats in order to be inferred by Monte Carlo:
+
+#### Single-Field Partitions
+
+* Timestamp Fields: any native timestamp field in the listed supported integrations
+* Date or String Fields - in the following formats (based on [standard C formatting](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes)):  
+   * `%Y-%m-%d`  
+   * `%Y-%m-%d`  
+   * `%Y-%m-%d-%H`  
+   * `%Y-%m`  
+   * `%Y%m`  
+   * `%Y%m%d`  
+   * `%Y%m%d%H`  
+   * `'%Y%m%d%H%M%S`  
+   * `%Y%m%d%H%M%S`  
+   * `%Y%m%d%H%M%S000`  
+   * `%YW%W`
+
+#### Multiple-Field Partitions
+
+If your partitions are separated into multiple String or Numeric fields, they must meet both the naming convention and formats below. 
+
+##### Field Naming Convention
+
+* Year: `year`, `yr`, `y`
+* Month: `month`, `m`
+* Week: `??`
+* Day: `day`, `d`
+* Hour (optional): `hour`, `hr`, `h`
+
+##### Field Supported Formats:
+
+* Year: `%Y`
+* Month: `%m`
+* Week: `%W`
+* Day: `%d`
+* Hour: `%H`
+
+### Supported Examples
+
+* BigQuery table partition of `_PARTITIONTIME` or `_PARTITIONDATE`
+* Databricks table partitioned by `dt` field in `%Y-%m-%d` format AND `hr` field in `%H` format

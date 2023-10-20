@@ -1,0 +1,17 @@
+---
+title: "Troubleshooting and FAQ: Fivetran"
+---
+
+### I get: "Error - Integration 'fivetran' not supported" when trying to set the integration
+
+This is because the Data Collector version you are running does not support Fivetran (the version is lower than 13175). In order to solve this you need to upgrade the Data Collector.
+
+Instructions here: [Upgrading Data Collector](/docs/upgrading-the-data-collector).
+
+To check your Data Collector version run the following CLI command and check the `Version` column: `montecarlo collectors list`
+
+### I get: "module tabulature could not be found" when running the CLI command
+
+If when running the CLI commands you get the error: `module tabulature could not be found` it is because you need to install it using `pip3` instead `pip`. 
+
+That will fix the issue and you will be able to proceed with the installation.

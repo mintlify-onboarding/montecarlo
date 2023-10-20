@@ -1,0 +1,85 @@
+---
+title: "MySQL (beta)"
+description: "Connection overview. Requires: CLI v0.51.0 and Data Collector v14147 or newer"
+---
+
+Integrating Monte Carlo with MySQL allows you to monitor your data assets through [custom SQL monitors](/docs/creating-sql-rules), which can be created in either the [UI wizard](https://getmontecarlo.com/monitors/create/sql-rule) and/or programmatically via [monitors as code](/docs/monitors-as-code) (API/SDK too). These monitors can be used to generate [notifications](/docs/slack) (incidents) to relevant stakeholders and [circuit break](/docs/circuit-breakers) pipelines.
+
+## Integration Setup
+
+To connect Monte Carlo to a MySQL database, follow these steps:
+
+1. [Enable network connectivity](/docs/mysql#1-enable-network-connectivity) between the database and Monte Carlo's data collector.
+2. [Create a read-only service account](/docs/mysql#2-create-a-read-only-service-account) with the appropriate permissions on your database.
+3. [Provide service account credentials](/docs/mysql#3-provide-service-account-credentials-to-monte-carlo) to Monte Carlo (requires [Using the CLI](/docs/using-the-cli)).
+
+### 1\. Enable network connectivity
+
+Follow the [Network Connectivity](/docs/aws-networking-tips) guide to IP Allowlist or VPC peer to provide access to MySQL.
+
+### 2\. Create a read-only service account
+
+> 📘
+> 
+> Prerequisites
+> 
+> To create a service account, you will need admin credentials to your MySQL database.
+
+Please run the SQL snippet below on your MySQL database to create a read-only service account for Monte Carlo
+
+SQL
+
+`CREATE USER 'montecarlo' IDENTIFIED BY '<PASSWORD>';
+
+/* 
+Grant access to all tables and views. Repeat for all relevant schemas (databases).
+Select permissions are necessary to create custom SQL monitors. 
+*/
+GRANT SELECT, SHOW VIEW ON <SCHEMA>.* TO 'montecarlo';
+
+FLUSH PRIVILEGES;
+`
+
+### 3\. Provide service account credentials to Monte Carlo
+
+1. Please follow [this](/docs/using-the-cli) guide to install and configure the CLI.
+2. Please use the command `montecarlo integrations add-mysql` to connect. For reference, see help [here](https://clidocs.getmontecarlo.com/index.html#montecarlo-integrations-add-mysql).
+
+Example
+
+`montecarlo integrations add-mysql \
+	--name artemis-dev \
+	--host example.cluster.us-east-1.rds.amazonaws.com \
+	--user montecarlo \
+	--password -1
+`
+
+## Monitor Support
+
+Below are the supported monitors for the MySQL Integration today. Please reach out to your Monte Carlo representative if you have requirements for additional Monitors.
+
+| Category                    | Monitor Type         | Support                                                                             |
+| --------------------------- | -------------------- | ----------------------------------------------------------------------------------- |
+| Automated Anomaly Detection | Freshness            |                                                                                     |
+| Automated Anomaly Detection | Volume               |                                                                                     |
+| Automated Monitoring        | Schema Changes       |                                                                                     |
+| Opt-in Monitor              | SQL Rule             | ![:white-check-mark:](/images/white-check-mark.png ":white-check-mark:") |
+| Opt-in Monitor              | Field Quality Rule   |                                                                                     |
+| Opt-in Monitor              | Freshness Rule       |                                                                                     |
+| Opt-in Monitor              | Volume Rule          |                                                                                     |
+| Opt-in Monitor              | Field Health Monitor |                                                                                     |
+| Opt-in Monitor              | Dimension Tracking   |                                                                                     |
+| Opt-in Monitor              | JSON Schema Changes  |                                                                                     |
+
+## FAQs
+
+**What is the minimum supported version?**
+
+Monte Carlo supports MySQL 8.0 and newer.
+
+**Are cloud variants of MySQL like AWS RDS, GCP Cloud SQL, and Azure Database supported?**
+
+Yes, AWS RDS, GCP Cloud SQL, and Azure Database for MySQL are all supported.
+
+**What hosting solutions are supported?**  
+This integration supports any instance that is reachable from the AWS cloud (e.g. AWS hosted, site-to-site VPN with AWS, publicly accessible, etc). Please see the [networking docs](/docs/aws-networking-tips) for more detail.

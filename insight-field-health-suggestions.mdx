@@ -1,0 +1,37 @@
+---
+title: "Insight: Field Health Suggestions"
+---
+
+### Field Definitions
+
+**FULL\_TABLE\_ID** : A concatenation of project, dataset and table name 
+
+**PROJECT\_NAME** : As defined externally
+
+**DATASET\_NAME** : As defined externally (e.g. a schema in snowflake) 
+
+**TABLE\_NAME**: As defined externally
+
+**TABLE\_TYPE** : Field values: table, view, external, wildcard\_table
+
+**IMPORTANCE\_SCORE** : A score from 0-1 expressed as a decimal, this is score is based on number of reads, number of users (query executors), degree connectivity (i.e., table’s # of parent/child tables), update periodicity and age & freshness. 
+
+**UPDATE\_FREQUENCY\_HOURS**: The typical number of hours in the update cycle.  
+  
+**TOTAL\_ROWS**: A count of the total rows in the table 
+
+**TOTAL\_BYTES**: A count of the total bytes in the table 
+
+**ROWS\_PER\_DAY**: usual count of rows updated per day 
+
+**BYTES\_PER\_DAY**: usual count of bytes updated per day   
+  
+**HAS\_TIME\_FIELD**: A true/false boolean.
+
+**HAS\_TXT\_FIELD**: A true/false boolean.
+
+**HAS\_NUM\_FIELD**: A true/false boolean.
+
+**HAS\_BOOL\_FIELD**: A true/false boolean.
+
+**DOMAINS**: As created by the user in the UI.

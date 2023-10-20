@@ -1,0 +1,76 @@
+---
+title: "Hybrid Deployment"
+---
+
+> ❗️
+> 
+> Additional steps
+> 
+> This hosting method is only a solution for limited customers. Please contact your account team if you would like the ability to self host.
+> 
+> If choosing the hybrid solution, please see additional requirements below and be advised that this will limit the ability for Monte Carlo to provide best-in-class support.
+
+### Deployment Requirements
+
+The data collector will be deployed using a CloudFormation template within your AWS account. There are select regions the data collector must be deployed in:
+
+* af-south-1
+* ap-northeast-2
+* ap-south-1
+* ap-southeast-1
+* ap-southeast-2
+* ca-central-1
+* eu-central-1
+* eu-north-1
+* eu-west-1
+* eu-west-2
+* us-east-1
+* us-east-2
+* us-west-2
+
+The full list is also available in the UI when setting up the data collector. If there is a region you would like supported that is not listed, please let us know!
+
+**Note:** An AWS admin is typically required to create the CloudFormation stack for the collector via the AWS console. 
+
+> 👍
+> 
+> Terraform
+> 
+> Terraform deployments are also supported through the [aws\_cloudformation\_stack](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudformation%5Fstack) resource. Monte Carlo also offers a native Terraform config that is currently in alpha; please reach out to your account representative if you are interested in trying it out!
+
+### Components of the Data Collector
+
+1. A **VPC** along with public/private subnets and other networking components. This VPC contains all components of the data collector. All outbound communication is routed through a single Elastic IP.
+2. 3 **lambda functions**:
+* one to handle API calls
+* one to execute distributed collection jobs: it connects to data warehouses, data lakes and BI tools to collect metadata, logs and metrics. This information is streamed back to Monte Carlo’s cloud via a secure Kinesis stream (using HTTPS calls)
+* _optional_: one third function that only comes if lake/orchestrator infrastructure is included in your collector that handles the processing of events coming from the SQS queue (see below)
+1. An **API gateway** that accepts API calls from Monte Carlo's cloud for configuration and management purposes. API calls are made over a private connection between Monte Carlo’s VPC and the collector's VPC. The gateway is configured to only accept calls coming from Monte Carlo’s environment.
+2. A **cross-account IAM role** to allow Monte Carlo to occasionally upgrade collector code as new versions are released. The role’s permissions are restricted to specific resources in the collector's CloudFormation template, and it cannot access or make changes to other resources in your AWS account. _This is optional, and the collector can be configured to bypass creating this role._
+
+> 📘
+> 
+> Collectors created after October 12, 2022 no longer provision a cross-account role
+> 
+> Instead, an additional maintenance / health lambda is bundled with the Data Collector to manage updates. Like the cross-account role this is optional and can be disabled when creating or updating the stack. 
+> 
+> If you are interested in migrating an existing collector into this new variant please let your Monte Carlo representative know or reach out to Support at [\[email protected\]](/cdn-cgi/l/email-protection#3645434646594442765b595842535557445a59525742571855595b), and we'd be happy to work with you to get you up and running!
+
+1. An **S3 bucket** that contains configuration and any other data required during processing, including [samplings](/docs/creating-sql-rules#samplings).
+2. Optional - **SQS queues** to handle events in data lake and/or airflow environments.
+
+### Connectivity between Data Collector and Monte Carlo's Cloud
+
+**From cloud to collector**. Monte Carlo's cloud service will occasionally make API calls to the data collector in order to configure and control its functionality. API calls are made over a [private API endpoint](https://aws.amazon.com/blogs/compute/introducing-amazon-api-gateway-private-endpoints/), and are routed through AWS’s private infrastructure. The collector’s API gateway is not exposed to the Internet, and is configured with a resource-based security policy that only allows API requests from Monte Carlo’s cloud VPC. This architecture guarantees that only Monte Carlo’s cloud environment can make API requests to the data collector, and provides the highest level of security.
+
+**From collector to cloud**. The data collector sends back metadata, logs and metrics to Monte Carlo’s cloud service through a collection of Kinesis streams. The streams are hosted in Monte Carlo’s cloud environment, and the data collector uses a dedicated IAM role to write records via a secure HTTPS connection. The data collector will only send records to streams that are configured by inbound API calls, which are guaranteed to come from Monte Carlo’s cloud service. 
+
+For a few integrations, like Databricks, metadata is also posted to Monte Carlo’s cloud service through an API Gateway over a secure HTTPS connection. This Gateway uses an account + service scoped token for authentication (AKA as an integration key). 
+
+For some integrations, like dbt Cloud, files are written directly to an S3 bucket in Monte Carlo's cloud environment using pre-signed URLs retrieved through the API Gateway mentioned above.
+
+The Data Collector template includes everything necessary for networking between your hosted Data Collector and the Monte Carlo cloud service. No other networking between the two should be required. 
+
+### Operating the Data Collector
+
+The data collector requires little to no operations once deployed. Occasionally, Monte Carlo will release fixes, improvements and other upgrades. Most upgrades only include code changes, and will be performed fully automatically by the Monte Carlo team, using the collector's cross-account IAM role. In the uncommon case infrastructure upgrades are required, the Monte Carlo team will reach out with precise instructions, requiring a [quick deployment process](/docs/upgrading-the-data-collector) by one of your AWS admins.

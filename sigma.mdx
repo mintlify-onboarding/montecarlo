@@ -1,0 +1,38 @@
+---
+title: "Sigma (beta)"
+---
+
+> 📘
+> 
+> This capability is in beta
+> 
+> Certain limitations in functionality may exist.
+
+## Overview
+
+Monte Carlo parses Query Logs from Sigma in order to document downstream lineage from your data storage. Nodes and edges are created or refreshed every 12 hours. 
+
+Monte Carlo creates Lineage nodes and Catalog entries for Pages in Sigma. The Name of the object is the Workbook and Page ID specified in the Sigma URL. Additionally in the Metadata for each Page, the following attributes are provided:
+
+* **Email**: the last user that queried the page.
+* **URL**: the URL of the Page in Sigma
+* **Kind**: The type of query that was specified (`adhoc`, `screenshot`)
+* **Workbook**: The Workbook that this Page is part of.
+* **Workbook Page**: The Page of this lineage node.
+* **Org**: The Sigma Organization that the node is part of.
+
+Workbook Pages expire from lineage if they have not be used in the past 7 days.
+
+---
+
+## Connecting Sigma
+
+> 👍
+> 
+> You are all set!
+> 
+> If you use Sigma, metadata for Sigma workbooks will be automatically extracted from your query logs.
+
+### Caveats
+
+* Sigma is only supported if you have connected a Warehouse or Lake integration with Query Logs: [Snowflake](/docs/snowflake), [BigQuery](/docs/bigquery), [Redshift](/docs/redshift), [Athena](/docs/athena), and [S3 Events - Query Logs (beta)](/docs/s3-events-query-logs).

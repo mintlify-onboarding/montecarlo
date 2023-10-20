@@ -1,0 +1,36 @@
+---
+title: "Insight: Field-level Cleanup Suggestions"
+---
+
+> 📘
+> 
+> Note
+> 
+> We currently suggest to delete fields that:
+> 
+> * Are not used in any downstream tables
+> * Are not used in any BI reports
+> * Are not read in any SELECT query
+> * The table itself is not eligible for cleanup
+
+### Field Defintions
+
+**FULL\_TABLE\_ID** : A concatenation of project, dataset and table name 
+
+**PROJECT\_NAME** : As defined externally
+
+**DATASET\_NAME** : As defined externally(e.g. a schema in snowflake) 
+
+**TABLE\_NAME**: As defined externally
+
+**TABLE\_TYPE** : Field values: table, view, external, wildcard\_table 
+
+**FIELD\_TO\_CLEANUP** : A list of fields that can be removed
+
+**FIELD\_TO\_KEEP** : A list of fields that should be kept
+
+**PERCENT\_REMOVABLE** : The % of fields in the table that can be deleted, the insight is sorted by this.
+
+**TABLE\_IMPORTANCE\_SCORE** : The table importance score, the insight is sorted by this
+
+[![docs.getmontecarlo.com](/images/e42fb99-small-Monte_Carlo_Logo_Secondary.png)docs.getmontecarlo.comImportance Score Calculation](https://docs.getmontecarlo.com/docs/key-assets-importance-score)

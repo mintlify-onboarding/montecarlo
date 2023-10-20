@@ -1,0 +1,120 @@
+---
+title: "Adding Additional Warehouses"
+---
+
+You will typically connect your warehouse to Monte Carlo while you follow the on-screen onboarding wizard. If you have more than one data warehouse in your environment, you will be able to connect additional warehouses to Monte Carlo once initial onboarding is complete. Your dashboard will then provide unified access to all tables in all warehouses.
+
+> 📘
+> 
+> Have more than 3,000 tables in your new warehouse?
+> 
+> You might need to adjust the capacity of your data collector to support the increased load. Please consult with your Monte Carlo success team.
+
+To connect Monte Carlo to a warehouse after initial onboarding had been completed, follow these steps:
+
+1. Ensure that Monte Carlo's data collector has [network connectivity](/docs/network-connectivity) to the warehouse.
+2. Create a read-only service account with the appropriate permissions on your data warehouse. See detailed instructions in our dedicated guides for [Snowflake](/docs/snowflake), [BigQuery](/docs/bigquery) and [Redshift](/docs/redshift).
+3. [Set your service account credentials](/docs/adding-another-warehouse#providing-service-account-credentials-to-monte-carlo) on Monte Carlo using the CLI.
+
+> 📘
+> 
+> Please allow up to 24 hours for a newly added warehouse to take effect
+> 
+> It may take 12-24 hours for tables from a newly added warehouse to appear in Catalog and Pipelines
+
+### Setting credentials for a new warehouse using the CLI
+
+You will provide connection details using Monte Carlo's CLI: 
+
+1. Please follow [this guide](/docs/using-the-cli) to install and configure the CLI.
+2. Please use one of the commands below to connect Monte Carlo with your warehouse.
+
+> 👍
+> 
+> Please give your warehouse a meaningful name
+> 
+> Please use the `name` parameter to give your new warehouse a friendly display name. This name will be used in Monte Carlo's UI.
+
+SnowflakeBigQueryRedshift
+
+`$ montecarlo integrations add-snowflake --help
+Usage: montecarlo integrations add-snowflake [OPTIONS]
+
+  Setup a Snowflake integration. For metadata, query logs and metrics.
+
+Options:
+  --user TEXT          User with access to snowflake.  [required]
+  --account TEXT       Snowflake account name.  [required]
+  --warehouse TEXT     Name of the warehouse for the user.  [required]
+  --password TEXT      User's password. If you prefer a prompt (with hidden
+                       input) enter -1.  [required]
+
+  --name TEXT          Friendly name for the warehouse.  [required]
+  --collector-id UUID  ID for the data collector. To disambiguate accounts
+                       with multiple collectors.
+
+  --skip-validation    Skip all connection tests. This option cannot be used
+                       with 'validate-only'.
+
+  --validate-only      Run connection tests without adding. This option cannot
+                       be used with 'skip-validation'.
+
+  --auto-yes           Skip any interactive approval.  [default: False]
+  --option-file FILE   Read configuration from FILE.
+  --help               Show this message and exit.
+`
+
+`$ montecarlo integrations add-bigquery --help
+Usage: montecarlo integrations add-bigquery [OPTIONS]
+
+  Setup a BigQuery integration. For metadata, query logs and metrics.
+
+Options:
+  --key-file PATH      JSON Key file.  [required]
+  --name TEXT          Friendly name for the warehouse.  [required]
+  --collector-id UUID  ID for the data collector. To disambiguate accounts
+                       with multiple collectors.
+
+  --skip-validation    Skip all connection tests. This option cannot be used
+                       with 'validate-only'.
+
+  --validate-only      Run connection tests without adding. This option cannot
+                       be used with 'skip-validation'.
+
+  --auto-yes           Skip any interactive approval.  [default: False]
+  --option-file FILE   Read configuration from FILE.
+  --help               Show this message and exit.
+`
+
+`$ montecarlo integrations add-redshift --help
+Usage: montecarlo integrations add-redshift [OPTIONS]
+
+  Setup a Redshift integration. For metadata, query logs and metrics.
+
+Options:
+  --port INTEGER       HTTP port.  [default: 5439]
+  --name TEXT          Friendly name for the warehouse.  [required]
+  --host TEXT          Hostname.  [required]
+  --user TEXT          Username with access to the database.  [required]
+  --database TEXT      Name of database.  [required]
+  --password TEXT      User's password. If you prefer a prompt (with hidden
+                       input) enter -1.  [required]
+
+  --collector-id UUID  ID for the data collector. To disambiguate accounts
+                       with multiple collectors.
+
+  --skip-validation    Skip all connection tests. This option cannot be used
+                       with 'validate-only'.
+
+  --validate-only      Run connection tests without adding. This option cannot
+                       be used with 'skip-validation'.
+
+  --auto-yes           Skip any interactive approval.  [default: False]
+  --test-network-only  Skip any permission tests. Only validates network
+                       connection between the collector and resource can be
+                       established. This option cannot be used with 'skip-
+                       validation'.  [default: False]
+
+  --option-file FILE   Read configuration from FILE.
+  --help               Show this message and exit.
+`

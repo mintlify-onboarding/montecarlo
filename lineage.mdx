@@ -1,0 +1,295 @@
+---
+title: "Lineage"
+---
+
+The following examples are queries related to lineage and nodes.
+
+Please note that the sample queries below only show a subset of the fields available for brevity. You can use introspection to see all available fields.
+
+### Get Lineage
+
+Lineage (i.e. upstream and downstream dependencies) can be retrieved using `getTableLineage`. For more information, see the [official API docs](https://apidocs.getmontecarlo.com/#query-getTableLineage).
+
+Sample QuerySample Response
+
+`{
+  getTableLineage(
+    mcon: "dummy_table_id_1"
+    direction: "downstream"
+    hops: 1
+  ) {
+    baseNode {
+      displayName
+      hasDownstreamNodes
+      hasUpstreamNodes
+      isCustom
+      mcon
+      objectType
+    }
+    connectedNodes {
+      displayName
+      hasDownstreamNodes
+      hasUpstreamNodes
+      isCustom
+      mcon
+      objectType
+    }
+    flattenedEdges {
+      directlyConnectedMcons
+      mcon
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "getTableLineage": {
+      "baseNode": {
+        "displayName": "dummy_table_id_1",
+        "hasDownstreamNodes": true,
+        "hasUpstreamNodes": true,
+        "isCustom": false,
+        "mcon": "dummy_table_id_1",
+        "objectType": "table",
+        "__typename": "LineageGraphNode"
+      },
+      "connectedNodes": [
+        {
+          "displayName": "dummy_bi_1",
+          "hasDownstreamNodes": true,
+          "hasUpstreamNodes": true,
+          "isCustom": false,
+          "mcon": "dummy_bi_1",
+          "objectType": "looker-view",
+          "__typename": "LineageGraphNode"
+        },
+        {
+          "displayName": "dummy_bi_2",
+          "hasDownstreamNodes": true,
+          "hasUpstreamNodes": true,
+          "isCustom": false,
+          "mcon": "dummy_bi_2",
+          "objectType": "looker-view",
+          "__typename": "LineageGraphNode"
+        }
+      ],
+      "flattenedEdges": [
+        {
+          "directlyConnectedMcons": [
+            "dummy_bi_1",
+            "dummy_bi_2",
+          ],
+          "mcon": "dummy_table_id_1",
+          "__typename": "FlattenedLineageGraphEdges"
+        }
+      ],
+      "__typename": "LineageGraph"
+    }
+  }
+}
+`
+
+### Add External Nodes
+
+External Nodes Monte Carlo does not have access to can be added to Lineage and Pipelines using a combination of **createOrUpdateLineageNode** and **createOrUpdateLineageEdge**
+
+Sample QuerySample Response
+
+`mutation {
+  createOrUpdateLineageNode(
+    name: "dummyTableName"
+    objectId: "database:schema.table_to_add"
+    objectType: "table"
+    resourceId: "dummy_warehouse_id"
+  ) {
+    node{
+      nodeId
+      displayName
+    }
+  }
+}
+
+mutation {
+  createOrUpdateLineageEdge(
+    destination: {
+      objectId: "database:schema.table_to_add"
+      objectType: "table"
+      resourceId: "dummy_warehouse_id"
+    }
+    source: {
+      objectId: "database:schema.table"
+      objectType: "table"
+      resourceId: "dummy_warehouse_id"
+    }
+    expireAt: "YYYY-MM-DDTHH:MM:SS.MMMZ"
+  ) {
+    edge{
+     expireAt
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "createOrUpdateLineageEdge": {
+      "edge": {
+        "createdTime": null,
+        "edgeId": "<edge_id>"
+      }
+    }
+  }
+}
+`
+
+### Block Nodes from Lineage
+
+You can block nodes from appearing in your lineage view based on regex at the dataset, schema, or table level. This can be convenient if you have an ETL that makes temporary tables causing your pipelines and lineage view to get cluttered quickly.
+
+Options:
+
+* **datasetRegexp:** (String): Block datasets matching the regexp
+* **projectRegexp:** (String): Block projects matching the regexp
+* **tableRegexp:** (String): Block tables matching the regexp
+
+First, you will need to grab the resource id. This is the uuid of the warehouse, bi tool, or datalake that your nodes exist in:
+
+Sample QuerySample Response
+
+`query getUser {
+  getUser {
+    email
+    account {
+      uuid
+      name
+    	tableauAccounts {
+        uuid
+    	}
+      warehouses {
+        uuid
+      }
+      bi {
+        uuid
+      }
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "getUser": {
+      "email": "<email>",
+      "account": {
+        "uuid": "<account_uuid>",
+        "name": "<account_name>",
+        "tableauAccounts": [
+          {
+            "uuid": "<example_tableau_resource_id>"
+          }
+        ],
+        "warehouses": [
+          {
+            "uuid": "<example_warehouse_resource_id>"
+          }
+        ],
+        "bi": : [
+          {
+            "uuid": "<example_bi_resource_id>"
+          }
+        }
+      }
+    }
+  }
+}
+`
+
+Then you will use that in the following query:
+
+Sample QuerySample Response
+
+`mutation {
+  createOrUpdateLineageNodeBlockPattern(
+    tableRegexp: "temp_table_*"
+    resourceId: "<resource_id>"
+  ) {
+    pattern {
+      id
+      uuid
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "createOrUpdateLineageNodeBlockPattern": {
+      "pattern": {
+        "id": "<id>",
+        "uuid": "<blockage_uuid>"
+      }
+    }
+  }
+}
+`
+
+To verify it looks as expected, run the following query with the uuid returned above:
+
+Sample QuerySample Response
+
+`query {
+  getLineageNodeBlockPattern(uuid: "<uuid>") {
+    id
+    uuid
+    tableRegexp
+    createdTime
+  }
+}
+`
+
+`{
+  "data": {
+    "getLineageNodeBlockPattern": {
+      "id": "<id>",
+      "uuid": "<uuid>",
+      "tableRegexp": "temp_table_*",
+      "createdTime": "2021-07-26T18:57:45.674238+00:00"
+    }
+  }
+}
+`
+
+If you are updating an existing blockage pattern, you will need to provide the uuid of the existing pattern in the following query. If this uuid is not provided, a new blockage pattern will be made:
+
+Sample QuerySample Response
+
+`mutation {
+  createOrUpdateLineageNodeBlockPattern(
+    uuid: "<uuid>"
+    tableRegexp: "<new_regex>"
+    resourceId: "<resource_id>"
+  ) {
+    pattern {
+      id
+      uuid
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "getLineageNodeBlockPattern": {
+      "id": "<id>",
+      "uuid": "<uuid>",
+    }
+  }
+}
+`
+
+> 🚧
+> 
+> Updates will not be visible right away.
+> 
+> Please note our Catalog view will show this change immediately, but the Pipelines view will take up to 12 hours to show this update.

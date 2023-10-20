@@ -1,0 +1,82 @@
+---
+title: "Insight: Key Assets"
+---
+
+> 🚧
+> 
+> Note
+> 
+> The lookback window for this insight is 30 days (the date range for the data included).
+
+### Field Definitions
+
+**RESOURCE\_TYPE**: The data warehouse type 
+
+**FULL\_TABLE\_ID**: A concatenation of project, dataset and table name 
+
+**PROJECT\_NAME**: As defined 
+
+**DATASET\_NAME**: As defined (e.g. a schema in snowflake) 
+
+**TABLE\_NAME**: As defined
+
+**TABLE\_TYPE** : Field values: table, view, external, wildcard\_table.
+
+**IMPORTANCE** : The level of importance based on the importance score as follows;  
+ _Importance\_score >= 0.75 then importance 'high'_ 
+ Importance\_score >= 0.6 then importance 'medium'  
+\* Importance\_score < 0.6 then importance 'low' 
+
+**IMPORTANCE\_SCORE** : A score from 0-1 expressed as a decimal. See how it is calculate below.
+
+[![docs.getmontecarlo.com](/images/e42fb99-small-Monte_Carlo_Logo_Secondary.png)docs.getmontecarlo.comKey Assets Importance Score](https://docs.getmontecarlo.com/docs/key-assets-importance-score)
+
+**PRC\_ACTIVE\_DAY**: The percentage of days with > 0 queries in the last 30 days 
+
+**USERS**: A count of query executors (reading & writing executor)
+
+**READ\_USERS**: A count of unique users querying the table  
+  
+**WRITE\_USERS**: A count of unique users writing into the table
+
+**READS**: number of queries successfully ran on the table  
+  
+**DISTINCT\_READS**: A count of unique queries on the table irrespective of timestamp  
+  
+**PRC\_DISTINCT\_READS**: The percentage of queries that are distinct vs non distinct
+
+**AVG\_READS\_PER\_ACTIVE\_DAY**: average of the queries on an active day
+
+**WRITES**: A count of updates to the table 
+
+**DISTINCT\_WRITES**: A count of unique updates to the table 
+
+**PRC\_DISTINCT\_WRITES**: The percentage of updates that are distinct vs non distinct.
+
+**AVG\_WRITES\_PER\_ACTIVE\_DAY**: The average amount of updates / active days.
+
+**LAST\_READ**: The timestamp of the last query to the table 
+
+**DAYS\_SINCE\_LAST\_READ**: A count of days since LAST\_READ
+
+**LAST\_WRITE**: The timestamp of the last update to the table 
+
+**DAYS\_SINCE\_LAST\_WRITE**: A count of the days since LAST\_WRITE
+
+**DIRECT\_UPSTREAM\_TABLES** : A count of the parent tables.  
+  
+**DIRECT\_DOWNSTREAM\_TABLES**: A count of the child tables.
+
+**TOTAL\_ROWS** : A count of the total rows in the table 
+
+**TOTAL\_BYTE**S : A count of the total bytes in the table 
+
+**ROWS\_PER\_DAY**: The typical number rows added to the table per day. 
+
+**BYTES\_PER\_DAY**: The typical number bytes added to the table per day. 
+
+**PERIODICITY**: The frequency of periodic updates if relevant.
+
+**URL**: A link to the table in the catalog page. 
+
+**DOMAINS**: As created by the user in the UI.

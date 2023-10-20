@@ -1,0 +1,711 @@
+---
+title: "Monitors as Code"
+---
+
+### Overview
+
+Monte Carlo developed a YAML-based monitors configuration to help teams deploy monitors as part of their CI/CD process. The following guide explains how to get started with monitors as code.
+
+### Prerequisites
+
+1. Install the CLI — [https://docs.getmontecarlo.com/docs/using-the-cli](/docs/using-the-cli)
+2. When running `montecarlo configure`, provide your API key and you may leave the AWS settings blank
+
+### Using code to define monitors
+
+First, you will need to create a Monte Carlo project. A Monte Carlo project is simply a directory which contains a `montecarlo.yml` file, which contains project-level configuration options. If you are using DBT, we recommend placing `montecarlo.yml` in the same directory as `dbt_project.yml`.
+
+The `montecarlo.yml` format:
+
+YAML
+
+`version: 1
+default_resource: <string>
+include_file_patterns:
+  - <string>
+exclude_file_patterns:
+  - <string>
+namespace: <string - optional> 
+`
+
+Description of options inside the `montecarlo.yml` file:
+
+* `version`: The version of MC configuration. Set to `1`
+* `default_resource`: The warehouse friendly name or UUID where YAML-defined monitors will be created. The warehouse UUID can be obtained via the `getUser` API as described [here](/docs/integrations#get-the-warehouse-id-dwid).  
+   * If your account only has a single warehouse configured, MC will use this warehouse by default, and this option does not need to be defined.  
+   * If you have multiple warehouses configured, you will need to either (1) define `default_resource`, or (2) specify the warehouse friendly name or UUID for each monitor explicitly in the `resource` property (see YAML format for configuring monitors below).
+* `include_file_patterns`: List of file patterns to include when searching for monitor configuration files. By default, this is set to `**/*.yaml` and `**/*.yml` . With these defaults, MC will search recursively for all directories nested within the project directory for any files with a `yaml` or `yml` extension.
+* `exclude_file_patterns`: List of file patterns to exclude when searching for monitor configuration files.
+
+Example `montecarlo.yml` configuration file, which should be sufficient for customers with a single warehouse:
+
+YAML
+
+`version: 1
+`
+
+Example `montecarlo.yml` configuration file, for customers with multiple warehouses configured.
+
+YAML
+
+`version: 1
+default_resource: bigquery
+`
+
+### Defining individual monitors
+
+> 📘
+> 
+> Define monitors in separate YML files than `montecarlo.yml`
+> 
+> Your montecarlo.yml file should only be used to define project-level configuration options. Use separate YML files to define individual monitors.
+
+Monitors are defined in YAML files within directories nested within the Monte Carlo project. Monitors can be configured in standalone YAML files, or embedded within DBT `schema.yml` files within the `meta` property of a DBT model definition.
+
+Monitor definitions inside of yml files must conform to the expected format in order to be processed successfully by the CLI. Some example monitor configurations, defining the most basic options can be found below.
+
+For an exhaustive list of configuration options and their definitions, refer to the [Monitor configuration reference section below](/docs/monitors-as-code#monitor-configuration-reference).
+
+Example of a standalone monitor definition:
+
+YAML
+
+`namespace: <string - optional>
+montecarlo:
+  field_health:
+    - table: project:dataset.table_name
+      timestamp_field: created
+  dimension_tracking:
+    - table: project:dataset.table_name
+      timestamp_field: created
+      field: order_status
+`
+
+Example of monitor embedded within a DBT `schema.yml` file:
+
+YAML
+
+`version: 2
+
+models:
+  - name: table_name
+    description: My table
+    meta:
+      montecarlo:
+        field_health:
+          - table: project:dataset.table_name
+            timestamp_field: created
+        dimension_tracking:
+          - table: '[[ ref("table_name") ]]'
+            name: dimension_tracking_for_table_name
+            description: 'Tracks dimensions for [[ ref("table_name") ]]'
+            timestamp_field: created
+            field: order_status
+`
+
+#### dbt ref resolution
+
+In the snippet above, you can see an example of resolving dbt `ref("<model_name>")` notation for any string field within Monte Carlo monitor configs. Just wrap the ref in `[[ ]]` and make sure to quote the string as in the example above. To resolve refs, you must pass the `--dbt-manifest <path_to_dbt_manifest>` argument to the CLI when applying the monitor config with the path to your dbt `manifest.json` file (by default created in the `target/` directory after running dbt commands like `compile` or `run`). Each dbt ref will be looked up in the manifest and replaced with the full table name. To use this feature you must be on version `0.42.0` or newer of the Monte Carlo CLI.
+
+> 📘
+> 
+> Tip: Using monitors as code with DBT
+> 
+> If your organization already uses DBT, you may find that embedding monitor configurations within DBT `schema.yml` files may make maintenance easier, as all configuration/metadata concerning a given table are maintained in the same location. For an example DBT repo with some basic monitor configuration, click [here](https://gitlab.com/mkh516/dbtSandbox).
+
+#### Shortcut to building monitor configuration
+
+If you want to get a head start on setting up monitors as code, visit the monitor details page of an existing monitor where you can find the YAML definition for that monitor's configuration.
+
+Below is a screenshot of the YAML definition for an existing monitor within Monte Carlo.
+
+![](/images/06ddcd8-yaml.jpg "yaml.jpg") 
+
+### Developing and testing locally
+
+Once the Monte Carlo project is setup with a `montecarlo.yml` and at least one monitor definition in a separate `.yml` file, you can use the Monte Carlo CLI to apply them.
+
+To apply monitor configuration to MC run:
+
+Bash
+
+`montecarlo monitors apply --namespace <namespace>
+`
+
+Note in the above command, a `namespace` parameter is supplied. Namespaces are required for all monitors configured via Monitors as Code as they make it easier to organize and manage monitors at scale. Namespaces can either be defined by passing a `--namespace` argument in the CLI command or defined within the `.yml` files (see above for more details). 
+
+The `apply` command behaves as follows:
+
+1. MC will search for all monitor configuration elements in the project, both in standalone and embedded in DBT schema files. All monitor configuration elements will be concatenated into a single configuration template.
+2. MC will apply the configuration template to your MC account:  
+   1. Any new monitors defined since last apply will be created  
+   2. Any previously defined monitors present in current configuration template will be updated if any attributes have changed  
+   3. Any previously defined monitors absent from current configuration template will be deleted
+
+#### Namespaces
+
+> 📘
+> 
+> You can think of namespaces like Cloudformation stack names. It’s a logical separation of a collection of resources that you can define. Monitors from different namespaces are isolated from each other.
+> 
+> Some examples of why this is useful -
+> 
+> 1. You have multiple people (or teams) working on managing monitors and don’t want to conflict or override configurations.
+> 2. You want to manage different groups monitors in different pipelines (e.g. dbt models in CI/CD x & non-dbt models in CI/CD y).
+> 
+> Namespaces can also be defined [within the montecarlo.yml file](#using-code-to-define-monitors) or within [individual monitor definitions](#defining-individual-monitors).
+
+Namespaces are currently limited to 2000 resources. Support for this starts in CLI version `0.52.0`, so please upgrade your CLI version if you are running into timeouts while applying changes.
+
+To delete (destroy) a namespace:
+
+Bash
+
+`montecarlo monitors delete --namespace <namespace>
+`
+
+This will delete all monitors for a given namespace.
+
+#### Dry Runs
+
+> 👍
+> 
+> The `apply` command also supports a `--dry-run` argument which will dry run the configuration update and report each operation. Using this argument just shows planned changes but doesn't apply them.
+
+### Integrating into your CI/CD pipeline
+
+Deploying monitors within a continuous integration pipeline is straightforward. Once changes are merged into your main production branch, configure your CI pipeline to install the `montecarlodata` CLI:
+
+Bash
+
+`pip install montecarlodata
+`
+
+And run this command:
+
+Bash
+
+`MCD_DEFAULT_API_ID=${MCD_DEFAULT_API_ID} \
+	MCD_DEFAULT_API_TOKEN=${MCD_DEFAULT_API_TOKEN} \
+	montecarlo monitors apply \
+			--namespace ${MC_MONITORS_NAMESPACE} \
+			--project-dir ${PROJECT_DIR} \
+                         --auto-yes
+`
+
+> 📘
+> 
+> Skipping confirmations
+> 
+> The `--auto-yes` option will disable any confirmation prompts shown by the command and should only be used on CI, where there's no interaction. Otherwise we recommend not including the `--auto-yes` so you can review what changes will be applied before confirming.
+
+These environment variables need to be populated:
+
+* `MCD_DEFAULT_API_ID`: Your Monte Carlo API ID
+* `MCD_DEFAULT_API_TOKEN`: Your Monte Carlo API Token
+* `MC_MONITORS_NAMESPACE`: Namespace to apply monitor configuration to
+* `PROJECT_DIR`: If the `montecarlo` command is not run within your Monte Carlo project directory, you can specify it here. Optional.
+
+#### Example projects with CI/CD
+
+For some examples of monitors as code projects with CI/CD setup, checkout these repositories:
+
+* [Standalone Monte Carlo project](https://gitlab.com/mkh516/mac)
+* [Basic DBT project with monitors (Gitlab)](https://gitlab.com/mkh516/dbtSandbox)
+* [Basic DBT project with monitors (Github)](https://github.com/melissa-hale/dbtSandbox)
+
+### Monitor configuration reference
+
+> 📘
+> 
+> The term `labels` is used to define the `audiences` for each monitor. `labels` and `audiences` are equivalent, but the term `labels` must be used in monitor config. Notification config uses the term `audiences`. See [Notifications as Code](/docs/notifications-as-code) for more info.
+
+YAML
+
+`montecarlo:
+  field_health:
+    - table: <string>  # required
+      name: <string> # optional -- by default it will be autogenerated
+      description: <string>
+      notes: <string> # optional
+      fields:
+        - <string>
+      selected_metrics: # optional -- empty to collect all metrics
+        - <metric> # see below for allowed values
+      use_important_fields: <bool> # optional -- by default, do not use important fields
+      segmented_expressions:
+        - <string> # Can be a field or a SQL expression
+      timestamp_field: <string>
+      timestamp_field_expression: <string>
+      where_condition: <string>
+      lookback_days: <int>
+      aggregation_time_interval: <one of 'day' or 'hour'>
+      min_segment_size: <int> # optional -- by default, fetch all segment sizes
+      schedule:  # optional -- by default, loose schedule with interval_minutes=720 (12h)
+        type: <loose, fixed, or dynamic>  # required
+        interval_minutes: <integer>  # required if loose or fixed
+        start_time: <date as isoformatted string>  # required if fixed
+        timezone: <timezone> # optional - select regional timezone for daylight savings ex. America/Los_Angeles
+      labels: # labels are equivalent to audiences
+        - <string>
+  dimension_tracking:
+    - table: <string>  # required
+      name: <string> # optional -- by default it will be autogenerated
+      description: <string>
+      notes: <string> # optional
+      field: <string>  # required
+      timestamp_field: <string>
+      timestamp_field_expression: <string>
+      where_condition: <string>
+      lookback_days: <int>
+      aggregation_time_interval: <one of 'day' or 'hour'>
+      schedule:  # optional -- by default, loose schedule with interval_minutes=720 (12h)
+        type: <loose, fixed, or dynamic>  # required
+        interval_minutes: <integer>  # required if loose or fixed
+        start_time: <date as isoformatted string>  # required if fixed
+        timezone: <timezone> # optional - select regional timezone for daylight savings ex. America/Los_Angeles
+      labels: # labels are equivalent to audiences
+        - <string>
+  json_schema:
+    - table: <string>  # required
+      name: <string> # optional -- by default it will be autogenerated
+      description: <string>
+      notes: <string> # optional
+      field: <string>  # required
+      timestamp_field: <string>
+      timestamp_field_expression: <string>
+      where_condition: <string>
+      schedule:  # optional -- by default, loose schedule with interval_minutes=720 (12h)
+        type: <loose, fixed, or dynamic>  # required
+        interval_minutes: <integer>  # required if loose or fixed
+        start_time: <date as isoformatted string>  # required if fixed
+        timezone: <timezone> # optional - select regional timezone for daylight savings ex. America/Los_Angeles
+      labels: # labels are equivalent to audiences
+        - <string>
+  custom_sql:
+    - sql: <string>  # required
+      name: <string> # optional -- by default it will be autogenerated
+      comparisons: <comparison>  # required
+      variables: <variable values>
+      description: <string>
+      notes: <string> # optional
+      schedule:
+        type: <string>  # must be 'fixed' or 'manual'
+        start_time: <date as isoformatted string>
+        interval_minutes: <integer>	
+        interval_crontab: 
+          - <string>
+        timezone: <timezone> # optional - select regional timezone for daylight savings ex. America/Los_Angeles
+          - <string>
+      event_rollup_count: <integer> # optional - enable to only send notifications every X incidents
+      event_rollup_until_changed: <boolean> # optional - enable to send subsequent notifications if breach changes, default: false
+      labels: # labels are equivalent to audiences
+        - <string>
+      severity: <string> # optional - only use SEV-0 through SEV-4 - custom values will be rejected
+  field_quality:
+    - table: <string> / tables: <list> # required
+      field: <string> / fields: <list> # required      
+      metric_type: <metric_type> # required, see below
+      comparisons: <comparison>  # required, see below
+      filters: # optional, rows to consider when collecting the metric
+        - field: <string> # required
+          operator: <string> # required, one of EQ, NEQ, LT, LTE, GT, GTE
+          value: <string> required
+      description: <string>
+      notes: <string> # optional
+      schedule:
+        type: <string>  # must be 'fixed' or 'manual'
+        start_time: <date as isoformatted string>
+        interval_minutes: <integer>	
+        interval_crontab: 
+          - <string>
+        timezone: <timezone> # optional - select regional timezone for daylight savings ex. America/Los_Angeles
+          - <string>
+      event_rollup_count: <integer> # optional - enable to only send notifications every X incidents
+      event_rollup_until_changed: <boolean> # optional - enable to send subsequent notifications if breach changes, default: false
+      labels: # labels are equivalent to audiences
+        - <string>
+      severity: <string> # optional - only use SEV-0 through SEV-4 - custom values will be rejected  
+  freshness:
+    - table: <string> / tables: <list> # required
+      name: <string> # optional -- by default it will be autogenerated
+      freshness_threshold: <integer>  # required
+      description: <string>
+      notes: <string> # optional
+      schedule:
+        type: fixed  # must be fixed
+        start_time: <date as isoformatted string>
+        interval_minutes: <integer>
+        interval_crontab: 
+          - <string>
+        timezone: <timezone> # optional - select regional timezone for daylight savings ex. America/Los_Angeles
+      event_rollup_count: <integer> # optional - enable to only send notifications every X incidents
+      event_rollup_until_changed: <boolean> # optional - enable to send subsequent notifications if breach changes, default: false
+      labels: # labels are equivalent to audiences
+        - <string>
+      severity: <string> # optional - only use SEV-0 through SEV-4 - custom values will be rejected
+  volume:
+    - table: <string> / tables: <list>   # required
+      name: <string> # optional -- by default it will be autogenerated
+      comparisons: <comparison>  # required
+      volume_metric: <row_count or byte_count>  # row_count by default
+      description: <string>
+      notes: <string> # optional
+      schedule:
+        type: fixed  # must be fixed
+        start_time: <date as isoformatted string>
+        interval_minutes: <integer>
+        interval_crontab: 
+          - <string>
+        timezone: <timezone> # optional - select regional timezone for daylight savings ex. America/Los_Angeles
+      event_rollup_count: <integer> # optional - enable to only send notifications every X incidents
+      event_rollup_until_changed: <boolean> # optional - enable to send subsequent notifications if breach changes, default: false
+      labels: # labels are equivalent to audiences
+        - <string>
+      severity: <string> # optional - only use SEV-0 through SEV-4 - custom values will be rejected
+`
+
+> 🚧
+> 
+> Lookback Limits
+> 
+> Where we allow you to specify a longer lookback period on some monitors (in case the data in your table has historical timestamps), you cannot pick a number larger than 7\. This is because for each day we "lookback", an additional query against your table is run. This is a safeguard to prevent specifying a very large period, like 90 days, and then having 90 queries run against your warehouse each time the monitor runs. If you need help with these windows, please feel free to reach out to [\[email protected\]](/cdn-cgi/l/email-protection#1b686e6b6b74696f5b7674756f7e787a6977747f7a6f7a35787476) or the chat bot in the lower right hand corner.
+
+#### Field Health Monitor
+
+* `table`: MC global table ID (format `<database>:<schema>.<table name>`
+* `name`: Optional name used to identify the monitor (to determine whether to create a new one or update an existing one for the namespace). By default, it will be autogenerated using `table`, `timestamp_field` and `where_condition`.
+* `description`: Friendly description of rule
+* `notes`: Additional context for the monitor
+* `fields`: List of fields in table to monitor. Optional — by default all fields are monitored
+* `selected_metrics`: List of metrics to collect over the selected fields. If empty, all available metrics will be collected. Metrics are one of:  
+   * `NULL_RATE`: % of null values  
+   * `UNIQUE_RATE` % of unique values  
+   * `ZERO_RATE`: % of values equal 0  
+   * `NEGATIVE_RATE`: % of values < 0  
+   * `NUMERIC_QUANTILES`: Percentiles (min, p20, p40, p60, p80, max)  
+   * `NUMERIC_MEAN`: Mean value  
+   * `NUMERIC_STDDEV`: Standard deviation of value  
+   * `TEXT_MIN_LENGTH`: Minimum text length  
+   * `TEXT_MAX_LENGTH`: Maximum text length  
+   * `TEXT_STD_LENGTH`: Standard deviation of text length  
+   * `TEXT_ALL_SPACE_RATE`: % of texts that have only whitespaces  
+   * `TEXT_NULL_KEYWORD_RATE`: % of texts including the words 'null' or 'None'  
+   * `TEXT_INT_RATE`: % of texts matching integer representations  
+   * `TEXT_NUMBER_RATE`: % of texts matching number representations  
+   * `TEXT_UUID_RATE`: % of texts matching UUIDs representations
+* `use_important_fields`: Defaults to false. If true, use the table current important fields to build the monitor. You can use important fields and also provide a specific list of fields at the same time.
+* `segmented_expressions`: List of fields or SQL expressions used to segment the field (must have exactly one field in `fields`). Enables [Monitoring by Dimension](/docs/field-health-metrics#advanced-field-health-monitor-options).
+* `timestamp_field`: Timestamp field
+* `timestamp_field_expression`: Arbitrary SQL expression to be used as timestamp field, e.g. `DATE(created)`. Must use either `timestamp_field` or `timestamp_field_expression` or neither.
+* `where_condition`: SQL snippet of where condition to add to field health query
+* `lookback_days`: Lookback period in days. Default: 3
+* `aggregation_time_interval`: Aggregation bucket time interval, either `hour` (default) or `day`
+* `min_segment_size`: Minimum number of rows for a segment to be fetched. Defaults to 1\. Can be used to avoid cardinality limits for datasets with a long tail of less-relevant segments.
+* `schedule`  
+   * `type`: One of `loose`, `fixed`, or `dynamic`  
+   * `interval_minutes`: For loose or fixed, how frequently to run the monitor  
+   * `start_time`: For fixed, when to start the schedule  
+   * `timezone`: Optional - select regional timezone for daylight savings ex. America/Los\_Angeles
+* `labels`: Optional list of audiences associated with the monitor (`labels` are equivalent to `audiences`).
+
+The monitored fields cannot exceed 300 fields, including important fields and manually specified fields. If they do, we'll attempt to keep all the manually specified fields and as many important fields as possible (ordered by importance score) until we reach 300 fields.
+
+#### Dimension Tracking Monitor
+
+* `table`: MC global table ID (format `<database>:<schema>.<table name>`
+* `name`: Optional name used to identify the monitor (to determine whether to create a new one or update an existing one for the namespace). By default, it will be autogenerated using `table`, `field`, `timestamp_field` and `where_condition`.
+* `description`: Friendly description of rule
+* `notes`: Additional context for the monitor
+* `field`: Field in table to monitor or a valid SQL expression that returns the row's dimension value as a string
+* `timestamp_field`: Timestamp field
+* `timestamp_field_expression`: Arbitrary SQL expression to be used as timestamp field, e.g. `DATE(created)`. Must use either `timestamp_field` or `timestamp_field_expression` or neither.
+* `where_condition`: SQL snippet of where condition to add to field health query
+* `lookback_days`: Lookback period in days. Default: 3
+* `aggregation_time_interval`: Aggregation bucket time interval, either `hour` (default) or `day`
+* `schedule`  
+   * `type`: One of `loose`, `fixed`, or `dynamic`  
+   * `interval_minutes`: For loose or fixed, how frequently to run the monitor  
+   * `start_time`: For fixed, when to start the schedule  
+   * `timezone`: Optional - select regional timezone for daylight savings ex. America/Los\_Angeles
+* `labels`: Optional list of audiences associated with the monitor (`labels` are equivalent to `audiences`).
+* `severity`: Optional, pre-set the severity of incidents generated by this monitor. Only use SEV-0 through SEV-4 as custom values will be rejected.
+
+#### JSON Schema Monitor
+
+* `table`: MC global table ID (format `<database>:<schema>.<table name>`
+* `name`: Optional name used to identify the monitor (to determine whether to create a new one or update an existing one for the namespace). By default, it will be autogenerated using `table`, `field`, `timestamp_field` and `where_condition`.
+* `description`: Friendly description of rule
+* `notes`: Additional context for the monitor
+* `field`: Field in table to monitor
+* `timestamp_field`: Timestamp field
+* `timestamp_field_expression`: Arbitrary SQL expression to be used as timestamp field, e.g. `DATE(created)`. Must use either `timestamp_field` or `timestamp_field_expression` or neither.
+* `where_condition`: SQL snippet of where condition to add to field health query
+* `schedule`  
+   * `type`: One of `loose`, `fixed`, or `dynamic`  
+   * `interval_minutes`: For loose or fixed, how frequently to run the monitor  
+   * `start_time`: For fixed, when to start the schedule  
+   * `timezone`: Optional - select regional timezone for daylight savings ex. America/Los\_Angeles
+* `labels`: Optional list of audiences associated with the monitor (`labels` are equivalent to `audiences`).
+
+#### SQL Rule
+
+* `sql`: SQL of rule
+* `query_result_type`: Optional, can be set to `SINGLE_NUMERIC` to make the rule use a [value-based threshold](/docs/creating-sql-rules#value-based-thresholds)
+* `sampling_sql`: Optional custom SQL query to be run on breach (results will be displayed in Incident IQ to help with investigation).
+* `name`: Optional name used to identify the rule (to determine whether to create a new one or update an existing one for the namespace). By default, it will be autogenerated using `sql`.
+* `comparisons`: See comparisons below
+* `variables`: See variables below
+* `description`: Friendly description of rule
+* `notes`: Additional context for the rule
+* `schedule`  
+   * `type`: Can be `fixed` or `manual`. `Manual` would be for SQL rules implemented during processes like [Circuit Breakers](/docs/circuit-breakers).  
+   * `interval_minutes`: How frequently to run the monitor (in minutes).  
+   * `interval_crontab`: How frequently to run the monitor (using a list of [CRON](https://crontab.guru) expressions, check [example below](/docs/monitors-as-code#example-with-cron-expressions)).  
+   * `start_time`: When to start the schedule. Required for `fixed`  
+   * `timezone`: Optional - select regional timezone for daylight savings ex. America/Los\_Angeles
+* `labels`: Optional list of audiences associated with the rule (`labels` are equivalent to `audiences`).
+* `severity`: Optional, pre-set the severity of incidents generated by this monitor. Only use SEV-0 through SEV-4 as custom values will be rejected.
+* `event_rollup_count`: Optional - a [Reduce Noise](/docs/reducing-noise-from-rules) option to only send notifications every X incidents
+* `event_rollup_until_changed`: Optional - a [Reduce Noise](/docs/reducing-noise-from-rules) option to send subsequent notifications if breach changes
+
+##### SQL Rule comparisons
+
+> 📘
+> 
+> `comparisons` are definitions of breaches, not expected return values. This section would be where you would define the logic for when to get alerted about anomalous behavior in your monitor. For example, if you make a custom SQL rule and pick:
+> 
+> * `type`: `threshold`
+> * `operator`: `GT`
+> * `threshold_value`: 100
+> 
+> When Monte Carlo runs your monitor and the return results are greater than 100, we will fire an alert to any routes configured to be notified about breaches to this monitor.
+
+* `type`: `threshold`, `dynamic_threshold` or `change`. If `threshold`, `threshold_value` below is an absolute value. If `dynamic_threshold` no threshold is needed (it will be determined automatically). If `change`, `threshold_value` as change from the historical baseline
+* `operator`: One of `EQ`, `NEQ`, `GT`, `GTE`, `LT`, `LTE`. Operator of comparison, =, ≠, >, ≥, <, ≤ respectively.
+* `threshold_value`: Threshold value
+* `baseline_agg_function`: If type = `change`, the aggregation function used to aggregate data points to calculate historical baseline. One of `AVG`, `MAX`, `MIN`.
+* `baseline_interval_minutes`: If type = `change`, the time interval in minutes (backwards from current time) to aggregate over to calculate historical baseline
+* `is_threshold_relative`: If type = `change`, whether or not `threshold_value` is a relative vs absolute threshold. `is_threshold_relative: true` would be a percentage measurement, `is_threshold_relative: false` would be a numerical measurement. Relative means the threshold\_value will be treated as a percentage value, Absolute means the threshold\_value will be treated as an actual count of rows.
+
+##### SQL Rule variables
+
+> 📘
+> 
+> When defining custom sql sentences, you can use variables to execute the same sentence for different combinations of values. Variables are defined as {{variable\_name}}. Then, you can define one or more values for each variable, and all combinations will be tested.
+> 
+> Here is an example defining the same sentence for several tables and conditions (4 sentences will be executed):
+> 
+> YAML
+> 
+> `custom_sql:
+>    - sql: |
+>         select foo from {{table}} where {{cond}}
+>      variables:
+>        table: 
+>            - project:dataset.table1 
+>            - project:dataset.table2
+>        cond: 
+>            - col1 > 1
+>            - col2 > 2 
+> 
+> `
+
+#### Field Quality Rule
+
+* `name`: Optional name used to identify the rule (to determine whether to create a new one or update an existing one for the namespace). By default, it will be autogenerated using `field-quality`.
+* `table`: MC global table ID (format `<database>:<schema>.<table name>`)
+* `tables`: Instead of `table`, you can also use `tables` to define a list of tables (check example with [Getting Started](/docs/architecture) multiple tables below\]([https://docs.getmontecarlo.com/docs/monitors-as-code#example-with-multiple-tables](/docs/monitors-as-code#example-with-multiple-tables))).
+* `field`: Field name
+* `fields`: Instead of `field`, you can also use `fields` to define a list of fields. All the fields must be present in the selected tables and have the same type if multiple tables are provided.
+* `metric_type`: What metric will be collected. Certain metrics are only available on specific data types:  
+   * Numeric: `NULL_RATE`, `UNIQUE_RATE`, `ZERO_RATE`, `NEGATIVE_RATE`, `NUMERIC_MIN`, `NUMERIC_MEAN`, `NUMERIC_STDDEV`, `NUMERIC_MEDIAN`, `NUMERIC_MAX`  
+   * Text: `NULL_RATE`, `UNIQUE_RATE`, `TEXT_MIN_LENGTH`, `TEXT_MEAN_LENGTH`, `TEXT_STD_LENGTH`, `TEXT_MAX_LENGTH`, `TEXT_ALL_SPACE_RATE`, `TEXT_NULL_KEYWORD_RATE`, `TEXT_INT_RATE`, `TEXT_NUMBER_RATE`, `TEXT_UUID_RATE`  
+   * Time: `NULL_RATE`  
+   * Date: `NULL_RATE`, `UNIQUE_RATE`  
+   * Boolean: `NULL_RATE`
+* `comparisons`: See comparisons below
+* `filters`: See filters below
+* `description`: Friendly description of rule
+* `notes`: Additional context for the rule
+* `schedule`  
+   * `type`: Can be `fixed` or `manual`. `Manual` would be for rules used during processes like [Circuit Breakers](/docs/circuit-breakers).  
+   * `interval_minutes`: How frequently to run the monitor (in minutes).  
+   * `interval_crontab`: How frequently to run the monitor (using a list of [CRON](https://crontab.guru) expressions, check [example below](/docs/monitors-as-code#example-with-cron-expressions)).  
+   * `start_time`: When to start the schedule. Required for `fixed`  
+   * `timezone`: Optional - select regional timezone for daylight savings ex. America/Los\_Angeles
+* `labels`: Optional list of audiences associated with the rule (`labels` are equivalent to `audiences`).
+* `severity`: Optional, pre-set the severity of incidents generated by this monitor. Only use SEV-0 through SEV-4 as custom values will be rejected.
+* `event_rollup_count`: Optional - a [Reduce Noise](/docs/reducing-noise-from-rules) option to only send notifications every X incidents
+* `event_rollup_until_changed`: Optional - a [Reduce Noise](/docs/reducing-noise-from-rules) option to send subsequent notifications if breach changes
+
+##### Field Quality Rule comparisons
+
+* `type`: `threshold`
+* `operator`: One of `EQ`, `NEQ`, `GT`, `GTE`, `LT`, `LTE`. Operator of comparison, =, ≠, >, ≥, <, ≤ respectively.
+* `threshold_value`: Threshold value
+
+##### Field Quality Rule filters
+
+* `field`: The field name
+* `operator`: One of `EQ`, `NEQ`, `GT`, `GTE`, `LT`, `LTE`. Operator of comparison, =, ≠, >, ≥, <, ≤ respectively.
+* `value`: The value to filter on
+
+#### Freshness Rule
+
+* `table`: MC global table ID (format `<database>:<schema>.<table name>`)
+* `tables`: Instead of `table`, can also use `tables` to define a list of tables (check example with [Getting Started](/docs/architecture) multiple tables below\]([https://docs.getmontecarlo.com/docs/monitors-as-code#example-with-multiple-tables](/docs/monitors-as-code#example-with-multiple-tables))).
+* `name`: Optional name used to identify the rule (to determine whether to create a new one or update an existing one for the namespace). By default, it will be autogenerated using `table`
+* `freshness_threshold`: Freshness breach threshold in minutes
+* `description`: Friendly description of rule
+* `notes`: Additional context for the rule
+* `schedule`  
+   * `type`: Must be `fixed`  
+   * `interval_minutes`: How frequently to run the monitor (in minutes).  
+   * `interval_crontab`: How frequently to run the monitor (using a list of [CRON](https://crontab.guru) expressions, check [example below](/docs/monitors-as-code#example-with-cron-expressions)).  
+   * `start_time`: When to start the schedule  
+   * `timezone`: Optional - select regional timezone for daylight savings ex. America/Los\_Angeles
+* `labels`: Optional list of audiences associated with the rule (`labels` are equivalent to `audiences`).
+* `severity`: Optional, pre-set the severity of incidents generated by this monitor. Only use SEV-0 through SEV-4 as custom values will be rejected.
+* `event_rollup_count`: Optional - a [Reduce Noise](/docs/reducing-noise-from-rules) option to only send notifications every X incidents
+* `event_rollup_until_changed`: Optional - a [Reduce Noise](/docs/reducing-noise-from-rules) option to send subsequent notifications if breach changes
+
+#### Volume Rule
+
+* `table`: MC global table ID (format `<database>:<schema>.<table name>`
+* `tables`: Instead of `table`, can also use `tables` to define a list of tables (check example with [multiple tables below](/docs/monitors-as-code#example-with-multiple-tables)).
+* `name`: Optional name used to identify the rule (to determine whether to create a new one or update an existing one for the namespace). By default, it will be autogenerated using `table`.
+* `volume_metric`: Must be `total_row_count` or `total_byte_count` — defines which volume metric to monitor
+* `comparisons`: See comparisons below
+* `description`: Friendly description of rule
+* `notes`: Additional context for the rule
+* `schedule`  
+   * `type`: Must be "fixed"  
+   * `interval_minutes`: How frequently to run the monitor (in minutes).  
+   * `interval_crontab`: How frequently to run the monitor (using a list of [CRON](https://crontab.guru) expressions, check [example below](/docs/monitors-as-code#example-with-cron-expressions)).  
+   * `start_time`: When to start the schedule  
+   * `timezone`: Optional - select regional timezone for daylight savings ex. America/Los\_Angeles
+* `labels`: Optional list of audiences associated with the rule (`labels` are equivalent to `audiences`).
+* `severity`: Optional, pre-set the severity of incidents generated by this monitor. Only use SEV-0 through SEV-4 as custom values will be rejected.
+* `event_rollup_count`: Optional - a [Reduce Noise](/docs/reducing-noise-from-rules) option to only send notifications every X incidents
+* `event_rollup_until_changed`: Optional - a [Reduce Noise](/docs/reducing-noise-from-rules) option to send subsequent notifications if breach changes
+
+##### Volume Rule comparisons
+
+* `type`: `absolute_volume` or `growth_volume`.
+
+If `absolute_volume`:
+
+* `operator`: One of `EQ`, `GTE`, `LTE`. Operator of comparison, =, ≥, ≤ respectively.
+* `threshold_lookback_minutes`: if operator is `EQ`, the time to look back to compare with the current value.
+* `threshold_value`: If operator is `GTE` or `LTE`, the threshold value
+
+If `growth_volume`:
+
+* `operator`: One of `EQ`, `GT`, `GTE`, `LT`, `LTE`. Operator of comparison, =, >, ≥, <, ≤ respectively.
+* `baseline_agg_function`: the aggregation function used to aggregate data points to calculate historical baseline. One of `AVG`, `MAX`, `MIN`.
+* `number_of_agg_periods`: the number of periods to use in the aggregate comparison.
+* `baseline_interval_minutes`: the aggregation period length.
+* `min_buffer_value` / `max_buffer_value`: the lower / upper bound buffer to modify the alert threshold.
+* `min_buffer_modifier_type` / `max_buffer_modifier_type`: the modifier type of min / max buffer, can be `METRIC` (absolute value) or `PERCENTAGE`.
+
+### Example
+
+YAML
+
+`montecarlo:
+  field_health:
+    - table: project:dataset.table_name
+      timestamp_field: created
+      schedule:
+        type: dynamic
+      labels: # labels are equivalent to audiences
+        - label_name1
+      selected_metrics:
+        - NULL_RATE
+    - table: project:dataset.table_name
+      timestamp_field: created
+      fields:
+        - field_name
+      segmented_expressions:
+        - segmented_expression
+      schedule:
+        type: dynamic
+  dimension_tracking:
+    - table: project:dataset.table_name
+      timestamp_field: created
+      field: order_status
+      labels: # labels are equivalent to audiences
+        - label_name2
+  custom_sql:
+    - description: Test rule
+      sql: |
+         select foo from project.dataset.my_table
+      comparisons:
+        - type: threshold
+          operator: GT
+          threshold_value: 0
+      schedule:
+        type: fixed
+        interval_minutes: 60
+        start_time: "2021-07-27T19:00:00"
+      severity: SEV-1
+  field_quality:
+    - description: Test rule
+      table: project.dataset.my_table
+      field: my_field
+      metric_type: NULL_RATE
+      comparisons:
+        - type: threshold
+          operator: GT
+          threshold_value: 0
+      schedule:
+        type: fixed
+        interval_minutes: 60
+        start_time: "2021-07-27T19:00:00"
+      severity: SEV-1
+  freshness:
+    - table: project:dataset.table_name
+      freshness_threshold: 30
+      schedule:
+        type: fixed
+        interval_minutes: 30
+        start_time: "2021-07-27T19:00:00"
+`
+
+### Example with multiple tables
+
+YAML
+
+`montecarlo:
+  freshness:
+    - tables: 
+          - project:dataset.table_name1
+          - project:dataset.table_name2
+      freshness_threshold: 30
+      schedule:
+        type: fixed
+        interval_minutes: 30
+        start_time: "2021-07-27T19:00:00"
+`
+
+### Example with CRON expressions
+
+YAML
+
+`montecarlo:
+  custom_sql:
+    - description: Test rule
+      sql: |
+         select foo from project.dataset.my_table
+      comparisons:
+        - type: threshold
+          operator: GT
+          threshold_value: 0
+      schedule:
+        type: fixed
+        interval_crontab:
+          - "0 10,16 * * MON-FRI"
+          - "0 12 * * SAT-SUN"   
+        start_time: "2021-07-27T19:00:00"
+`

@@ -1,0 +1,64 @@
+---
+title: "Field Quality Rules"
+---
+
+Field Quality rules offer an easy way to define an alert condition on a field metric like % null, % unique, etc. Unlike Field Health rules, which rely on Machine Learning models to surface anomalies based on historical patterns, Field Quality rules ensure any alert condition breach will immediately trigger an Incident. 
+
+These rules are ideal for important fields that have experienced data quality issues in the past or where metric changes (ex. % unique rate decreasing below 100%) would impact downstream processes and analytical use cases.
+
+### Configuring a Field Quality rule
+
+Steps to create a Field Quality rule:
+
+1. Visit the Catalog page for the table with the field in question
+2. Click on Create Monitor and select Field Quality OR Find the field in Field Lineage and click the (+) icon
+3. Confirm the selected field
+4. Select the [field metric](#supported-field-metrics) you want to monitor (% null, % unique, etc)
+5. Define the [alert condition](#defining-alert-conditions) for the metric
+6. Add [field filters](#adding-field-filters) to refine the metric (most users apply datetime field lookback filters here!)
+7. Edit the rule name, audiences, and/or notes
+8. Save the rule
+
+### Supported field metrics
+
+The following field metrics are currently supported:
+
+| Metric      | Supported data types                                | SQL used to calculate metric                                                                                     |
+| ----------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| % null      | All (Numeric, Text, Boolean, Datetime, Time, Array) | select 1 - COUNT({{field\_name}}) / CAST(COUNT(\*) AS NUMERIC) as NULL\_RATE from {{table\_name}}                |
+| % unique    | Numeric, Text, Boolean, Datetime                    | select COUNT(DISTINCT {{field\_name}}) / CAST(COUNT(\*) AS NUMERIC) as APPROX\_DISTINCTNESS from {{table\_name}} |
+| % negative  | Numeric                                             | select COUNTIF({{field\_name}} < 0) / CAST(COUNT(\*) AS NUMERIC) as NEGATIVE\_RATE from {{table\_name}}          |
+| % zero      | Numeric                                             | select COUNTIF({{field\_name}} = 0) / CAST(COUNT(\*) AS NUMERIC) as ZERO\_RATE from {{table\_name}}              |
+| Mean        | Numeric                                             | select AVG({{field\_name}}) as NUMERIC\_MEAN from {{table\_name}}                                                |
+| Max         | Numeric                                             | select MAX({{field\_name}}) as NUMERIC\_MAX from {{table\_name}}                                                 |
+| Min         | Numeric                                             | select MIN({{field\_name}}) as NUMERIC\_MIN from {{table\_name}}                                                 |
+| Mean Length | Text                                                | select AVG(LENGTH({{field\_name}})) as MEAN\_LENGTH from {{table\_name}}                                         |
+| Max Length  | Text                                                | select MAX(LENGTH({{field\_name}})) as MAX\_LENGTH from {{table\_name}}                                          |
+| Min Length  | Text                                                | select MIN(LENGTH({{field\_name}})) as MIN\_LENGTH from {{table\_name}}                                          |
+
+### Defining alert conditions
+
+We currently support the following operators to define your alert condition.
+
+* Equal to (=)
+* Less than (<)
+* Less than or equal to (<=)
+* Greater than (>)
+* Greater than or equal to (>=)
+* Not equal to (!=)
+
+### Adding field filters
+
+> 🚧
+> 
+> Datetime field filters highly encouraged
+> 
+> To reduce the risk of expensive and/or timed out queries, we highly encourage applying a filter on a Datetime column to limit how many records are returned in each rule run. Follow the steps below to add a Datetime field filter.
+
+Field filters apply basic WHERE clauses to the underlying query to reduce which records are included in the metric calculation query. The most common application is to reduce the lookback range of the query so only recent records are returned.
+
+Steps to apply a field filter:
+
+1. Click the blue (+) icon
+2. Select a table field
+3. Use the operator to specify lookback range, string filter, etc.

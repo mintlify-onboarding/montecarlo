@@ -1,0 +1,102 @@
+---
+title: "Spark"
+---
+
+To connect Monte Carlo to a Spark cluster for health queries, follow these steps:
+
+1. Create a Spark cluster for Monte Carlo. Alternatively, you may use an existing cluster that you already have in your environment. Ensure that auto-termination is off.
+2. Ensure that the Spark Thrift Server is enabled. Different distributions handle this server differently, for example, it is enabled by default on Databricks but needs to be enabled explicitly on EMR.
+3. Ensure that Monte Carlo's data collector has [network connectivity](/docs/network-connectivity) to the cluster (VPC peering might be required).
+4. Create a service account on your Spark cluster (if necessary).
+5. Provide service account credentials to Monte Carlo as described below.
+
+> 📘
+> 
+> Adding a Databricks connection
+> 
+> * A more convenient way to add a connection to an all-purpose cluster is through the [ integrations](https://getmontecarlo.com/settings/integrations) wizard in the Monte Carlo application.
+> * The minimum supported Databricks version is 7.x.
+
+### Providing account credentials to Monte Carlo
+
+You will provide connection details for Spark using Monte Carlo's CLI:
+
+1. Please follow [this guide](/docs/using-the-cli) to install and configure the CLI.
+2. Monte Carlo supports three types of connections: binary, HTTP and Databricks. Please use the command `montecarlo integrations [add-spark-binary-mode | add-spark-http-mode | add-spark-databricks]` to set up Spark connectivity. For reference, see help for the commands below.
+
+binary-modehttp-modedatabricks
+
+`$ montecarlo integrations add-spark-binary-mode --help
+Usage: montecarlo integrations add-spark-binary-mode [OPTIONS]
+
+  Setup a thrift binary Spark integration. For health queries.
+
+Options:
+  --host TEXT          Hostname.  [required]
+  --database TEXT      Name of database.  [required]
+  --port INTEGER       Port.  [default: 10000]
+  --user TEXT          Username with access to spark.  [required]
+  --password TEXT      User\'s password. If you prefer a prompt (with hidden
+                       input) enter -1.  [required]
+  --name TEXT          Friendly name of the warehouse which the connection
+                       will belong to.
+  --collector-id UUID  ID for the data collector. To disambiguate accounts
+                       with multiple collectors.
+  --skip-validation    Skip all connection tests. This option cannot be used
+                       with 'validate-only'.
+  --validate-only      Run connection tests without adding. This option cannot
+                       be used with 'skip-validation'.
+  --auto-yes           Skip any interactive approval.
+  --option-file FILE   Read configuration from FILE.
+  --help               Show this message and exit.
+`
+
+`$ montecarlo integrations add-spark-http-mode --help
+Usage: montecarlo integrations add-spark-http-mode [OPTIONS]
+
+  Setup a thrift HTTP Spark integration. For health queries.
+
+Options:
+  --url TEXT           HTTP URL.  [required]
+  --user TEXT          Username with access to spark.  [required]
+  --password TEXT      User\'s password. If you prefer a prompt (with hidden
+                       input) enter -1.  [required]
+  --name TEXT          Friendly name of the warehouse which the connection
+                       will belong to.
+  --collector-id UUID  ID for the data collector. To disambiguate accounts
+                       with multiple collectors.
+  --skip-validation    Skip all connection tests. This option cannot be used
+                       with 'validate-only'.
+  --validate-only      Run connection tests without adding. This option cannot
+                       be used with 'skip-validation'.
+  --auto-yes           Skip any interactive approval.
+  --option-file FILE   Read configuration from FILE.
+  --help               Show this message and exit.
+`
+
+`$ montecarlo integrations add-spark-databricks --help
+Usage: montecarlo integrations add-spark-databricks [OPTIONS]
+
+  Setup a Spark integration for Databricks. For health queries.
+
+Options:
+  --databricks-workspace-url TEXT
+                                  Databricks workspace URL.  [required]
+  --databricks-workspace-id TEXT  Databricks workspace ID.  [required]
+  --databricks-cluster-id TEXT    Databricks cluster ID.  [required]
+  --databricks-token TEXT         Databricks access token. If you prefer a
+                                  prompt (with hidden input) enter -1.
+                                  [required]
+  --name TEXT          						Friendly name of the warehouse which the connection
+                       						will belong to. 
+  --collector-id UUID             ID for the data collector. To disambiguate
+                                  accounts with multiple collectors.
+  --skip-validation               Skip all connection tests. This option
+                                  cannot be used with 'validate-only'.
+  --validate-only                 Run connection tests without adding. This
+                                  option cannot be used with 'skip-
+                                  validation'.
+  --auto-yes                      Skip any interactive approval.
+  --option-file FILE              Read configuration from FILE.
+  --help                          Show this message and exit.
+`

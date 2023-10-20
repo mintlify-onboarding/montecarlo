@@ -1,0 +1,22 @@
+---
+title: "Overview: BI"
+description: "Integrate Monte Carlo with your Business Tools"
+---
+
+> 📘
+> 
+> Your data collector must be deployed before connecting BI tools
+> 
+> See instructions [here](/docs/deployment).
+
+Integrating Monte Carlo with a BI tool allows Monte Carlo to track metadata and lineage for the dashboards and reports you have in your environment. By automatically pulling metadata from the tool, Monte Carlo can provide end-to-end data observability across BI and warehouses/lakes.
+
+To integrate a BI tool, you will:
+
+1. [Enable network connectivity](/docs/network-connectivity) between the tool and Monte Carlo's data collector if the tool is not publicly accessible.
+2. Create service accounts with the appropriate permissions on your BI tool. See detailed instructions in dedicated guides for Tableau, Looker, Chartio and Periscope.
+3. Provide service account credentials on your Monte Carlo onboarding wizard to validate and complete the integration.
+
+![400](/images/e7b50ba-Screen_Shot_2021-07-23_at_10.57.20_AM.png "Screen Shot 2021-07-23 at 10.57.20 AM.png")
+
+Example: setting up service account credentials for Tableau during onboarding

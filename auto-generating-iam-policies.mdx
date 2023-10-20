@@ -1,0 +1,145 @@
+---
+title: "Auto-generating IAM Policy Documents"
+---
+
+For integrations that require authentication by an IAM role the CLI can be used to auto-generate one or more IAM JSON policy documents by deriving any necessary resources in your account to build a policy.
+
+To use the IAM policy generators follow these steps - 
+
+1. Follow [this guide](/docs/using-the-cli) to install and configure the CLI (requires >= `0.17.0`).
+2. Run the `policy-gen` command for your desired integration. For reference, see help below:
+
+Athena HelpGlue Help
+
+`` $ montecarlo discovery athena-policy-gen --help
+Usage: montecarlo discovery athena-policy-gen [OPTIONS]
+
+  Generate an IAM policy for Athena. After review, output of this command
+  can be redirected into `montecarlo integrations create-role` or
+  `montecarlo discovery cf-role-gen` if you prefer IaC.
+
+Options:
+  --database-name TEXT         Glue/Athena database name to generate a policy
+                               from. Enter '\*' to give Monte Carlo access to
+                               all databases. This option can be passed
+                               multiple times for more than one database.
+                               [required]
+
+  --data-bucket-name TEXT      Name of a S3 bucket storing the data for your
+                               Glue/Athena tables. If this option is not
+                               specified the bucket names are derived (looked
+                               up) from the tables in your databases. This
+                               option can be passed multiple times for more
+                               than one bucket. Enter '\*' to give Monte Carlo
+                               access to all buckets.
+
+  --workgroup-name TEXT        Athena workgroup for Monte Carlo to use when
+                               performing queries. The "primary" workgroup for
+                               the region is used if one is not specified.
+                               [default: primary; required]
+
+  --resource-aws-region TEXT   Override the AWS region where the resource is
+                               located. Defaults to the region where the
+                               collector is hosted.
+
+  --resource-aws-profile TEXT  Override the AWS profile use by the CLI for the
+                               resource. This can be helpful if the resource
+                               and collector are in different accounts.
+
+  --collector-id UUID          ID for the data collector. To disambiguate
+                               accounts with multiple collectors.
+
+  --help                       Show this message and exit.
+ ``
+
+`` $ montecarlo discovery glue-policy-gen --help
+Usage: montecarlo discovery glue-policy-gen [OPTIONS]
+
+  Generate an IAM policy for Glue. After review, output of this command can
+  be redirected into `montecarlo integrations create-role` or `montecarlo
+  discovery cf-role-gen` if you prefer IaC.
+
+Options:
+  --database-name TEXT         Glue/Athena database name to generate a policy
+                               from. Enter '\*' to give Monte Carlo access to
+                               all databases. This option can be passed
+                               multiple times for more than one database.
+                               [required]
+
+  --data-bucket-name TEXT      Name of a S3 bucket storing the data for your
+                               Glue/Athena tables. If this option is not
+                               specified the bucket names are derived (looked
+                               up) from the tables in your databases. This
+                               option can be passed multiple times for more
+                               than one bucket. Enter '\*' to give Monte Carlo
+                               access to all buckets.
+
+  --resource-aws-region TEXT   Override the AWS region where the resource is
+                               located. Defaults to the region where the
+                               collector is hosted.
+
+  --resource-aws-profile TEXT  Override the AWS profile use by the CLI for the
+                               resource. This can be helpful if the resource
+                               and collector are in different accounts.
+
+  --collector-id UUID          ID for the data collector. To disambiguate
+                               accounts with multiple collectors.
+
+  --help                       Show this message and exit.
+ ``
+
+### FAQs
+
+**How do I use the generated policies?**  
+After carefully reviewing the generated IAM policy documents you can [create an IAM role](/docs/creating-iam-roles) and then complete onboarding.
+
+> 👍
+> 
+> Recommendation - use infrastructure as code
+> 
+> The command [cf-role-gen](/docs/creating-iam-roles#generating-a-cloudformation-template-using-the-mc-cli-recommended) can be used to help create a Data Collector compatible IAM role by generating a CloudFormation template with one or more IAM policies.
+
+**Can I modify the generated policies before using?**  
+Absolutely! Feel free to edit the policies to what best suites your account / usage.
+
+**What if I have more then one database or bucket?**  
+The `database-name` option can be passed multiple times. By default any data bucket names are derived from your account, but you can override this behavior by specifying one or more `data-bucket-name` options.
+
+If you want to give Monte Carlo access to all databases in a region you can pass `\*` as the `database-name`. When an asterisk is passed the same is used for the data buckets. To make this more granular you can pass specific bucket names with the `data-bucket-name` option.
+
+**What if my resource is not found?**  
+By default the utility will use AWS profile associated with CLI during setup or the default AWS profile for the session.
+
+To override this behavior use the `resource-aws-profile` flag.
+
+This utility also uses the same AWS region as where the collector is hosted by default. Use the `resource-aws-region` flag to to pick another region.
+
+### Tips and tricks
+
+**Redirecting output**  
+Status messages are outputted to Stderr, but the generated policy is outputted to Stdout. This means you can redirect the Stdout to a file to easily save the generated policy and still track progress. For instance, 
+
+`$ montecarlo discovery athena-policy-gen --database-name foo > mcd_athena_access_policy.json
+Generating policy for Athena.
+Looking up workgroup details.  [####################################]  100%
+Looking up buckets details.  [####################################]  100% 
+$ cat mcd_athena_access_policy.json
+...
+`
+
+**Process Substitution**  
+The output of any commands can be used as input for another using process substitution. For instance,
+
+`$ montecarlo discovery cf-role-gen --policy-file <(montecarlo discovery glue-policy-gen --database-name foo) > mcd_cf_role_template.json
+Generating CloudFormation template for creating a role resource.
+Generating policy for Glue.
+Looking up buckets details.  [####################################]  100%
+$ cat mcd_cf_role_template.json
+...
+`
+
+**Listing Glue/Athena database names**  
+The AWS CLI can be used to conveniently list all database names. You can page through this list to help decide what databases to add. For instance,
+
+`$ aws glue get-databases --query 'DatabaseList[*].Name'
+`

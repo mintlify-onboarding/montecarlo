@@ -1,0 +1,86 @@
+---
+title: "Notifications as Code"
+---
+
+### Overview
+
+This guide explains how to use your Monitor as Code configuration files to setup Slack and Email notifications channels for custom monitors. Note: currently, only notifications from custom monitors are supported through Notifications as Code.
+
+### Prerequisites
+
+1. Follow the instructions on the [Monitors as Code: Prerequisites](/docs/monitors-as-code#prerequisites) section to configure your CLI
+2. Setup your project file as described on [Monitors as code: Using code to define monitors](/docs/monitors-as-code#using-code-to-define-monitors)
+
+### Defining notifications channels
+
+In an existing monitor config file, or a new separate config file, add a `notifications` section to declare your channels. For each channel, indicate a `name` to uniquely identify the setting, the recipients, and a set of `audiences` for which the channel should be used.
+
+Note that `audiences` inside of a `notifications` definition is referenced as `labels` in a monitor definition. `labels` and `audiences` are equivalent, but some cases still require the term `labels`.
+
+Here's an example with all the currently supported channels, including a monitor definition leveraging one of the defined `audiences`:
+
+YAML
+
+`montecarlo:
+  notifications:
+    slack:
+      - name: a-slack-notification
+        channel: a-test-channel
+        audiences: ['team-1', 'team-2']
+    email:
+      - name: a-email-notification
+        emails: ['[[email protected]](/cdn-cgi/l/email-protection)', '[[email protected]](/cdn-cgi/l/email-protection)']
+        audiences: ['team-1']
+  field_health:
+    - table: project:dataset.table_name
+      timestamp_field: created
+      labels: # monitors use the term labels, but they are equivalent to audiences
+        - team-1
+`
+
+The `notifications` section can be declared on a file that already contains monitor definitions, or on a separate file. 
+
+Notifications created through notifications as code will use the same namespace as the other monitors. You can get more information on namespaces [here](/docs/monitors-as-code#namespaces).
+
+If the provided audiences do not exists, they will be created.
+
+> 👍
+> 
+> Applying notification changes
+> 
+> Notification changes are applied with the same command as monitors. See [Monitors as Code: Developing and testing locally](/docs/monitors-as-code#developing-and-testing-locally) for details.
+
+### Notifications configuration reference
+
+`montecarlo:
+  notifications:
+    slack:
+      - name: <string>           # required
+        channel: <string>        # required
+        is_private: <bool>       # optional - defaults to false, pass true to use a slack private channel 
+        custom_message: <string> # optional - a message to show with the notification
+        audiences:               # required - the audiences to match
+          - <string>
+    email:
+      - name: <string>           # required
+        emails:                  # required - one or more recipients email
+          - <string> 
+        custom_message: <string> # optional - a message to show with the notification
+        audiences:               # required - the audiences to match
+          - <string>
+`
+
+#### Slack
+
+* `name`: Required value to uniquely identify the notification setting (to determine whether to create a new one or update an existing one for the namespace).
+* `custom_message`: A custom message to show with the notification.
+* `channel`: The slack channel name for public channels, or the Slack channel ID for private ones. The channel must exist.
+* `is_private`: Set to `true` when sending notifications to a private Slack channel. The `channel` should include the channel ID instead of the name.
+* `audiences`: List of audiences for the notification. Only incidents for monitors with these audiences will be forwarded. At least one audience must be provided.
+
+#### Email
+
+* `name`: Required value to uniquely identify the notification setting (to determine whether to create a new one or update an existing one for the namespace).
+* `custom_message`: A custom message to show with the notification.
+* `emails`: A list of emails to send the notifications to.
+* `audiences`: List of audiences for the notification. Only incidents for monitors with these audiences will be forwarded. At least one audience must be provided.

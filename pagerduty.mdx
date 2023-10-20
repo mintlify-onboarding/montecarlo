@@ -1,0 +1,48 @@
+---
+title: "PagerDuty"
+description: "Integrate Monte Carlo with PagerDuty"
+---
+
+This guide explains how to receive PagerDuty notifications from Monte Carlo.
+
+### PagerDuty + Monte Carlo Integration Benefits
+
+* Automate data monitoring and data incident management with Monte Carlo and PagerDuty.
+* Monte Carlo’s data observability platform automates monitoring and anomaly detection for your data pipelines, protecting against issues related to data freshness, volume, distribution or schema.
+* By coupling proactive alerting with end-to-end observability, data teams get alerted to data issues as soon as they happen. Monte Carlo enables teams to assess the downstream business impact and work quickly to resolve these issues.
+* Use PagerDuty with Monte Carlo to alert on-call responders as soon as data issues arise in order to prevent Data Downtime.
+
+### How it Works
+
+* Monte Carlo will automatically, with machine learning powered anomaly detection, create PagerDuty alerts for incidents related to data Freshness, Volume, Distribution, Schema or Lineage
+* Alerts can also be created for custom rule breaches, such as a value falling outside an explicit range
+* Users are able to granularly route alerts to the proper Pagerduty endpoints by filtering on both the type of data incident and/ or the affected data asset from the Monte Carlo app.
+
+**Requirements**  
+Generating the required REST API key requires the user to have User or Account Admin roles
+
+**Support**  
+If you need help with this integration, please contact [support](/cdn-cgi/l/email-protection#a1d2d4d1d1ced3d5e1cccecfd5c4c2c0d3cdcec5c0d5c08fc2cecc).
+
+### Integration Walkthrough
+
+**Integrating With a PagerDuty Service**
+
+1. From the Configuration menu, select Services. There are two ways to add an integration to a service:  
+   * If you are adding your integration to an existing service: Click the name of the service you want to add the integration to. Then, select the Integrations tab and click the New Integration button.  
+   * If you are creating a new service for your integration: Please read the PagerDuty documentation section "Configuring Services and Integrations" and follow the steps outlined in the "[Create a New Service](https://support.pagerduty.com/docs/services-and-integrations#create-a-service)" section, selecting Monte Carlo as the Integration Type in step 5\. Continue with the In Monte Carlo section (below) once you have finished these steps.
+2. Enter an Integration Name in the format monitoring-tool-service-name (e.g. monte-carlo-data-monitoring) and select Monte Carlo from the Integration Type menu.
+3. Click the Add Integration button to save your new integration. You will be redirected to the Integrations tab for your service.
+4. An Integration Key will be generated on this screen. Keep this key saved in a safe place, as it will be used when you configure the integration with Monte Carlo in the next section.
+
+**In Monte Carlo**
+
+1. From the Settings tab, click on “Notifications” on the left side of the screen.
+2. Click “Add Notification”
+3. Select “PagerDuty” as the channel
+4. Configure your notification settings
+5. Enter your PagerDuty routing key
+6. Click “Add Notification”
+
+**How to Uninstall**  
+From the notifications module in Monte Carlo (Settings > Notifications), you can delete your PagerDuty notifications by clicking the delete button.

@@ -1,0 +1,33 @@
+---
+title: "Insight: Heavy Queries"
+---
+
+> 🚧
+> 
+> This insight is reported on a rolling 7 day window
+
+### Field Defintions
+
+**RESOURCE\_ID**: Unique ID given to the warehouse 
+
+**CONNECTION\_TYPE:** The data warehouse type 
+
+**QUERY\_EXECUTOR**: The account who executed the query 
+
+**QUERY**: A print of the query 
+
+**LAST\_RUNTIME** : Timestamp of the last runtime 
+
+**NUM\_TIMES\_RAN\_LAST\_7\_DAYS** : Number of runs in the last 7 days
+
+**TOTAL\_BYTES\_SCANNED\_LAST\_7\_DAYS** : Total bytes scanned in last 7 days
+
+> 📘
+> 
+> TOTAL\_BYTES\_SCANNED\_LAST\_7\_DAYS is **only** available for BigQuery and Athena integrations.
+
+**TOTAL\_RUNTIME\_SEC\_LAST\_7\_DAYS** : Total runtime in seconds in the last 7 days
+
+> 📘
+> 
+> TOTAL\_RUNTIME\_SEC\_LAST\_7\_DAYS is **not** available for BigQuery and Athena integrations. 

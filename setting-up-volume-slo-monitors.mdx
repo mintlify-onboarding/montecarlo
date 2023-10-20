@@ -1,0 +1,45 @@
+---
+title: "Setting up Volume Rules"
+---
+
+> 🚧
+> 
+> Last Updated: October 19, 2022
+
+### Transcript
+
+Hey there! Let's see how to create a Volume SLO monitor in Monte Carlo. We will start by navigating to the monitors tab and then clicking on "Create New Monitor":
+
+![1912](/images/db69d48-Screen_Shot_2022-08-01_at_4.15.18_PM.png "Screen Shot 2022-08-01 at 4.15.18 PM.png")
+
+Create New Monitor
+
+Then from this list, with all the available custom monitors that we can create in Monte Carlo. In this video, we are going to focus on this one, the Volume SLO:
+
+![535](/images/b9a3e46-Screen_Shot_2022-08-01_at_4.51.14_PM.png "Screen Shot 2022-08-01 at 4.51.14 PM.png")
+
+Volume SLO
+
+As you know, Monte Carlo provides stable freshness and volume monitoring and alerting as part of our machine learning out of the box detectors. However, in certain cases, these out of the box detections may not be explicit enough, and you may want to supplement it with a volume SLO more tailored to your business needs. This monitor will help you get alerted when the number of rows or the size of a table increases or decreases beyond a given threshold, or if the number of rows or table size remain unchanged over a given period of time.
+
+Let's see how to configure our Volume SLO monitor. We'll click on "Configure Monitor", and on this first step, we're going to provide the table name in which we want to configure this monitor, as well as the type of volume change we want to monitor:
+
+![1911](/images/b80a744-Screen_Shot_2022-08-01_at_4.51.28_PM.png "Screen Shot 2022-08-01 at 4.51.28 PM.png")
+
+Pick a Table and the Type of Volume Detection
+
+At the time of this recording, only this table size comparison option is available, where you will provide threshold for Monte Carlo to compare the number of rows of a table or table size relative to the previous measurements. We are also currently working on releasing a second option, the table growth comparison, where we will also be able to compare a table set growth with previous growth measurements.
+
+I will select this option for now and click on "Continue". On this second step, we are going to specify our alert condition, and we will provide details such as the volume metrics so whether we want our volume SLO to check the number of rows or the size of a table in height, as well as when do we want Monte Carlo to trigger an alert. So for example, I can select "Increases" here so that Monte Carlo will trigger an incident if the current total of rows returned increases to the specified volume here, same with "Decreases", or I can also select "Remains the Same" so that I will be alerted if the current total number of rows does not change over a given period of time that I would be able to set here:
+
+![1913](/images/2a1c241-Screen_Shot_2022-08-01_at_4.52.30_PM.png "Screen Shot 2022-08-01 at 4.52.30 PM.png")
+
+Alert Condition
+
+So I'll leave it like this and then click on "Continue". Then this last step would be to provide the scheduling which we want this monitor to run. Here I will provide how often I want it to run so I can provide a number of minutes, hours, days, or weeks, as well as provide start time and date. Once I specify these two details here, the last thing would be for me to provide a name to this monitor and click on "Continue":
+
+![1919](/images/f8adc0c-Screen_Shot_2022-08-01_at_4.52.59_PM.png "Screen Shot 2022-08-01 at 4.52.59 PM.png")
+
+Set a Schedule
+
+And that's it! We have created a Volume SLO monitor. I hope this was helpful and please feel free to reach out to [\[email protected\]](/cdn-cgi/l/email-protection#84f7f1f4f4ebf6f0c4e9ebeaf0e1e7e5f6e8ebe0e5f0e5aae7ebe9) or the chat bot in the lower right hand corner if you have any more questions!

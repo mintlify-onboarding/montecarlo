@@ -1,0 +1,70 @@
+---
+title: "Field Health Monitors"
+---
+
+When applied to a table or view, Field Health Monitors automatically begin tracking and reporting on anomalies across the metrics listed below. These monitors are ideal for important tables within your organization where null or non-distinct field values would result in a data quality issue. By tracking these statistics over time, we’re able to intelligently notify you when anomalies occur. Note that you need to configure Field Health monitoring on tables and views.
+
+### Configuring a field health monitor
+
+Configuring a field health monitor requires a few simple steps including:
+
+* select a table
+* select 1 or more fields in selected table to monitor
+* specify a row creation time field to minimize the records analyzed on each run
+* specify the schedule for when the check should run
+
+Once enabled for field(s) in a table, the Field Health monitor will run on the specified schedule regularly checking for anomalies across many metrics calculated on the record values for the field(s).
+
+#### Advanced Field Health monitor options
+
+Multiple advanced options are available to configure Field Health monitors to check for specific types of anomalies. Advanced options include
+
+**Monitoring by dimension**  
+This option allows you to run field health monitors on the values of a field (i.e. `contract_amount`) segmented by another field value (i.e. `account_type`). This structure is ideal for situations where a segment of records may have unique patterns which the Field Health monitor can observe. In the example above, `account_type=enterprise` will likely have very different metrics in the `contract_amount` field which would be observed with this feature.
+
+You can enable this option in the advanced settings of step 2 (select fields) in the Field Health Monitor creation flow.
+
+**Table Record filter**  
+This option allows you to filter the records which the Field Health monitor looks at to train the model and monitor for changes. Similar to monitoring by dimension, this feature can be used to exclude or include specific records that you want the Field Health model to review.
+
+You can enable this option in the advanced settings of step 2 (select fields) in the Field Health Monitor creation flow.
+
+**Aggregation window**  
+This option allows you to define how records are aggregated when calculating the Field Health metrics. A daily aggregation window is ideal for tables that have sparse records being added daily.
+
+You can configure the aggregation window in the advanced settings of step 3 (select schedule) in the Field Health Monitor creation flow.
+
+**Adjusting Field Health Metric Sensitivity**  
+Once a Field Health monitor has been setup, you have the option to adjust the sensitivity for a give Field Health monitor. To do so, you need to navigate to a given monitors page and within the summary view on the Monitor Detail tab you will see Metric Sensitivity. The settings options are low, medium, and high with **medium** being the default.
+
+#### Training the Field Health Model
+
+Field Health monitors leverage ML to detect anomalies across many metrics, and thus require a training period to train the models and set a baseline. The length of the training period depends on the number of freshness events the model has to review. If a table does not receive many updates, it will take longer for the models to train. In most cases, this training period lasts less than 14 days.
+
+### Field health monitor metrics
+
+The following list includes all metrics automatically tracked with Field Monitors. While trend reporting is available for all metrics, some metrics are not yet configured to notify you of anomalies. To enable alerting on an excluded metric please contact us using the Intercom bot or at [\[email protected\]](/cdn-cgi/l/email-protection#72010702021d0006321f1d1c06171113001e1d161306135c111d1f).
+
+| Metric            | Definition                                                                                               | Supported field types | Analytics | Anomaly detection       |
+| ----------------- | -------------------------------------------------------------------------------------------------------- | --------------------- | --------- | ----------------------- |
+| % Null            | Percentage of rows that have a NULL value                                                                | All                   | Yes       | Yes                     |
+| % Unique          | Number of distinct values divided by total number of values                                              | All                   | Yes       | Yes                     |
+| % Zero            | Percentage of rows that have the value 0                                                                 | Numeric               | Yes       | Yes                     |
+| % Negative        | Percentage of rows that have a negative value                                                            | Numeric               | Yes       | Yes                     |
+| Mean              | Mean value across all rows                                                                               | Numeric               | Yes       | Yes                     |
+| Min               | Minimum across all rows                                                                                  | Numeric               | Yes       | Yes                     |
+| p20               | 20th percentile                                                                                          | Numeric               | Yes       | Yes                     |
+| p40               | 40th percentile                                                                                          | Numeric               | Yes       | Yes                     |
+| p60               | 60th percentile                                                                                          | Numeric               | Yes       | Yes                     |
+| p80               | 80th percentile                                                                                          | Numeric               | Yes       | Yes                     |
+| Max               | Maximum across all rows                                                                                  | Numeric               | Yes       | Yes                     |
+| Std               | Standard deviation of values                                                                             | Numeric               | Yes       | Currently not supported |
+| Min length        | Minimum count of characters over non-null values                                                         | Strings               | Yes       | Currently not supported |
+| Mean length       | Mean count of characters over non-null values                                                            | Strings               | Yes       | Currently not supported |
+| Std length        | Standard deviation of the count over non-null values                                                     | Strings               | Yes       | Currently not supported |
+| Max length        | Maximum count of characters over non-null values                                                         | Strings               | Yes       | Currently not supported |
+| % Whitespace only | Percentage of rows where the string contains only whitespace characters, e.g. \\n, \\t, space            | Strings               | Yes       | Yes                     |
+| % Integer         | Percentage of rows where the string represents a valid integer number                                    | Strings               | Yes       | Yes                     |
+| % "Null"/"None"   | Percentage of rows where the string is equal to 'null', 'None' or similar tokens                         | Strings               | Yes       | Yes                     |
+| % Float           | Percentage of rows where the string represents a valid floating point number                             | Strings               | Yes       | Yes                     |
+| % UUID            | Percentage of rows where the string represents a valid UUID, e.g. '256bc0d3-dedd-4c3f-b6f8-aced33238bc6' | Strings               | Yes       | Yes                     |

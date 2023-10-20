@@ -1,0 +1,490 @@
+---
+title: "Monitors"
+---
+
+The following examples are queries related to custom SQL rules, Field Health, Dimension Tracking, and JSON Schema monitors.
+
+Please note that the sample queries below only show a subset of the fields available for brevity. You can use introspection to see all available fields.
+
+> 📘
+> 
+> Adding Monitors Using the API vs Monitors as Code
+> 
+> This page is for setting up monitors using our API. If you are interesting in setting up monitors in a large environment using code, please see: [Monitors as Code](/docs/monitors-as-code)
+
+### Add Field Health, Dimension Tracking, and JSON Schema Monitors
+
+> ❗️
+> 
+> Bootstrapped Data
+> 
+> Please be aware that during the initial creation of Field Health and Dimension Tracking monitors, Monte Carlo will collect metrics on the past 14 days of data. We do this to quickly get our anomaly models up to speed rather than waiting 2/3 weeks until the models have learned what non-anomalous behavior looks like for your table. Typically, this works as expected, but becomes especially important when making monitors at scale. If you make 100 monitors at once, that means we will try to run 1400 queries on your warehouse at the same time. This behavior only happens during the creation process; after the initial collection, the monitors default to running one query twice a day. Also note that for some very large tables we avoid bootstrapping because even one monitor can be too taxing on a warehouse.
+
+Custom Monitors can be added via API using the _createOrUpdateMonitor_ function.
+
+Depending on the type of monitor you would like to setup will determine the value of the following parameters:
+
+_monitorType_  
+Field Health - "stats"  
+Dimension Tracking - "categories"  
+JSON Schema - "json\_schema"
+
+_scheduleType_
+
+_Default_ \- "FIXED" (_Note: Input **intervalMinutes** as whatever interval you would like, and include startTime in datestring format_)  
+_Dynamic_ \- "DYNAMIC" (_Note_: This will check for Field Health each time we detect a table has been updated)  
+_Manual_ \- "MANUAL": This is for manually triggered SQL rules, particularly related to [Circuit Breakers](/docs/circuit-breakers) 
+
+Sample QuerySample Response
+
+`mutation{
+  createOrUpdateMonitor(
+    monitorType: "stats"
+    resourceId: "dummy_warehouse_id"
+    fullTableId: "project_id:schema_id.table_id"
+    timeAxisType: "TIMESTAMP"
+    timeAxisName: "time_field"
+    scheduleConfig: {
+      scheduleType: "FIXED"
+      intervalMinutes: 720
+      startTime: "YYYY-MM-DDTHH:MM:SS.MMMZ"
+    }
+  ){
+    monitor{
+      id
+      uuid
+      createdBy
+    }
+  }
+`
+
+``
+
+### Create or Update Custom SQL Rules
+
+Custom Rules can be updated via the API. Use cases include updating the description, changing the rule interval or schedule, and modifying the rule comparisons.
+
+> 🚧
+> 
+> Create vs Update
+> 
+> Please note the only difference between making a new custom SQL rule and updating one is providing the rule `uuid` in the `createOrUpdateCustomMetricRule` query.
+
+_Step 1: Grab `dwId`_  
+The first step is to grab your warehouse id, also known as the `dwId`. This is the id of the warehouse the query will be running in:
+
+Sample QuerySample Response
+
+`query getUser {
+  getUser {
+    email
+    account {
+      uuid
+      name
+      warehouses {
+        uuid
+        id
+        createdOn
+        connectionType
+      }
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "getUser": {
+      "email": "<email>",
+      "account": {
+        "uuid": "<account_uuid>",
+        "name": "<account_name>",
+        "warehouses": [
+          {
+            "uuid": "<this is the dwId you are looking for>",
+            "id": "2806",
+            "createdOn": "2021-03-30T22:36:25.983787+00:00",
+            "connectionType": "REDSHIFT"
+          }
+        ]
+      }
+    }
+  }
+}
+`
+
+_Step 2: Make the monitor_  
+Run:
+
+Sample Query
+
+`mutation {
+  createOrUpdateCustomMetricRule(
+    dwId: "<dwId_grabbed_by_the_above_query>"
+    comparisons: [
+      {
+        comparisonType: THRESHOLD
+        operator: GT
+        threshold: 0
+      }
+    ]
+    customSql: "<sql_query_here>"
+    description: "<brief_description>"
+    scheduleConfig: {
+        intervalMinutes: <int for how often you want the monitor to run in minutes - for every 12 hours, this would be 720. For every 24 hours, it would be 1440>
+        startTime: "<when do you want the first execution to be. If left blank, it will execute right away. Otherwise, an example input would be 2021-07-11T14:00:00+00:00>"   
+    scheduleType: <Option for how often to run the checks: FIXED, LOOSE, DYNAMIC, MANUAL>
+    }
+    timezone: "UTC"
+  ) {
+    customRule {
+      uuid
+    }
+  }
+}
+`
+
+> ❗️
+> 
+> Return customRule uuid
+> 
+> It's important to return this in the above command! If you need to update or change your rule, this is the id you will need to rerun this command.
+
+If you would like to view the rule after the fact, you can always run the following query with the `uuid` that was returned from the above query:
+
+Sample QuerySample Response
+
+`query {
+  getCustomRule(
+    ruleId: "<rule_uuid>"
+  ) {
+    intervalMinutes
+    comparisons {
+      comparisonType
+      metric
+      operator
+      threshold
+    }
+    description
+    timezone
+    startTime
+    customSql
+  }
+}
+`
+
+`{
+  "data": {
+    "getCustomRule": {
+      "intervalMinutes": 1440,
+      "comparisons": [
+        {
+          "comparisonType": "THRESHOLD",
+          "metric": "custom_metric_<rule_uuid>",
+          "operator": "GT",
+          "threshold": 0
+        }
+      ],
+      "description": "Sample description",
+      "timezone": "UTC",
+      "startTime": "2021-06-30T19:00:00+00:00",
+      "customSql": "<sql_query>"
+    }
+  }
+}
+`
+
+If you are updating an existing SQL rule, you can find a list of your existing rule `uuid`s by running:
+
+Sample QuerySample Response
+
+`query {
+  getCustomRules (
+    first: 5
+    ruleType: "CUSTOM_SQL"
+  ) {
+    edges {
+      node {
+        uuid
+        creatorId
+        createdTime
+        description
+        isDeleted
+        entities
+        scheduleConfig {
+          intervalMinutes
+          startTime
+        }
+      }
+    }
+  }
+}
+`
+
+`{
+  "errors": <There might be some errors here. For the most part, you can ignore!>,
+  "data": {
+    "getCustomRules": {
+      "edges": [
+        {
+          "node": {
+            "uuid": "<this is the uuid you are looking for>",
+            "creatorId": "<email>",
+            "createdTime": "2021-06-29T20:01:22.427007+00:00",
+            "description": "Sample Description",
+            "isDeleted": false,
+            "entities": [
+             "<full_table_id>"
+            ],
+            "scheduleConfig": {
+              "intervalMinutes": 1440,
+              "startTime": "2021-06-30T19:00:00+00:00"
+            }
+          }
+        },
+    ….
+      ]
+    }
+  }
+}
+`
+
+This query accepts the following arguments to narrow in on the rule you are looking for: `before`, `after`, `first`, `last`, and `ruleType`. Once you have found the necessary `uuid`, you can follow step 2 above to update it by adding the `uuid` argument in the call.
+
+### Get Incidents
+
+To find a list of incidents in your workspace, you can run the `getIncidents` query. It accepts several filters:
+
+* **dwId** (UUID): Filter by a specific warehouse
+* **incidentTypes** (String): Filter by type of incident. The full list of accepted values is:  
+   * SCHEMA\_CHANGES  
+   * DELETED\_TABLES  
+   * CUSTOM\_RULE\_ANOMALIES  
+   * METRIC\_ANOMALIES  
+   * ANOMALIES
+* **eventTypes** (String): Filter by type of event as an incident can have multiple event types
+* **eventStates** (String): Filter by the state individual events are in. A list of accepted values includes:  
+   * OPEN  
+   * RESOLVED  
+   * NO\_ACTION\_REQUIRED  
+   * MUTED  
+   * FALSE\_POSITIVE
+* **startTime** (DateTime): Filter for incidents newer than this
+* **endTime** (DateTime): Filter for incidents older than this
+* **incidentIds** (UUID): Filter for specific incidents
+* **projects** (String): Filter by projects
+* **datasets** (String): Filter by datasets
+* **tables** (String): Filter by tables
+* **fullTableIds** (String): Filter by full table ids
+* **first** (Int)
+* **last** (Int)
+
+Please note this is not an exhaustive list of filters. Contact us using the Intercom bot or at [\[email protected\]](/cdn-cgi/l/email-protection#cfbcbabfbfa0bdbb8fa2a0a1bbaaacaebda3a0abaebbaee1aca0a2) if you would like to learn more!
+
+Sample QuerySample Response
+
+`query {
+  getIncidents(
+    last: 10
+    incidentTypes: "SCHEMA_CHANGES"
+    startTime: "2021-06-01T00:00Z"
+  ) {
+    edges {
+      node {
+        id
+        uuid
+        createdTime
+        updatedTime
+        project
+        dataset
+        incidentType
+      }
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "getIncidents": {
+      "edges": [
+        {
+          "node": {
+            "id": "SW5jaWRlbnQ6MTM0NjU4",
+            "uuid": "<incident_uuid>",
+            "createdTime": "2021-07-22T08:41:06.640605+00:00",
+            "updatedTime": "2021-07-22T08:41:05.814719+00:00",
+            "project": "<project_name>",
+            "dataset": "<dataset_name>",
+            "incidentType": "SCHEMA_CHANGES"
+          }
+        },
+        {
+          "node": {
+            "id": "SW5jaWRlbnQ6MTMzMjI2",
+            "uuid": "<incident_uuid>",
+            "createdTime": "2021-07-20T06:33:10.761202+00:00",
+            "updatedTime": "2021-07-20T06:33:10.726695+00:00",
+            "project": "<project_name>",
+            "dataset": "<dataset_name>",
+            "incidentType": "SCHEMA_CHANGES"
+          }
+        },
+        ...
+      ]
+    }
+  }
+}
+`
+
+### Create or Update Alert Notifications
+
+You can also create or update alert routing using our `createOrUpdateNotificationSetting` endpoint.
+
+There are several options to the arguments this endpoint accepts:
+
+* **notificationType**: "pagerduty", "email", "webhooks", "slack\_v2", "opsgenie"
+* **recipient**: Destination to send notifications to. For email, provide the email address. For pagerduty, the key. For slack, the channel.
+* **anomalyTypes**: This argument will default to "all", meaning if you do not provide an argument, your notification will receive alerts about all anomalies. If you want to only receive a subset of alerts, you can pick and chose: "anomalies", "schema\_changes", "deleted\_tables", "metric\_anomalies", or "custom\_rule\_anomalies". Provide them as an array of comma separated strings.
+* **rules**: This option allows you to pick a subset of custom rules or tables to send to your notification. If more than one argument, please provide them as an array of comma separated strings.  
+   * **datasetIds**: Whitelist by dataset identifiers  
+   * **fullTableIds**: Whitelist by full table identifiers  
+   * **rulesIds**: Whitelist by rule identifiers  
+   * **tagKeys**: Whitelist by tag keys  
+   * **tagKeyValues**: Whitelist by tag key/value pairs  
+   * **tableRegex**: For use in updating regex based rules
+
+> 🚧
+> 
+> Create vs Update
+> 
+> Please note the only difference between making a new alert notification and updating one is providing the `settingId` key in the `createOrUpdateNotificationSetting` query.
+
+To make a new alert notification, run the following query:
+
+Sample Query
+
+`mutation {
+  createOrUpdateNotificationSetting(
+    notificationType: "email"
+    recipient: "[[email protected]](/cdn-cgi/l/email-protection)"
+    anomalyTypes: "anomalies"
+    rules: {
+      fullTableIds: ["dataset:schema.table"]
+      ruleIds: ["<rule_uuid1>", "<rule_uuid2>", "<rule_uuid3>"]
+    }
+  ) {
+    notificationSetting {
+      id
+      uuid
+    }
+  }
+}
+`
+
+> ❗️
+> 
+> Return notification uuid
+> 
+> It's important to return this in the above command! If you need to update or change your rule, this is the id you will need to rerun this command.
+
+If you want to update an existing notification, you will need a `settingId` of an existing notification setting. You can return all existing notification settings by running the `getUser` query:
+
+Sample QuerySample Response
+
+`query getUser {
+  getUser {
+    email
+    account {
+      uuid
+      notificationSettings {
+        uuid
+        type
+        recipient
+        anomalyTypes
+        routingRules {
+          uuid
+          tableRules
+          sqlRules
+        }
+      }
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "getUser": {
+      "email": "[[email protected]](/cdn-cgi/l/email-protection)",
+      "account": {
+        "uuid": "<account_uuid>",
+        "notificationSettings": [
+          {
+            "uuid": "<settingId>",
+            "type": "EMAIL",
+            "recipient": "[[email protected]](/cdn-cgi/l/email-protection)",
+            "anomalyTypes": [
+              "custom_rule_anomalies"
+            ],
+            "routingRules": {
+              "uuid": "<route_uuid>",
+              "tableRules":  [
+                "dataset:schema.table"
+              ],
+              "sqlRules": [
+                "<rule_uuid>"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+`
+
+After you found the `settingId`, run the `createOrUpdateNotificationSetting` query to update the notification route.
+
+If you want to get a list of all existing SQL rule UUIDs to provide into the `createOrUpdateNotificationSetting` query, run:
+
+Sample QuerySample Response
+
+`query {
+  getCustomRules(first: 20) {
+    edges {
+      node {
+        uuid
+        ruleType
+        description
+      }
+    }
+  }
+}
+`
+
+`{
+  "data": {
+    "getCustomRules": {
+      "edges": [
+        {
+          "node": {
+            "uuid": "<rule_uuid>",
+            "ruleType": "CUSTOM_SQL",
+            "description": "Katie Noonan's Testing Rule"
+          }
+        },
+        {
+          "node": {
+            "uuid": "<rule_uuid>",
+            "ruleType": "CUSTOM_SQL",
+            "description": "Another Test Rule"
+          }
+        }
+      ]
+    }
+  }
+}
+`
+
+This query accepts the following arguments to narrow in on the rule you are looking for: `before`, `after`, `first`, `last`, and `ruleType`.

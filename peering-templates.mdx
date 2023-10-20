@@ -1,0 +1,71 @@
+---
+title: "VPC Peering using CloudFormation"
+---
+
+For resources (e.g. Redshift, Tableau, etc.) that require peering to connect with the Data Collector, the following CloudFormation templates can be used to automate the process and help manage resources as code.
+
+In order to peer the requester (Data Collector) and accepter (Your Resource), follow these steps -
+
+1. Create Peering Cross Account assumable role CloudFormation stack.
+2. Create Requester CloudFormation stack.
+3. Create Accepter CloudFormation stack.
+
+> 🚧
+> 
+> Check if the resource you want to peer with is publicly accessible
+> 
+> Peering might not be necessary in this scenario. See [here](/docs/network-connectivity#ip-filtering) for more details.
+
+> 🚧
+> 
+> Check for any CIDR block overlaps between the Data Collector and your resource
+> 
+> VPC peering is not possible when the peered VPCs use overlapping CIDR blocks. If this case emerges, you may choose to use a custom CIDR block for your Monte Carlo data collector. See [here](/docs/deployment#advanced-options) for details.
+
+### Create Peering Cross Account assumable role CloudFormation stack
+
+> 👍
+> 
+> This step might not be required
+> 
+> This step is only necessary if the requester (Data Collector) and accepter (Your Resource) are not in the same AWS account.
+
+1. Download and review the CloudFormation template.  
+[https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/peering/v1/mcd-cross-account-role.yaml](https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/peering/v1/mcd-cross-account-role.yaml)
+2. Deploy the stack in the same AWS account / region as your resource. Fill in the parameter.
+
+![1978](/images/c34cace-Screen_Shot_2021-07-15_at_2.41.09_PM.png "Screen Shot 2021-07-15 at 2.41.09 PM.png")
+
+Parameters Wizard
+
+1. Retrieve the `PeeringRole` from the stack outputs. This will be used in the next step.
+
+### Create Requester CloudFormation stack
+
+> ❗️
+> 
+> If you deployed your Data Collector in an existing (customer managed) VPC with subnets that have more than one route table please reach out to your Monte Carlo representative.
+
+1. Download and review the CloudFormation template.  
+[https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/peering/v1/mcd-requester.yaml](https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/peering/v1/mcd-requester.yaml)
+2. Deploy the stack in the same AWS account / region as the requester (Data Collector). Fill in the parameters from the Data Collector and Your Resource.
+
+![1984](/images/18fbdc5-Screen_Shot_2021-07-15_at_2.39.58_PM.png "Screen Shot 2021-07-15 at 2.39.58 PM.png")
+
+Parameters Wizard
+
+1. Retrieve the `PeeringConnection` from the stack outputs. This will be used in the next step.
+
+### Create Accepter CloudFormation stack
+
+> ❗️
+> 
+> If your Resource's subnets use more than three route tables please reach out to your Monte Carlo representative.
+
+1. Download and review the CloudFormation template.  
+[https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/peering/v1/mcd-accepter.yaml](https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/peering/v1/mcd-accepter.yaml)
+2. Deploy the stack in the same AWS account / region as the accepter (Your Resource). Fill in the parameters from the Data Collector and your Resource.
+
+![1990](/images/cd62d60-Screen_Shot_2022-01-26_at_1.55.11_PM.png "Screen Shot 2022-01-26 at 1.55.11 PM.png")
+
+Parameters Wizard

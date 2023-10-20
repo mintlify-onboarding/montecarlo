@@ -1,0 +1,23 @@
+---
+title: "Advanced Configuration"
+---
+
+### API Gateway Access Logging
+
+For API Gateway access logging to work, grant read and write log permissions to CloudWatch for your account.
+
+> ❗️
+> 
+> If the collector's API gateway will be the first in the region you will need to first deploy with logging disabled, execute the steps below and then enable logging by updating the parameter in the CloudFormation stack.
+
+Follow these steps:
+
+1. Create a new role with `apigateway.amazonaws.com` as its trusted entity.
+2. Set the `AmazonAPIGatewayPushToCloudWatchLogs` policy to the role.
+3. Go to the API gateway console in the region where the collector will be deployed, go to "Settings" and set "CloudWatch log role ARN" with the role created in step 1.
+4. Configure the logging settings for the API stage following the [AWS documentation](https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-logging.html#set-up-access-logging-using-console).
+![667](/images/7b88131-api_gw_settings.png "api_gw_settings.png") 
+
+> 🚧
+> 
+> The "Settings" menu item is the one at the bottom, not the one in the API menu.

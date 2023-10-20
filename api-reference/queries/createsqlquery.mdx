@@ -1,0 +1,63 @@
+---
+title: "createSqlQuery"
+description: "Convert natural language into a SQL query"
+---
+
+## Response
+
+Returns an `AIMessageOutput`
+
+## Arguments
+
+| Name                         | Description                                                    |
+|------------------------------|----------------------------------------------------------------|
+| `messages` - `[AIMessageInput]!` | Messages between the user and the AI                           |
+| `requestUuid` - `UUID`           | The identifier of the request if we want to stream the results |
+| `warehouseUuid` - `UUID!`        | The identifier of datawarehouse that is being queried          |
+
+## Variables
+```json
+{
+  "messages": [AIMessageInput],
+  "requestUuid": "a836bfe1-18ef-4b6c-aebd-a456f204f56a",
+  "warehouseUuid": "a836bfe1-18ef-4b6c-aebd-a456f204f56a"
+}
+```
+
+<RequestExample>
+
+```graphql Query
+query CreateSqlQuery(
+  $messages: [AIMessageInput]!,
+  $requestUuid: UUID,
+  $warehouseUuid: UUID!
+) {
+  createSqlQuery(
+    messages: $messages,
+    requestUuid: $requestUuid,
+    warehouseUuid: $warehouseUuid
+  ) {
+    actor
+    message
+    status
+  }
+}
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "createSqlQuery": {
+      "actor": "AI",
+      "message": "abc123",
+      "status": "xyz789"
+    }
+  }
+}
+```
+
+</ResponseExample>

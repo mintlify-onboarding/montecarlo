@@ -1,0 +1,28 @@
+---
+title: "Insight: Unmonitored Tables"
+description: "Tables where some or all of MCs automated monitors will not alert because there is not enough consistent training data."
+---
+
+**FULL\_TABLE\_ID** : A concatenation of project, dataset and table name 
+
+**IMPORTANCE\_SCORE** : A score from 0-1 expressed as a decimal. See how it is calculate below.
+
+[![docs.getmontecarlo.com](/images/e42fb99-small-Monte_Carlo_Logo_Secondary.png)docs.getmontecarlo.comImportance Score Calculation](https://docs.getmontecarlo.com/docs/key-assets-importance-score)
+
+**IS\_MUTED**: True if the table is muted; meaning you will not receive notifications with alerts. False otherwise.  
+  
+**VOLUME\_CHANGE\_IS\_ACTIVE**: True if the monitor is active, False if it is not active.  
+  
+**VOLUME\_CHANGE\_INACTIVE\_SINCE**: The date that the monitor became inactive, 'null' where the monitor is active.  
+  
+**UNCHANGED\_SIZE\_IS\_ACTIVE**: True if the monitor is active, False if it is not active.
+
+**UNCHANGED\_SIZE\_INACTIVE\_SINCE**: The date that the monitor became inactive, 'null' where the monitor is active.
+
+**FRESHNESS\_ACTIVE**: True if the monitor is active, False if it is not active.
+
+**FRESHNESS\_INACTIVE\_SINCE**: The date that the monitor became inactive, 'null' where the monitor is active.
+
+**VOLUME\_SLO**: True if there is a custom Volume SLO monitor on the table, False otherwise. 
+
+**FRESHNESS\_SLO**: True if there is a custom Freshness SLO monitor on the table, False otherwise.

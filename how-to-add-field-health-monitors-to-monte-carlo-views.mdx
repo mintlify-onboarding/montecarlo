@@ -1,0 +1,83 @@
+---
+title: "Setting up Field Health Monitors"
+---
+
+This tutorial will review the steps of making a Field Health monitor in Monte Carlo. Field Health monitors are a great way to add extra insurance and deeper statistical coverage on tables or views that are important to your pipeline. For example, if you are interested in better understanding the null rate or want to be alerted to any big fluctuations in the percent unique or percent negative or mean values for any columns in a table, Field Health monitors will help you do that!
+
+> 🚧
+> 
+> Last Updated: April 11, 2022
+
+### Transcript
+
+To add a Field Health monitor for any table or view in Monte Carlo, land on the "Monitors" tab and click on "Create New Monitor":
+
+![3482](/images/ed974fc-Screen_Shot_2022-02-03_at_2.10.38_PM.png "Screen Shot 2022-02-03 at 2.10.38 PM.png")
+
+Monitors Tab
+
+This is where you will be presented with the menu of options for different sorts of opt in monitors that you can add through Monte Carlo. In this case, we are going to add a Field Health monitor, which is great if you want to add extra insurance and deeper statistical coverage on tables or views that are very important to you. For example, if you are really interested in better understanding the null rate or want to be alerted to any big fluctuations in the percent unique or percent negative, or mean values for any columns in a table, Field Health is great.
+
+Click "Configure Monitor" in the Field Health card:
+
+![3484](/images/137b133-Screen_Shot_2022-02-03_at_2.11.25_PM.png "Screen Shot 2022-02-03 at 2.11.25 PM.png")
+
+Advanced Monitors Tab
+
+Next, select the table you want to add this monitor to. In this case, we are going to add it to a table that is really important to us, which is the `customer360` table. It's where we unify a lot of our customer data, and you can click "Continue":
+
+![3480](/images/9e461b3-Screen_Shot_2022-02-03_at_2.12.35_PM.png "Screen Shot 2022-02-03 at 2.12.35 PM.png")
+
+Select a table or view
+
+Our default approach is to monitor all fields within the selected table. We do this because oftentimes it can be difficult to predict when and where data issues might emerge, and so we think providing coverage on all fields is a good way to handle that sort of issue. If you do want to apply Field Health to very specific columns, unclick the "Monitor all fields" box and then you can opt in specific fields that you'd want to monitor, which is good if you have an exceptionally wide table with perhaps many hundreds of columns, and so you want to monitor a handful of your most important ones:
+
+![3490](/images/1369ed5-Screen_Shot_2022-02-03_at_2.16.10_PM.png "Screen Shot 2022-02-03 at 2.16.10 PM.png")
+
+Select fields
+
+In most cases, it's appropriate to leave it on "Monitors all fields". You also have the option here if you wanted to zero in on a segment of your data. You can apply a SQL "where" clause to monitor a portion of the data:
+
+![3492](/images/2cd589f-Screen_Shot_2022-02-03_at_2.17.15_PM.png "Screen Shot 2022-02-03 at 2.17.15 PM.png")
+
+Apply WHERE clause
+
+Click "Continue", and then you are prompted to select a field that will represent the row creation time. This is essentially going to be the x-axis in the statistical understanding Monte Carlo is going to develop for your data. It's the way that Monte Carlo can understand the data that is from today versus the data from the trailing days and weeks. That way, Monte Carlo can isolate and understand if the null rate or the percent unique or percentiles or mean values on today's data or this hour's data are much different from the data that's come in historically. In this case, there is just one-time field that we know does represent the row creation time and so we'll select that:
+
+![3482](/images/cb847df-Screen_Shot_2022-02-03_at_2.18.28_PM.png "Screen Shot 2022-02-03 at 2.18.28 PM.png")
+
+Pick a timestamp
+
+Know you also have the option to stitch together a time field with a SQL expression, or you have the option to click "All records" which will do a full column scan each time the monitor runs:
+
+![3484](/images/454d786-Screen_Shot_2022-02-03_at_2.19.02_PM.png "Screen Shot 2022-02-03 at 2.19.02 PM.png")
+
+SQL time expression
+
+> ❗️
+> 
+> All records
+> 
+> Careful picking "All Records"! This will result in Monte Carlo scanning your entire table for data, which can incur significant cost and cause the queries to fail due to timeouts.
+
+You also have some advanced options that allow you to play with the aggregation window, and this will say if you want to bucket the statistics by day or by hour. I'm going to leave it on the default:
+
+![3482](/images/f42d76c-Screen_Shot_2022-02-03_at_2.19.47_PM.png "Screen Shot 2022-02-03 at 2.19.47 PM.png")
+
+Data aggregation options
+
+Lastly, you have the ability to configure the monitor's schedule. In most cases, it's appropriate to leave it on the default which will run the monitor every twelve hours, but you do have the option to run it more frequently or less frequently if you click "Custom":
+
+![3480](/images/07cf23d-Screen_Shot_2022-02-03_at_2.20.00_PM.png "Screen Shot 2022-02-03 at 2.20.00 PM.png")
+
+Custom schedule
+
+You also have the option to select "Dynamic" scheduling which will mean the monitor will run when Monte Carlo has recognized that the table has received an update. Again, in most settings it's appropriate to leave it on the default, and so I'll leave it there which runs the monitor every 12 hours:
+
+![3484](/images/94e1a86-Screen_Shot_2022-02-03_at_2.20.26_PM.png "Screen Shot 2022-02-03 at 2.20.26 PM.png")
+
+Add monitor
+
+Then all you need to do is click "Add Monitor", and Monte Carlo will go and develop a benchmark for all those different statistics in this table. That initial benchmark will look back 14 days, and then each time the monitor runs, it's looking back 4 hours from here on out. Any alerts that this monitor generates will follow the existing notification settings and notification routing that you have set for the schema or the table that you have applied this Field Health monitor to.
+
+That's it! ![:tada:](/images/tada.png ":tada:") I hope this was helpful and please feel free to reach out to [\[email protected\]](/cdn-cgi/l/email-protection#bbc8cecbcbd4c9cffbd6d4d5cfded8dac9d7d4dfdacfda95d8d4d6) or the chat bot in the lower right hand corner if you have any questions!

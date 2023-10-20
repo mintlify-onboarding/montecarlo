@@ -1,0 +1,27 @@
+---
+title: "Troubleshooting and FAQs: Tableau"
+description: "Guide to troubleshooting and FAQs about the Tableau integration"
+---
+
+### Enable Metadata API
+
+You must enable Tableau's metadata API in order for this integration to work. Please see the [Tableau docs here on how to enable](https://help.tableau.com/current/api/metadata%5Fapi/en-us/docs/meta%5Fapi%5Fstart.html#enable-the-tableau-metadata-api-for-tableau-server). Once this endpoint is enabled, it may take anywhere from a day to a week to populate all of your data into the API store. For further questions on the metadata API and how Tableau creates its store, please reach out to your Tableau representative.
+
+When trying to onboard, this means you will see errors like `BACKFILL RUNNING` or `Still creating the Metadata API Store. Results from the query might be incomplete at this time` until that process is complete. Please use the `--skip-validation` toggle to add this integration to Monte Carlo as Monte Carlo will attempt to collector your metadata every 12 hours, so once the backfill is finished, Monte Carlo will then automatically begin pulling in your data to make lineage:
+
+![](/images/03d9d0f-Screenshot_2023-10-18_at_5.30.56_PM.png) 
+
+### SSL Certificate Failure
+
+If you are deploying your Tableau server with an SSL certificate, by default Monte Carlo will attempt to verify that. This can cause failures like `unable to get local issuer certificate` when trying to integrate to Monte Carlo.
+
+To solve, please integrate Tableau to Monte Carlo using the API or CLI which will allow you bypass this verification:
+
+1. Download and get set up with the CLI: [Using the CLI](/docs/using-the-cli)
+2. Run `montecarlo integrations add-tableau` making sure to include the `--no-verify-ssl` flag:
+
+![](/images/c63de9a-Screenshot_2023-04-21_at_4.52.07_PM.png)
+
+This should allow you to successfully onboard Tableau!
+
+If you would prefer to use the API, you can also do so, please see here for the call details: [addTableauAccount](https://apidocs.getmontecarlo.com/#mutation-addTableauAccount)

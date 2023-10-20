@@ -1,0 +1,21 @@
+---
+title: "Insight: Table Read/Write Activity"
+---
+
+### Field Definitions
+
+**FULL\_TABLE\_ID** : A concatenation of project, dataset and table name 
+
+**RESOURCE\_ID**: A unique ID for the warehouse 
+
+**METRIC**: The metric type
+
+**TIMESTAMP**: Timestamp of data point 
+
+**MEASUREMENT\_TIMESTAMP**: The timestamp when MC measure 'last\_read\_on' or 'last\_updated\_on'
+
+**DATE\_AGGREGATION\_BUCKET\_SIZE**: Day/week/month, If METRIC is 'last\_read\_on' or 'last\_updated\_on' this will be null.  
+  
+**VALUE**: Value of the data point. For last\_read\_on' and 'last\_updated\_on' it will be epoch time in seconds.
+
+**DOMAINS**: As created by the user in the UI.

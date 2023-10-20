@@ -1,0 +1,97 @@
+---
+title: "Create and register an AWS S3 Data Store (Beta)"
+description: "How-to create and register"
+---
+
+> 📝
+> 
+> Prerequisites
+> 
+> 1. You are an admin in AWS (for steps 1 and 2).
+> 2. You are an [Account Owner](/docs/authorization#managed-roles-and-groups) and have [installed and configured](/docs/using-the-cli) Monte Carlo's CLI (for step 3).
+
+> 👍
+> 
+> Tip
+> 
+> This template can be used to automate steps 1 and 2 and manage resources as code with CloudFormation: [https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/enablement/v0/apollo\_s3\_data\_store.yaml](https://prod-us-east-1-mcd-data-collector.s3.amazonaws.com/enablement/v0/apollo%5Fs3%5Fdata%5Fstore.yaml)
+> 
+> If you wish to use please download, review, and then deploy the stack in your AWS account.
+
+This guide outlines how to setup a Data Store for storing troubleshooting and temporary data in your AWS cloud.
+
+## 1\. Create an S3 Bucket
+
+Use the AWS Console, CLI or favorite IaC tool to create a **new** S3 Bucket in your AWS account with no public access. 
+
+Note that registration (step 3) will fail if the bucket is publicly accessible. 
+
+We strongly recommend you do not use an existing bucket or share with other jobs as Monte Carlo might overwrite existing data. And we also recommend the following settings:
+
+* SSE-S3 Server side encryption.
+* Expiration lifecycles. 90 days or less for all objects in the following prefixes:
+
+Prefixes
+
+`custom-sql-output-samples/
+rca
+idempotent
+`
+
+## 2\. Create an Assumable IAM Role
+
+Then follow the steps outlined in [Creating IAM Roles](creating-iam-roles) to create a role in your AWS account with the policy below, replacing the `BUCKET` with the bucket you created above.
+
+Policy
+
+`{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:DeleteObject",
+                "s3:ListBucket",
+                "s3:GetBucketPublicAccessBlock",
+                "s3:GetBucketPolicyStatus",
+                "s3:GetBucketAcl"
+            ],
+            "Resource": [
+                "arn:aws:s3:::<BUCKET>",
+                "arn:aws:s3:::<BUCKET>/*"
+            ],
+            "Effect": "Allow"
+        }
+    ]
+}
+`
+
+All references to the Data Collector in the guide above refer to a service that is automatically hosted and managed by Monte Carlo. No additional infrastructure or resources are required.
+
+When generating the trust policy this service will be hosted in one of the following AWS accounts:
+
+* `190812797848`
+* `799135046351`
+
+And when creating a role please add `MonteCarloData` as a tag key or this role will be unable to be assumed by Monte Carlo.
+
+You can see information regarding your automatically managed Data Collector service in the [settings/integrations/collectors](https://getmontecarlo.com/settings/integrations/collectors) tab on the UI or via the [list](https://clidocs.getmontecarlo.com/#montecarlo-collectors-list) command on the CLI.
+
+## 3\. Register the Data Store using Monte Carlo's CLI
+
+After creating the bucket and role use the command `montecarlo agents register-s3-store` to register them.
+
+For reference on this command please see [here](https://clidocs.getmontecarlo.com/#montecarlo-agents-register-s3-store).
+
+The `bucket-name` is the bucket you created in step one and `assumable-role` (and optional `external-id`) are the ARN (and ID) from step two.
+
+Example
+
+`montecarlo agents register-s3-store \
+  --bucket-name example-bucket \
+  --assumable-role arn:aws:iam::123456789:role/mcd-test-apollo-role \
+  --external-id 1234567890
+`
+
+After this step is complete all integrations that you add to this Data Collector Service will automatically use this bucket for storing troubleshooting and temporary data. You can add these integrations as you normally would using Monte Carlo's UI wizard or CLI.

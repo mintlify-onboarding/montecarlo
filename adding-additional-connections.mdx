@@ -1,0 +1,31 @@
+---
+title: "Adding Additional Connections"
+---
+
+You've already added a lake connection, but you have another portion of your lake that you'd like Monte Carlo to monitor. You're in luck because we support multiple data lake connections to Monte Carlo!
+
+Follow the associated onboarding process for the additional lake infrastructure you will want to set up. This the same process you used to set up the first lake connection. One important thing to keep in mind, is the `--name` parameter while setting up your data lakes. This will be the name of the connection you're setting up, and is important to distinguish your lake connections from each other, especially in situations where they're the same type of integration (multiple databricks workspaces, or multiple glue catalogs for instance). 
+
+### The `--name` parameter
+
+It's very important to understand the name parameter on the CLI and how it relates to the types of connections you can add in a lake.
+
+**Metastore Connections**  
+We have 3 main metastore connections for lakes - Hive, Glue, and Databricks Metastore. For these connections, we only allow 1 of any given type in a lake stack. If you want to connect to more than 1 of these metastores, you will need to give it a new name in the `--name` parameter while connecting it, and that will be the name of your new lake stack.
+
+**Other Connections**  
+While connecting any other kind of connection (query engine, Databricks Delta, etc), the `--name` parameter indicates which stack you want to add it to. These connections must be added to an existing stack.
+
+### FAQs
+
+**Do we need to have another data collector?**  
+No, we do not need a second data collector to monitor a second data lake.
+
+**Is each lake stack independent?**  
+Yes, for the most part, each lake stack is independent.
+
+**What part of the lake stack is not independent?**  
+We are able to support multiple lakes with a single set of S3 infrastructure. You only need to set up S3 events once.
+
+**Do we need to add a second query engine, even if we've already added one?**  
+Yes, you will need to set up a second query engine connection, even if it's already in another lake. Because we will not know about the Metadata from the second lake when setting up and monitoring queries to that first query engine, we will need to add it again while referencing the second lake.

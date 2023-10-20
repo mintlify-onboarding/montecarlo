@@ -1,0 +1,54 @@
+---
+title: "Using the Data Reliability Dashboard"
+---
+
+The [Data Reliability Dashboard](https://getmontecarlo.com/dashboard/data-reliability) is a manager overview. It shows several key metrics about your stack, incidents, incident response, user adoption, and uptime. It also helps break many of these metrics out by Domain, so you can see which Domains are high performers and which may be struggling to adopt.
+
+These can be used to set goals for your data team, or to fine-tune parts of your Monte Carlo deployment.  
+Metrics in the Data Reliability Dashboard are updated every 12 hours.
+
+### Filters
+
+**Tags:** filter metrics only for tables that have a certain [Tag](/docs/tags). Multiple tags can be added and filtered on at a time, each is added as an OR condition. 
+
+**Key Assets Only:** filter metrics only for tables that Monte Carlo has identified as a [Key Asset](/docs/key-assets), meaning the Importance Score is >= .75\. Key Assets are automatically calculated based on how heavily a table is used, and can also be overridden by a user input.
+
+**Incident Types:** remove certain Incident types from the metrics. This is most often used to filter out Schema Changes.
+
+**Lookback Range:** time duration to filter metrics.
+
+**Include current month / week:** true/false to include the current week or month’s data in metrics. This is defaulted to false, because including the current, incomplete week or month can often skew the trendline of metrics.
+
+### Metric Definitions
+
+**Incidents**
+
+* **All Incidents:** any incident surfaced in Monte Carlo, whether from out-of-the-box or custom monitors, or from external sources (e.g. dbt)
+* **Incidents from Custom Monitors:** any incident created by a custom monitor within Monte Carlo
+
+**Incident Response**
+
+* **Status Update Rate:** \# of incidents with a status / total # of incidents
+* **Time to Response:** for incidents with a status, the _median_ time from incident created to the time of first status update
+* **Time to ‘Fixed’:** for Incidents with Status = Fixed, the _median_ time from incident created to the time of status marked Fixed.
+
+**Custom Monitors**
+
+* **Monitors Created:** any custom monitor created during the Lookback Period. The large number is the total for the range, and the adjacent chart shows creation day-over-day, week-over-week, or month-over-month. **Note:** due to how this data is tracked, it won’t count any monitors that were created but have since been deleted.
+* **Active Monitors:** the total number of custom monitors that are currently active in your environment. This number is often larger than the metric you’ll see in ‘Monitors Created,’ because it includes monitors created before the Lookback Range.
+* **Incidents:** the total number of Incidents created from each type of custom monitor. Note: this does include incidents from custom monitors that have since been deleted. This column should sum to ‘Incidents from Custom Monitors’ metric at the top of the dashboard.
+
+**Domains**
+
+* This section segments metrics from Stack Summary, Incident Response, and Custom Monitors (specifically the Active Monitors column) by Domain. This is helpful to draw comparisons in activity and adoption between Domains.
+
+**Table Uptime**
+
+* Each card in this section shows, for different types of monitors, the # of tables with no incident / the total number of tables. You’ll notice that the big numbers are lower than the day-over-day, week-over-week, or month-over-month values in the adjacent charts. This is because they consider the entire Lookback Range, while the charts examine it within shorter time intervals. For example, if between 95-98% of tables are Incident-free for 6 discrete, consecutive months, then it makes sense that perhaps 88% of tables were Incident-free if you look at the trailing 6 months as a whole.
+
+**Users**
+
+* **Active Users within MC:** users who have activity into the Monte Carlo UI within the Lookback Range. The big number shows to total count from the Lookback Range, and the adjacent chart shows the count of users day-over-day, week-over-week, or month-over-month.
+* **Page Views:** the count of page views from users during the Lookback Range.
+* **Last Activity within MC:** the day/time of the most recent activity from this user.  
+Don’t see a user that you expect to see? First, try adjusting the lookback range or choosing to include the current week or month. If that doesn’t work, the user may have a blocker in prohibits tracking their activity. Or, there may be an issue with mapping the user’s activity to the appropriate account within Monte Carlo’s analytics.

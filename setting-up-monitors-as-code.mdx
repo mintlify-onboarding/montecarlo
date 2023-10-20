@@ -1,0 +1,71 @@
+---
+title: "Locally setting up Monitors as Code"
+---
+
+This tutorial will go over the steps to locally set up Monitors as Code. Monitors as Code is a great way codify monitors at scale without needing to go into the Monte Carlo UI.
+
+> 🚧
+> 
+> Last Updated: April 11, 2022
+
+### Transcript
+
+In this example, I'll be leveraging dbt, and I'll also be making the assumption that you've downloaded our CLI. If you have not, please see here: [Using the CLI](/docs/using-the-cli) 
+
+The first step here will be to create a `montecarlo.yaml` file, in which you'll want to pass through `version` as `1`. For most of you that will be sufficient; if you do have multiple data warehouses set up within Monte Carlo, you will also want to add this `default_resource` in which you can explicitly define which data warehouse you are using for these monitors. Secondarily, you'll want to set up a yaml file for these monitors. In this specific case, I've created the `monitors.yaml` file in which I'm defining both a Field Health as well as a Dimension Tracking monitor:
+
+![379](/images/8b3f6b1-Screen_Shot_2022-04-11_at_5.41.01_PM.png "Screen Shot 2022-04-11 at 5.41.01 PM.png")
+
+Example montecarlo.yaml file
+
+> 📘
+> 
+> Opt In Monitors
+> 
+> Read more about our opt in monitors, including Field Health and Dimension Tracking here: \[Monitors Overview\] (doc:overview-1)
+
+Alternatively, you can also embed these monitors within your dbt `schema.yaml` file. For more details on what that looks like as opposed to this example, you can go to the "Defining Individual Monitors" section within our [Monitors as Code](/docs/monitors-as-code#defining-individual-monitors) page within our documentation.
+
+Once you have that set up, you'll first want to navigate to the location where you have your `montecarlo.yaml` file, as that is the project root; in this case, we can see that I have that here. And now to set these up, I will want to run the `montecarlo monitors apply` command. In this case, I am going to define this under a test namespace here so that we can see this within the UI. Now, one thing to note here is with these namespaces, this is a way of naming a grouping of monitors you are creating so that the system can synchronize changes between your local configuration and what's stored within the Monte Carlo database:
+
+![583](/images/d71a007-Screen_Shot_2022-04-11_at_5.42.28_PM.png "Screen Shot 2022-04-11 at 5.42.28 PM.png")
+
+Applying the monitors
+
+As I run this, we can see that it catches the Field Health monitor as well as the Dimension Tracking monitor and these changes were successfully applied:
+
+![583](/images/8ff947b-Screen_Shot_2022-04-11_at_5.43.17_PM.png "Screen Shot 2022-04-11 at 5.43.17 PM.png")
+
+Successful output after applying monitors
+
+Now if I go to the Monte Carlo environment and refresh the page, we'll be able to see those two monitors at the top of the list of customer monitors here. As you can see, the namespace matches, as well as the table, and the type of monitor:
+
+![1066](/images/718903e-Screen_Shot_2022-04-11_at_5.45.13_PM.png "Screen Shot 2022-04-11 at 5.45.13 PM.png")
+
+Monitors as Code in the Monte Carlo UI
+
+Now if i also wanted to remove these, I can do so leveraging the `montecarlo monitors delete` command, and I'll want to match the namespace so it knows what it should delete:
+
+![580](/images/4e6f663-Screen_Shot_2022-04-11_at_5.47.28_PM.png "Screen Shot 2022-04-11 at 5.47.28 PM.png")
+
+Deleting monitors
+
+Now if I refresh my Monte Carlo UI, you'll be able to see that those no longer exist within the Monte Carlo environment:
+
+![1069](/images/0d3a7af-Screen_Shot_2022-04-11_at_5.48.53_PM.png "Screen Shot 2022-04-11 at 5.48.53 PM.png")
+
+Fresh Monte Carlo UI
+
+Hopefully this was helpful, but please feel free to reach out to [\[email protected\]](/cdn-cgi/l/email-protection#b3c0c6c3c3dcc1c7f3dedcddc7d6d0d2c1dfdcd7d2c7d29dd0dcde) or the chat bot in the lower right hand corner if you have any more questions!
+
+> 🚧
+> 
+> Notifications
+> 
+> Please be aware these monitors will be applied to any alert routing already in place. For example, if you have routes that get alerts on a schema or database level, setting up 500 monitors at once may cause an influx in emails, slack pings, team messages, etc.
+
+### FAQs
+
+**Question:** I am getting an error when trying to set up hundreds of monitors, how can I fix this?
+
+**Answer:** Currently, we are limited in the number of monitors that can be set up concurrently. The workaround is to set up multiple different namespaces of \~50 monitors or less. This will also reduce singularity around your monitors, allowing you to edit a few monitors at a time as opposed to editing all.

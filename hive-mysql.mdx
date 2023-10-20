@@ -1,0 +1,83 @@
+---
+title: "Hive Metastore"
+---
+
+> 📘
+> 
+> Prerequisites
+> 
+> To complete this guide, you will need admin credentials to your Hive metastore MySQL database.
+
+> 🚧
+> 
+> Databricks with Hive
+> 
+> If you are using Databricks with an external Hive catalog, please follow the [Databricks](/docs/overview-databricks) documentation. Setting up Hive as a separate integration is not necessary.
+
+To connect Monte Carlo to a MySQL Hive metastore, follow these steps:
+
+1. Ensure that Monte Carlo's data collector has [network connectivity](/docs/network-connectivity) to the metastore (VPC peering is required in most cases).
+2. [Create a service account](/docs/hive-mysql#creating-a-service-account-for-monte-carlo) on your MySQL metastore.
+3. [Provide service account credentials](/docs/hive-mysql#providing-service-account-credentials-to-monte-carlo) in Monte Carlo's integration wizard.
+
+### Creating a service account for Monte Carlo
+
+Please run the SQL snippet below on your MySQL metastore using your favorite SQL client to create a read-only service account for Monte Carlo:
+
+SQL
+
+`CREATE USER 'monte_carlo'@'%' IDENTIFIED BY '<password>'; 
+REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'monte_carlo'@'%';
+GRANT SELECT ON <hive_schema>.* TO 'monte_carlo'@'%';
+FLUSH PRIVILEGES;
+`
+
+Before using the snippet, you will need to populate the following:
+
+* **<password>**: Strong password to be used by the service account user.
+* **<hive\_schema>**: Name of your Hive schema on the metastore database, typically _hive_ or _metastore_.
+
+### Providing service account credentials to Monte Carlo
+
+You will provide connection details for the Hive (metastore) using Monte Carlo's CLI: 
+
+1. Please follow [this guide](/docs/using-the-cli) to install and configure the CLI.
+2. Please use the command `montecarlo integrations add-hive-metastore` to set up metastore connectivity. For reference, see help for this command below:
+
+> 📘
+> 
+> On using more than one metastore with Presto
+> 
+> If connecting multiple hive clusters please specify the corresponding catalog name using the `--catalog` flag. 
+> 
+> Otherwise, by default 'hive' is used as the name of the catalog.
+
+Shell
+
+`$ montecarlo integrations add-hive-metastore --help
+Usage: montecarlo integrations add-hive-metastore [OPTIONS]
+
+  Setup a Hive metastore integration (MySQL). For metadata.
+
+Options:
+  --port INTEGER       HTTP port.  [default: 3306]
+  --use-ssl            Use SSL to connect (using AWS RDS certificates).
+  --catalog TEXT       Presto catalog name. For using multiple hive clusters
+                       with Presto. Uses 'hive' if not specified.
+  --name TEXT          Friendly name for the created warehouse. Name must be
+                       unique.
+  --host TEXT          Hostname.  [required]
+  --user TEXT          Username with access to the database.  [required]
+  --database TEXT      Name of database.  [required]
+  --password TEXT      User\'s password. If you prefer a prompt (with hidden
+                       input) enter -1.  [required]
+  --collector-id UUID  ID for the data collector. To disambiguate accounts
+                       with multiple collectors.
+  --skip-validation    Skip all connection tests. This option cannot be used
+                       with 'validate-only'.
+  --validate-only      Run connection tests without adding. This option cannot
+                       be used with 'skip-validation'.
+  --auto-yes           Skip any interactive approval.
+  --option-file FILE   Read configuration from FILE.
+  --help               Show this message and exit.
+`

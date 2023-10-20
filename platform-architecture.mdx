@@ -1,0 +1,65 @@
+---
+title: "Architecture & Deployment Options"
+---
+
+## Platform Architecture
+
+Monte Carlo operates as a software-as-a-service with options to extend components of the platform into the customer environment for security and compliance requirements.
+
+### Platform Components
+
+#### Cloud Service
+
+Monte Carlo operates a cloud service to support the user interface, data monitoring system, reliability dashboards, and notification routing.
+
+#### Agent
+
+An isolated, customer-dedicated Agent that is used to connect to customer resources for monitoring.
+
+#### Object Storage
+
+Object storage bucket for a small sample of individual values or data records from the customer environment that are associated with a data reliability incident detected by Monte Carlo.
+
+## Deployment Options Overview
+
+Monte Carlo offers three different deployment models that vary based on where components of the architecture are deployed. Generally, for best-in-class support and minimal-to-no overhead, we recommend a **Cloud** or **Cloud with Customer-hosted Object Storage**.
+
+### Cloud Deployment
+
+Monte Carlo operates completely as a software-as-a-service (SaaS). An isolated, customer-dedicated Agent and Object Storage are deployed in Monte Carlo's cloud to connect to customer resources. 
+
+![](/images/e64f320-1.svg)
+
+### Cloud with Customer-hosted Object Storage Deployment
+
+Monte Carlo operates completely as a software-as-a-service (SaaS), _with the exception of the Object Storage being hosted by the customer_. An isolated, customer-dedicated Agent is deployed in Monte Carlo's cloud to connect to customer resources. 
+
+This deployment model allows customers to never store record-level data with Monte Carlo while minimizing hosting maintenance and overhead.
+
+Available for AWS and Google Cloud.
+
+![](/images/86cc8b6-2.svg)
+
+### Customer-hosted Agent & Object Storage Deployment
+
+The Monte Carlo Agent and Object Storage are deployed in the customer environment. 
+
+This deployment model allows the most the most control but requires the most maintenance and hosting for customers.
+
+Available for AWS today and Google Cloud is coming soon.
+
+![](/images/61053a8-3.svg)
+
+## Deployment Options Comparison
+
+The following matrix compares what each deployment model means from an infrastructure (i.e. the resources you host), network (i.e. how to establish reachability between Monte Carlo and an integration), object storage (i.e. where troubleshooting and temporary data is stored) and maintenance perspective (e.g. any required upgrades or management).
+
+| Option                                                      | Infrastructure                                                                                                                                                         | Networking                                                                                                                                                                                                                                    | Storage                                                                                     | Maintenance                                                                         |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Cloud**                                                   | None. Monte Carlo hosts everything for you.                                                                                                                            | You can connect by allowlisting your dedicated IP address (all clouds), or Peer / PrivateLink between Monte Carlo's cloud and your cloud (AWS only).                                                                                          | Troubleshooting data is stored in customer-dedicated object storage in Monte Carlo's cloud. | None required.                                                                      |
+| **Cloud w/ Customer-hosted Object Storage (AWS)**           | You host an S3 bucket.                                                                                                                                                 | Connect by allowlisting dedicated IP address (all clouds), or Peer / PrivateLink between Monte Carlo's and customer cloud (AWS only).                                                                                                         | Troubleshooting data is stored in an S3 bucket hosted in customer AWS cloud.                | None required.                                                                      |
+| **Cloud w/ Customer-hosted Object Storage (GCP)**           | You host a GCS bucket.                                                                                                                                                 | Connect by allowlisting dedicated IP address (all clouds).                                                                                                                                                                                    | Troubleshooting data is stored in the GCS bucket hosted in customer GCP cloud.              | None required.                                                                      |
+| **Customer-hosted Agent & Object Storage (AWS)**            | Customer host the [ Data Collector Service](/docs/hybrid-solution#components-of-the-data-collector).This includes multiple lambda functions, bucket, API gateway, etc. | You can connect by deploying the Data Collector into your own VPC or having the Data Collector generate a new VPC and allowlisting the dedicated IP address, or Peering / PrivateLinking between the Data Collector and your resource on AWS. | Troubleshooting data is stored in an S3 bucket hosted in customer AWS cloud.                | Upgrades and monitoring are required. Supportability and debugging is also limited. |
+| **Customer-hosted Agent & Object Storage Deployment (GCP)** | _Details coming soon!_                                                                                                                                                 | _Details coming soon!_                                                                                                                                                                                                                        | _Details coming soon!_                                                                      | _Details coming soon!_                                                              |
+
+Note that Metadata, Metrics, Query logs, and Aggregated / anonymized statistics are always stored in Monte Carlo's Cloud. Troubleshooting data refers to a small sample of individual values or data records to make it easier for you to investigate, root cause, and resolve an incident or data issue. You can always opt out of storing any troubleshooting data, per integration, regardless of the option you select.

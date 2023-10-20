@@ -1,0 +1,92 @@
+---
+title: "SQL Server (beta)"
+description: "Connection overview. Requires: CLI v0.50.0 and Data Collector v14147 or newer"
+---
+
+Integrating Monte Carlo with SQL Server allows you to monitor your data assets through [custom SQL monitors](/docs/creating-sql-rules), which can be created in either the [UI wizard](https://getmontecarlo.com/monitors/create/sql-rule) and/or programmatically via [monitors as code](/docs/monitors-as-code) (API/SDK too). These monitors can be used to generate [notifications](/docs/slack) (incidents) to relevant stakeholders and [circuit break](/docs/circuit-breakers) pipelines.
+
+## Integration Setup
+
+To connect Monte Carlo to a SQL Server database, follow these steps:
+
+1. [Enable network connectivity](/docs/sql-server#1-enable-network-connectivity) between the database and Monte Carlo's data collector.
+2. [Create a read-only service account](/docs/sql-server#2-create-a-read-only-service-account) with the appropriate permissions on your database.
+3. [Provide service account credentials](/docs/sql-server#3-provide-service-account-credentials-to-monte-carlo) to Monte Carlo (requires [Using the CLI](/docs/using-the-cli)).
+
+### 1\. Enable network connectivity
+
+Follow the [Network Connectivity](/docs/aws-networking-tips) guide to IP Allowlist or VPC peer to provide access to SQL Server.
+
+### 2\. Create a read-only service account
+
+> 📘
+> 
+> Prerequisites
+> 
+> To create a service account, you will need admin credentials to your SQL Server database.
+
+Please run the SQL snippet below on your SQL Server database to create a read-only service account for Monte Carlo.
+
+SQL
+
+`CREATE LOGIN montecarlo WITH PASSWORD = '<password>';
+
+-- Grant access to all current tables. Repeat for all relevant databases.
+-- Select permissions are necessary to create custom SQL monitors.
+
+USE <database>;
+CREATE USER montecarlo FOR LOGIN montecarlo;
+ALTER ROLE db_datareader ADD MEMBER montecarlo;
+`
+
+### 3\. Provide service account credentials to Monte Carlo
+
+1. Please follow [this](/docs/using-the-cli) guide to install and configure the CLI.
+2. Please use the command `montecarlo integrations add-sql-server` to connect. For reference, see help [here](https://clidocs.getmontecarlo.com/#montecarlo-integrations-add-sql-server).
+
+Example
+
+`montecarlo integrations add-sql-server \
+	--name aloy-dev \
+	--host sample-cluster.123456789.us-east-1.rds.amazonaws.com \
+	--user montecarlo \
+	--password -1
+`
+
+## Monitor Support
+
+Below are the supported monitors for the SQL Server Integration today. Please reach out to your Monte Carlo representative if you have requirements for additional Monitors.
+
+| Category                    | Monitor Type         | Support                                                                             |
+| --------------------------- | -------------------- | ----------------------------------------------------------------------------------- |
+| Automated Anomaly Detection | Freshness            |                                                                                     |
+| Automated Anomaly Detection | Volume               |                                                                                     |
+| Automated Monitoring        | Schema Changes       |                                                                                     |
+| Opt-in Monitor              | SQL Rule             | ![:white-check-mark:](/images/white-check-mark.png ":white-check-mark:") |
+| Opt-in Monitor              | Field Quality Rule   |                                                                                     |
+| Opt-in Monitor              | Freshness Rule       |                                                                                     |
+| Opt-in Monitor              | Volume Rule          |                                                                                     |
+| Opt-in Monitor              | Field Health Monitor |                                                                                     |
+| Opt-in Monitor              | Dimension Tracking   |                                                                                     |
+| Opt-in Monitor              | JSON Schema Changes  |                                                                                     |
+
+## FAQs
+
+**What is the minimum supported version?**
+
+Monte Carlo supports SQL server 2012 and newer.
+
+**What hosting solutions are supported?**  
+This integration supports any instance that is reachable from the AWS cloud (e.g. AWS hosted, site-to-site VPN with AWS, publicly accessible, etc). Please see the [networking docs](/docs/aws-networking-tips) for more detail.
+
+**Are cloud variants of SQL Server like AWS RDS, GCP Cloud SQL, and Azure SQL Server supported?**
+
+Yes, AWS RDS, GCP Cloud SQL, and Azure SQL Server are all supported.
+
+**What is the `db_datareader` role?**
+
+You can find details about this role [here](https://learn.microsoft.com/en-us/sql/relational-databases/security/authentication-access/database-level-roles?view=sql-server-ver16#fixed-database-roles).
+
+**What types of SQL Expressions are or are not supported?**
+
+We cannot execute SQL with CTEs for rules on SQL Server. Monte Carlo wraps your SQL Statement in a CTE for safety, and SQL Server does not support nested CTEs.

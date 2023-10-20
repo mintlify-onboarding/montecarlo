@@ -1,0 +1,42 @@
+---
+title: "FAQs and Troubleshooting"
+---
+
+### FAQs
+
+##### Do you support any other IdPs?
+
+We work with any IdP that supports SAML. We have outlined the set up information for the major IdPs, but if you have an IdP not outlined above, let us know, and we'd be happy to help you through the set up.
+
+##### I've set up SSO in my workspace; what happens to my current users?
+
+When SSO is enabled in your workspace, we automatically disable all username/password users once you have successfully used SSO to login to your account. Any user who signs into your account after SSO is validated is forced to authenticate through your IdP. You do not need to delete and reinvite users.
+
+In other words, when SSO is enabled, access to Monte Carlo becomes entirely dependent who has been granted access in the IdP. Users who previously had access through a username/password but are not granted access through the IdP will be locked out.
+
+##### If I have SSO enabled in my workspace, do I still need to invite users to our account? Does Monte Carlo support JIT (Just-in-Time provisioning)?
+
+No, you do not. We support Just-in-Time provisioning (JIT) so any users who have a domain or other account identifier matching your SSO settings (i.e. @montecarlodata.com) will be automatically associated with your account. They simply need to put their email into the SSO login box on our login page: getmontecarlo.com/signin, and we will verify their access with your IdP and approve/deny access from there. We will default to the "Viewer" role for these users.
+
+##### Can I map my Groups in SSO to Authorization Groups in Monte Carlo?
+
+Yes! See more details [here](/docs/mapping-sso-authorization-groups). By mapping Groups in SSO to Authorization Groups in Monte Carlo, you can streamline the onboarding of new users and save time.
+
+##### How do I find the custom app metadata information in Okta?
+
+To find the metadata information that you need to provide to Monte Carlo to enable SSO, follow [this Okta help article](https://support.okta.com/help/s/question/0D50Z00008G7VVzSAN/how-to-use-okta-idp-metadata-in-service-provider-application?language=en%5FUS). An example of a metadata URL would be: `https://[okta_org_url].okta.com/app/[app_id]/sso/saml/metadata`.
+
+### Troubleshooting
+
+##### I am seeing an error about invalid samlResponse or relayState; what's wrong?
+
+If you are seeing the following error:
+
+![](/images/54d8389-image_56.png) 
+
+This is because you attempted to log into Monte Carlo by clicking on the tile in your IdP. [Monte Carlo currently does not support IdP-initiated log in flows.](/docs/setting-up-single-sign-on-sso#configuring-your-identity-provider) 
+
+To avoid this error, you need to either:
+
+1. Start your log in flow from getmontecarlo.com/signin and provide your email. This will redirect you through your IdP, and back into Monte Carlo properly.
+2. You can [create a bookmark in your IdP](/docs/setting-up-single-sign-on-sso#identity-provider-initiated-login) that will automatically authenticate users so they do not need to re-enter credentials. This way, you can start your log in flow without leaving your IdP.

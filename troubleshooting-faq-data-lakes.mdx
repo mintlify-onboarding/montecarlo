@@ -1,0 +1,14 @@
+---
+title: "Troubleshooting & FAQ: Data Lakes"
+---
+
+**Can Monte Carlo monitor just S3 / Athena / Hive / etc.?**  
+Monte Carlo requires at least a storage system, a metastore, and a query engine to work as intended. This is because each of these systems provides a different slice of the metadata MC leverages for data observability purposes.
+
+**What does MC need to automatically generate lineage?**  
+MC requires query logs for ETL procedures (DDL, DML). This usually means EMR or Presto logs accessible in S3, or a connection to Athena if you run ETL through Athena. MC currently does not support lineage in Spark, though a Databricks Unity Catalog-based lineage capability is available.
+
+**What if we use multiple query engines?**  
+MC currently only supports one query engine type per environment. This means that if you have multiple query engines (Spark and Athena), or have multiple accounts (like Spark clusters), we ask that you select one that suits your use case.
+
+For advanced users of custom monitors, we support multiple query connections of the same type via the API/SDK. For example, you can now setup multiple Spark warehouse connections with varying config to optimize for performance and cost. [See API docs here for details](/docs/integrations#add-multiple-query-engines), usage examples, and any limitations on this feature. Note that MC currently does not support mixing engines from different connection types. Reach out to your Monte Carlo representative or click on the chat bot in the lower right hand corner if you have additional questions.

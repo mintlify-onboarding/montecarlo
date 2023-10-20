@@ -1,0 +1,54 @@
+---
+title: "Generating MC monitors from dbt tests"
+---
+
+We support generating Monte Carlo monitors based on your dbt tests in `montecarlo` version `0.44.0` and above. Just run the following command with the path to your dbt `manifest.json` (run `dbt compile` with the desired target if you need to generate this) and your desired output file path and it will create monitor config YAML that you can add to your Monte Carlo project:
+
+`montecarlo monitors generate-from-dbt-tests \
+  --dbt-manifest /path/to/dbt/manifest.json \
+  --output-path /path/to/mc_monitor_config.yml
+`
+
+You can also optionally specify specific types of dbt tests if you do not want to move them all into Monte Carlo. You can specify any of the standard 4 types that come with dbt (`unique`, `not_null`, `accepted_values`, and `relationships`), a custom generic test type, or the special keyword `SINGULAR` which matches singular dbt tests that do not otherwise have a type.
+
+You can also specify audiences that will be applied to all the generated monitors using `--label` parameters (`label` is equivalent to `audience`).
+
+`montecarlo monitors generate-from-dbt-tests \
+  --dbt-manifest /path/to/dbt/manifest.json \
+  --output-path /path/to/mc_monitor_config.yml \
+  --test-type SINGULAR \
+  --test-type not_null \
+  --label foo \
+  --label bar
+`
+
+> 📘
+> 
+> Make sure to apply the changes to your Monte Carlo project
+> 
+> The `montecarlo monitors generate-from-dbt-tests` command creates a YAML config file that will create the corresponding monitors for the dbt tests _when the monitor config is applied_. It does not immediately apply the config. Make sure to run the `montecarlo monitors apply` command described above to actually create the monitors.
+
+The generated output will look like this, with an entry for each dbt test:
+
+YAML
+
+`montecarlo:
+  - name: test.dbt_project.not_null_table_name_field_name
+    description: test.dbt_project.not_null_table_name_field_name
+    sql: |
+      select field_name
+      from dbt_project.prod.table_name
+      where field_name is null
+    schedule:
+      type: fixed
+      start_time: '2023-03-30T17:33:52.897469+00:00'
+      interval_minutes: 720
+    comparisons:
+    - type: threshold
+      operator: GT
+      threshold_value: 0
+    labels: # labels are equivalent to audiences
+    - bar
+    - foo
+
+`

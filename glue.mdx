@@ -1,0 +1,264 @@
+---
+title: "Glue"
+---
+
+## Overview
+
+Glue is a serverless AWS offering used for data cataloging, transformation, integration, and orchestration. The Monte Carlo integration is primarily interested in the cataloging features of the Glue Metastore. The Glue Metastore provides Monte Carlo with the databases, tables, and partition information of data stored in AWS S3 Buckets.
+
+### How does Monte Carlo use Glue?
+
+The catalog information in Glue powers the Monte Carlo Assets view providing users with
+
+* The ability to discover and explore data assets cataloged by Glue
+* Table metadata type, schema, column, and partition information
+* Schema monitoring
+* Query Engines (Other data lake components rely on the Glue metastore to effectively map their queries to your data assets)
+
+> 🚧
+> 
+> Databricks with Glue
+> 
+> If you are using Databricks with an external Glue catalog, please follow the [Databricks](/docs/overview-databricks) documentation. Setting up Glue as a separate integration is not necessary.
+
+### What features are not enabled by a Glue integration?
+
+Monte Carlo data lake observability is enabled by integrating the entire data lake stack. The Glue metastore is a critical piece of that stack, but does not enable the full suite of data observability features on it's own. In order to get the best coverage your data lake you will need to include a Query Engine integration to work in conjunction with Glue. Below is a list of Monte Carlo features that are not available with Glue alone.
+
+* Automated Freshness and Volume Monitoring
+* Field Health, Dimension Tracking and JSON Monitors
+* SQL, Freshness, Volume, Field Quality and Cardinality Rules
+* Query Logs
+* Importance scores
+* Insight Reports
+
+### How does Monte Carlo integrate with Glue?
+
+![](/images/GaWh1zp.png)
+
+Monte Carlo uses assumable [IAM roles](https://docs.aws.amazon.com/IAM/latest/UserGuide/id%5Froles.html) to reach into your Glue metastore. Using the Monte Carlo CLI, you pass the role ARN, database names, and S3 buckets you are interested in monitoring to Monte Carlo.
+
+The easiest way to set up Glue is to use the [Monte Carlo CLI](/docs/using-the-cli) exclusively ([Option 1](/docs/glue#option-1-use-the-monte-carlo-cli-recommended)) as the CLI completely automates the infrastructure creation and policy configuration. In the case that is not possible, proceed to [Option 2](/docs/glue#2-create-an-access-role).
+
+> 📘
+> 
+> Prerequisites
+> 
+> * **Permission to create IAM roles and policies in AWS**
+> * **Monte Carlo CLI configured with API keys** ( Please follow [this guide](/docs/using-the-cli) to install and configure the CLI on your local machine)
+
+## Option 1: Use the Monte Carlo CLI \[Recommended\]
+
+1. Generate the Glue access policy
+2. Create an access role
+3. Provide role information to Monte Carlo
+
+### 1\. Generate the Glue access policy
+
+1. Run `montecarlo discovery glue-policy-gen [parameters] > glue_access_policy.json` with the necessary parameters. If the data account is not the same as the collector account, use `--resource-aws-region` and `--resource-aws-profile` to pass the data account profile.
+
+Shell
+
+`` $ montecarlo discovery glue-policy-gen --help
+Usage: montecarlo discovery glue-policy-gen [OPTIONS]
+
+  Generate an IAM policy for Glue. After review, output of this command can
+  be redirected into `montecarlo integrations create-role` or `montecarlo
+  discovery cf-role-gen` if you prefer IaC.
+
+Options:
+  --database-name TEXT         Glue/Athena database name to generate a policy
+                               from. Enter '\*' to give Monte Carlo access to
+                               all databases. This option can be passed
+                               multiple times for more than one database.
+                               [required]
+
+  --data-bucket-name TEXT      Name of a S3 bucket storing the data for your
+                               Glue/Athena tables. If this option is not
+                               specified the bucket names are derived (looked
+                               up) from the tables in your databases. This
+                               option can be passed multiple times for more
+                               than one bucket. Enter '\*' to give Monte Carlo
+                               access to all buckets.
+
+  --resource-aws-region TEXT   Override the AWS region where the resource is
+                               located. Defaults to the region where the
+                               collector is hosted.
+
+  --resource-aws-profile TEXT  Override the AWS profile use by the CLI for the
+                               resource. This can be helpful if the resource
+                               and collector are in different accounts.
+
+  --collector-id UUID          ID for the data collector. To disambiguate
+                               accounts with multiple collectors.
+
+  --help                       Show this message and exit.
+ ``
+
+### 2\. Create an access role
+
+1. Run `montecarlo integrations create-role glue_access_policy.json`. If the data account is not the same as the collector account, use `--aws-profile` to pass the data account profile.
+2. The command prints a role ARN and an external id, they are used in the next section.
+
+Shell
+
+`$ montecarlo integrations create-role --help
+Usage: montecarlo integrations create-role [OPTIONS] FILE
+
+  Create an IAM role from a policy FILE. The returned role ARN and external
+  id should be used for adding lake assets.
+
+Options:
+  --aws-profile TEXT  Override the AWS profile used by the CLI, which
+                      determines where the role is created. This can be
+                      helpful when the account that manages the asset is not
+                      the same as the collector.
+
+  --help              Show this message and exit.
+`
+
+### 3\. Provide role information to Monte Carlo
+
+1. Run `montecarlo integrations add-glue` with the necessary parameters.
+
+Shell
+
+`$ montecarlo integrations add-glue --help
+Usage: montecarlo integrations add-glue [OPTIONS]
+
+  Setup a Glue integration. For metadata.
+
+Options:
+  --region TEXT        Glue catalog region. If not specified the region the
+                       collector is deployed in is used.
+  --role TEXT          Assumable role ARN to use for accessing AWS resources.
+                       [required]
+  --external-id TEXT   An external id, per assumable role conditions.
+  --name TEXT          Friendly name for the created warehouse. Name must be
+                       unique.
+  --collector-id UUID  ID for the data collector. To disambiguate accounts
+                       with multiple collectors.
+  --skip-validation    Skip all connection tests. This option cannot be used
+                       with 'validate-only'.
+  --validate-only      Run connection tests without adding. This option cannot
+                       be used with 'skip-validation'.
+  --auto-yes           Skip any interactive approval.
+  --option-file FILE   Read configuration from FILE.
+  --help               Show this message and exit.
+`
+
+## Option 2: Use the AWS UI
+
+### 1\. Create an access role
+
+1. Follow the steps outlined in [Creating IAM Roles](/docs/creating-iam-roles) to create a role with the policy below, replacing the values **REGION**, **ACCOUNT\_ID**, **S3\_ARN** (of the S3 bucket(s) storing the data for your Glue/Athena tables - you can alternatively pass `"*"` to give access to all buckets), and **DATABASE\_NAME**.
+2. The role ARN and external ID should be saved to be used in the next step.
+
+JSON
+
+`{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket",
+                "s3:GetBucketLocation"
+            ],
+            "Resource": [
+                "<S3_ARN>"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "glue:GetConnections",
+            "Resource": [
+                "arn:aws:glue:<REGION>:<ACCOUNT_ID>:catalog",
+                "arn:aws:glue:<REGION>:<ACCOUNT_ID>:connection/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "glue:GetDatabases",
+            "Resource": [
+                "arn:aws:glue:<REGION>:<ACCOUNT_ID>:catalog",
+                "arn:aws:glue:<REGION>:<ACCOUNT_ID>:database/<DATABASE_NAME>"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "glue:GetTables",
+                "glue:GetTable",
+                "glue:GetPartitions",
+                "glue:GetPartition"
+            ],
+            "Resource": [
+                "arn:aws:glue:<REGION>:<ACCOUNT_ID>:catalog",
+                "arn:aws:glue:<REGION>:<ACCOUNT_ID>:database/<DATABASE_NAME>",
+                "arn:aws:glue:<REGION>:<ACCOUNT_ID>:table/<DATABASE_NAME>/*"
+            ]
+        }
+    ]
+}
+`
+
+### 2\. Provide role information to Monte Carlo
+
+1. Run `montecarlo integrations add-glue` with the necessary parameters.
+
+Shell
+
+`$ montecarlo integrations add-glue --help
+Usage: montecarlo integrations add-glue [OPTIONS]
+
+  Setup a Glue integration. For metadata.
+
+Options:
+  --region TEXT        Glue catalog region. If not specified the region the
+                       collector is deployed in is used.
+  --role TEXT          Assumable role ARN to use for accessing AWS resources.
+                       [required]
+  --external-id TEXT   An external id, per assumable role conditions.
+  --name TEXT          Friendly name for the created warehouse. Name must be
+                       unique.
+  --collector-id UUID  ID for the data collector. To disambiguate accounts
+                       with multiple collectors.
+  --skip-validation    Skip all connection tests. This option cannot be used
+                       with 'validate-only'.
+  --validate-only      Run connection tests without adding. This option cannot
+                       be used with 'skip-validation'.
+  --auto-yes           Skip any interactive approval.
+  --option-file FILE   Read configuration from FILE.
+  --help               Show this message and exit.
+`
+
+## Troubleshooting
+
+### Validation error
+
+Shell
+
+`User: arn:aws:iam::<aws_account_id>:user/<user> is not authorized to perform: <action> on resource: arn:aws:glue:<region>:<aws_account_id>:<resource>
+`
+
+**Potential Causes**
+
+* AWS policy is not attached to a Role
+* Policy is misconfigured. This often happens when the policy is created by hand. Try generating the the policy using Option 1 and performing a diff between your policy and the Monte Carlo CLI generated one
+* A resource policy (e.g. bucket policy) is denying access
+* Other types of policies are denying access, see [AWS doc](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference%5Fpolicies%5Fevaluation-logic.html#policy-eval-denyallow), but keep in mind that this is less likely, things like permission boundaries are not common.
+
+### Assume role error
+
+Shell
+
+`User: arn:aws:sts::<dc_account_id>:assumed-role/<role> is not authorized to perform: sts:AssumeRole on resource: arn:aws:iam::<data_account_id>:role/<role>
+`
+
+**Potential Causes**
+
+* The role was created under the wrong AWS account. The IAM role must exist in the same account as Glue
+* The trust relationship account is wrong - the account in the trust relationship must be the data collector account
+* A trust relationship is missing ([step 2](/docs/creating-iam-roles#2-select-another-aws-account-and-specify-the-account-id-where-monte-carlos-data-collector-stack-is-deployed-if-managed-by-monte-carlo-please-reach-out-to-monte-carlo-for-details-on-the-account-id) in creating IAM role docs)
+* The MonteCarloData tag is **missing** or **contains** a value - value must be absent ([step 7](/docs/creating-iam-roles#7-add-a-tag-with-the-key-montecarlodata-and-click-next-review) in IAM role docs)

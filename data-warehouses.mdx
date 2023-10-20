@@ -1,0 +1,28 @@
+---
+title: "Overview: Data Warehouses"
+description: "Integrate Monte Carlo with your Data Warehouse"
+---
+
+> 📘
+> 
+> Your data collector must be deployed before connecting a warehouse
+> 
+> See instructions [here](/docs/deployment).
+
+Integrating Monte Carlo with a data warehouse allows Monte Carlo to track health of tables and pipelines. By automatically pulling metadata, query logs and metrics, from the warehouse, Monte Carlo can provide end-to-end data observability.
+
+To integrate a data warehouse, you will:
+
+1. [Enable network connectivity](/docs/network-connectivity) between the warehouse and Monte Carlo's data collector if the warehouse is not publicly accessible.
+2. Create a read-only service account with the appropriate permissions on your data warehouse. See detailed instructions in dedicated warehouse guides for Snowflake, BigQuery and Redshift.
+3. Provide service account credentials on your Monte Carlo onboarding wizard to validate and complete the integration.
+
+![429](/images/2be2ae7-Screen_Shot_2021-07-23_at_10.49.22_AM.png "Screen Shot 2021-07-23 at 10.49.22 AM.png")
+
+Example: setting up service account credentials for Snowflake during onboarding
+
+### FAQs
+
+**I have an advanced monitor that keeps timing out; how can I make sure MC runs as needed while keeping my resource consumption and costs low?**
+
+For advanced users of custom monitors, we support multiple query connections of the same type via the API/SDK. For example, you can now setup multiple Snowflake warehouse connections with varying config to optimize for performance and cost. [See API docs here for details](/docs/integrations#add-multiple-query-engines), usage examples, and any limitations on this feature. Reach out to your Monte Carlo representative or click on the chat bot in the lower right hand corner if you have additional questions.

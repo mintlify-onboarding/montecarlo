@@ -1,0 +1,42 @@
+---
+title: "Overview"
+---
+
+Monte Carlo uses a data collector to connect to data warehouses, data lakes and BI tools in order to extract metadata, logs and statistics. The data collector is deployed in Monte Carlo's secure AWS environment across our Fortune 500 clients to ensure a seamless deployment process and best-in-class customer support. This section outlines the architecture and deployment options of the data collector. 
+
+### Architecture
+
+The data collector architecture is optimized as seen below to ensure maximum security as we interact with your data. 
+
+![960](/images/bf6ba90-MC_Diagram_Suggestions-2.png "MC Diagram Suggestions?-2.png")
+
+Architecture
+
+### Deployment Options
+
+#### SaaS Option
+
+Monte Carlo is a SaaS platform. We will take on deployment and management of the data collector. This makes it easier for us to manage the infrastructure in cases like upgrading, operationally monitor the collector's infrastructure, and provide better debugging support.
+
+When Monte Carlo is hosting the data collector, the major configuration required is [network connectivity](/docs/network-connectivity), which your MC representative will help you through.
+
+#### Hybrid Option
+
+Though the SaaS deployment option is strongly recommended, this is optional and not required. If you have more stringent security/compliance requirements, deploying the collector in your AWS environment is a viable option. Please see our [Hybrid Solution documentation](/docs/hybrid-solution) for more details regarding this route.
+
+### Data Collections
+
+See below for information regarding where Monte Carlo collects data from per integration, and at what interval:
+
+| Integration      | Metadata                                                                                        | Query Logs                                                                                                                               | Freshness                                                                          | Volume                                                                             | Advanced Monitors                                                                                                  |
+| ---------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Redshift         | 1 hour from information schema                                                                  | 10 minutes from internal log                                                                                                             | Calculated from query logs, based on queries that are deemed to update tables      | Taken from metadata information every hour                                         | Collected through SQL queries, based on user configuration                                                         |
+| Snowflake        | 1 hour from information schema                                                                  | 1 hour from internal log                                                                                                                 | Taken from metadata information every hour                                         | Taken from metadata information every hour                                         | Collected through SQL queries, based on user configuration                                                         |
+| BigQuery         | 1 hour from information schema                                                                  | 1 hour from internal log                                                                                                                 | Taken from metadata information every hour                                         | Taken from metadata information every hour                                         | Collected through SQL queries, based on user configuration                                                         |
+| Databricks       | 1 hour from metastore                                                                           | No query logs; Delta History available on-demand                                                                                         | Taken from metadata information every hour                                         | Row-volume with metadata every hour                                                | Collected through queries, based on user configuration. We recommend SQL Warehouses, but can use Spark             |
+| Data Lakes on s3 | 1 hour from metastore (Glue/Hive)                                                               | 1 hour from HIve logs on s3/Presto logs on s3/AthenaIn the case of s3 events, logs will be pushed to us as they are loaded to the bucket | Taken from s3 events, pushed to Monte Carlo at the cadence the bucket is loaded to | Taken from s3 events, pushed to Monte Carlo at the cadence the bucket is loaded to | Collected through SQL queries, based on user configuration. Queries can be executed using Hive/Presto/Athena/Spark |
+| Looker Git       | 12 hours from cloud hosted repos                                                                |                                                                                                                                          |                                                                                    |                                                                                    |                                                                                                                    |
+| Tableau API      | 12 hours from API                                                                               |                                                                                                                                          |                                                                                    |                                                                                    |                                                                                                                    |
+| Looker API       | 4 days**Note:** Our Looker API connection retrieves data every 4 days due to Looker API limits. |                                                                                                                                          |                                                                                    |                                                                                    |                                                                                                                    |
+| dbt Cloud        | 1 hour from API                                                                                 |                                                                                                                                          |                                                                                    |                                                                                    |                                                                                                                    |
+| dbt Core         | No interval - pushed to Monte Carlo when CLI command is run                                     |                                                                                                                                          |                                                                                    |                                                                                    |                                                                                                                    |

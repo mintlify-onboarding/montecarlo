@@ -1,0 +1,63 @@
+---
+title: "Alation"
+---
+
+With the Monte Carlo <> Alation integration, data consumers can quickly understand the current health of a table, building confidence before using the data. This integration uses Alation’s APIs from its [Open Data Quality Initiative](https://developer.alation.com/dev/docs/alation-open-data-quality-initiative-guide) to populate the **Health** tab on a table’s page in Alation. Both cloud and on-premise versions of Alation are supported.
+
+This integration replaces an earlier version. The documentation for that legacy version is available [here](/docs/alation-legacy) for customers that are still in process of migrating to the new version.
+
+### Setup
+
+Within Monte Carlo, navigate to [Settings > Integrations](https://app.dev.getmontecarlo.com/settings/integrations). Scroll down to the **Notifications and Collaboration** section, click **Create**, and select **Alation**.
+
+You’ll be presented with a form with the following fields and toggles. Complete the form and click **Create**.
+
+* **Server url**: should be of form [https://companyname.alationcatalog.com](https://companyname.alationcatalog.com)
+* **Username**: username for the Alation service account.  
+   * [How to create an Alation service account](https://developer.alation.com/dev/docs/creating-an-api-service-account)  
+   * The service account must have [sufficient permissions](https://developer.alation.com/dev/docs/alation-apis-by-roles), including `POST` and `DELETE` for `/integration/v1/data_quality/`
+* **Password**: password the the Alation service account
+* **On-premises**: select if you have an on-premises version of Alation that is not accessible externally (requests will be routed through the data collector)
+* **Verify SSL certificate**: disable this if your on-premises Alation instance does not support SSL. Only applies when the on-premises option is used
+![](/images/7b878c9-Pasted_Image_9_12_23__9_05_PM-2.png) 
+
+### Information passed from Monte Carlo to Alation’s ‘Health’ section
+
+The integration sends anomalies (“events”) from Monte Carlo to Alation. These events are used to populate the **Health** section within an Alation page for a table. 
+
+![The **Health** section for a table in Alation, populated by Monte Carlo](/images/e07553a-Pasted_Image_9_12_23__3_31_PM.png)
+
+The **Health** section for a table in Alation, populated by Monte Carlo
+
+To understand the rows within the **Health** section:
+
+* One row is provided for each of 3 categories of Monte Carlo’s automated (“out-of-the-box”) monitors: freshness, volume, schema change
+* One row is provided for each custom monitor configured on that table
+* At least 1 Incident must have occurred before the row will show at all.
+* The status of only the most recent incident of that category or custom monitor is shown
+
+The columns in the **Health** section are predefined as part of Alation’s [Open Data Quality Initiative](https://developer.alation.com/dev/docs/alation-open-data-quality-initiative-guide). Monte Carlo has populated the columns as follows:
+
+* **Rule**: the type of anomaly. This also contains a link to the corresponding monitor or Asset page in Monte Carlo.
+* **Object Name**: a link to the summary page for the table in Alation. This column is predefined by Alation and not editable by Monte Carlo
+* **Status**: a green, yellow, or red indicator based on the Incident Status in the **Value** column. This will be red if the **Value** is “No Status,” yellow if “Investigating,” and green for all other values.
+* **Value**: the Incident Status (e.g. Fixed, Expected, etc) of the most recent event of that type or monitor
+* **Description**: the “Description” of the custom monitor in Monte Carlo, or an indication if this is a type of automated monitor for Monte Carlo
+* **Last Updated**: the time that the entry was created or last updated, whichever is most recent
+
+Once the integration between Monte Carlo and Alation is set up, events will automatically begin to flow to Alation, creating entries in the Health section. Entries are added or updated when any of the following occurs in Monte Carlo:
+
+* An event is created and added to an incident. This will add or update the corresponding row.
+* The status of an incident is changed. This will update the Status column in Alation of any of the events that were part of that Incident.
+* The description of a custom monitor in Monte Carlo has changed. This will change the description of the monitor in Alation.
+* A custom monitor is deleted. This will remove the row for that monitor in Alation.
+* A table is removed from a custom monitor. This will remove the row from that table in Alation.
+
+Note: there is not an historical load of past events from Monte Carlo to Alation. Alation only receives events from Monte Carlo on a go-forward basis.
+
+Expect a latency of between 1-5 minutes between Monte Carlo and Alation.
+
+Monte Carlo will pass events for all tables it is observing and most event types. The exceptions not sent to Alation are:
+
+* dbt errors and airflow job failures that have been integrated into Monte Carlo
+* any tables or event types that are muted from within Monte Carlo

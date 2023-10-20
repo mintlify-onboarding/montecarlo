@@ -1,0 +1,51 @@
+---
+title: "Reducing noise from rules"
+---
+
+When the conditions of a Freshness Rule, Volume Rule, Field Quality Rule, or SQL Rule are breached, it creates an Incident. This Incident will trigger a notification, based on configurations in [Settings > Notifications](https://getmontecarlo.com/settings/notifications).
+
+Some rules may remain in a ‘breached’ state for an extended period of time. This can result in repetitive notifications, especially if the rule runs on a frequent schedule. This can cause undesirable alert fatigue.
+
+Monte Carlo offers ways to minimize repetitive notifications during these scenarios. Options are made available in the _Define schedule_ section of Freshness, Volume, Field Quality, or SQL Rule creation. See here:
+
+![](/images/4c3730e-Screenshot_2023-02-16_at_3_51_15_PM_2.png "Screenshot_2023-02-16_at_3_51_15_PM (2).png")
+
+## [](#section-)
+
+### For SQL Rules and Field Quality Rules
+
+Select 1 from the following set of options:
+
+While the threshold stays violated, send a notification and then:
+
+* **Reduce noise**: send another notification every \[ X \] runs of the rule
+* **Reduce noise**: send another notification only if the value or count of breached rows changes
+* Notify every time
+
+> 📘
+> 
+> **Note**: In SQL Rules, these options are only available when an _Absolute_ threshold is selected. They are not available for rules with _Automatic_ or _Relative_ thresholds, as those are less prone to repetitive notifications.
+
+Here is an example of how those options would play out over the course of 25 runs of a hypothetical SQL Rule whose breach condition is to notify if count is > 0\. In this scenario, Option 1 is set to send another notification every **4** consecutive breached runs.
+
+![](/images/0e5924f-SQL_Rule.png "SQL Rule.png")
+
+## [](#-1)
+
+### For Freshness Rules and Volume Rules
+
+Select 1 from the following set of options:
+
+While the threshold stays violated, send a notification and then:
+
+* **Reduce noise**: send another notification every \[ X \] runs of the rule
+* **Reduce noise**: don’t send another notification
+* Notify every time
+
+Here is an example of how those options would play out over the course of 25 runs of a hypothetical Freshness Rule or Volume Rule. In this scenario, Option 1 is set to send another notification every **4** consecutive breached runs.
+
+![](/images/6cee577-Fresh__vol_rule.png "Fresh & vol rule.png")
+
+### In Monitors as Code
+
+The configuration options for Reduce Noise are called `event_rollup_count` and `event_rollup_until_changed`. Visit the [Monitors as Code](/docs/monitors-as-code) documentation for full details.

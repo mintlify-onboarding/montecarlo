@@ -1,0 +1,282 @@
+---
+title: "Custom Monitors - SQL Rules"
+---
+
+This guide explains how to create SQL Rules in Monte Carlo. 
+
+### Introduction to SQL rules
+
+With this advanced feature, you can write custom SQL to check for anomalies specific to your business. Given the flexibility of SQL, Monte Carlo customers often use these rules to get notified when thresholds for null values, referential integrity, empty strings, etc. are breached. 
+
+A list of common use cases and associated [SQL templates can be found below](/docs/creating-sql-rules#common-sql-rules) .
+
+To view current SQL Rules and create new rules, visit the Monitors tab in the [Monte Carlo app](https://getmontecarlo.com/). 
+
+When creating a new SQL rule, keep the following in mind:
+
+* The SQL query must take **less than 15 minutes** to run. We recommend filtering on partitions and indexes to minimize query time.
+* When testing the SQL query from the app, it must take **less than 30 seconds** to run. You can add a `limit` to reduce query time, or test the query in your warehouse.
+* The SQL query must be a valid expression that can be run as a subquery. Monte Carlo will wrap your expression in a SELECT COUNT so it only fetches the number of rows returned. **This means rules should be written such that the query returns the anomalous rows.**  
+   * Value-based thresholds allow for using the return value of the query rather than the row count. [See here for more information](/docs/creating-sql-rules#value-based-thresholds).
+
+> 🚧
+> 
+> SQL Rule Run Sampling
+> 
+> To better help users find root cause for when these rules breach, we now also store a sample of the breached output in your data collector. [See here for more information](/docs/creating-sql-rules#sql-rule-output-sampling).
+
+### Setting up a SQL Rule
+
+To create a rule in Monte Carlo, please visit the [monitors page](https://getmontecarlo.com/monitors), select **CREATE NEW MONITOR**:
+
+![](/images/c4d6eb3-Screen_Shot_2021-12-14_at_4.32.10_PM.png "Screen Shot 2021-12-14 at 4.32.10 PM.png")
+
+**CONFIGURE MONITOR** under "SQL rule":
+
+![](/images/18f9069-Screen_Shot_2021-12-14_at_4.32.27_PM.png "Screen Shot 2021-12-14 at 4.32.27 PM.png")
+
+and follow the wizard:
+
+![](/images/21044c0-Screen_Shot_2021-12-14_at_4.32.36_PM.png "Screen Shot 2021-12-14 at 4.32.36 PM.png")
+
+### Common SQL Rule Templates
+
+The following patterns cover some common scenarios you can address with SQL rules.
+
+> 📘
+> 
+> How should I use the templates in this article?
+> 
+> 1. Replace any `{{table}}` and `{{column}}` placeholders with the table and column names you want to test for. `{{value}}` placeholders should be replaced with thresholds that makes sense for your domain. The query should return only rows you would consider anomalous, or breaking the rule.
+> 2. Set the rule to alert when row count is **greater than 0**.
+
+> 🚧
+> 
+> Please consider the volume of data you will be processing in your rule
+> 
+> To prevent expensive queries for large tables, we recommend filtering records on a partition (e.g. rows created in the last day).
+
+ **Referential integrity**   
+All IDs in a child table must be present in a parent table.
+
+SQL
+
+`WITH child 
+     AS (SELECT {{column}} AS id 
+         FROM   {{table_1}}), 
+     parent 
+     AS (SELECT {{column}} AS id 
+         FROM   {{table_2}}) 
+SELECT * 
+FROM   child 
+       LEFT JOIN parent using (id) 
+WHERE  child.id IS NOT NULL 
+       AND parent.id IS NULL
+`
+
+ **No duplicates**   
+No duplicates in a given column.
+
+SQL
+
+`SELECT {{column}}
+FROM   {{table}}
+GROUP  BY {{column}} 
+HAVING Count(*) > 1
+`
+
+ **Label validation**   
+All values in a column are part of a set of valid labels.
+
+SQL
+
+`SELECT {{column}} 
+FROM   {{table}} 
+WHERE  {{column}} NOT IN ( '{{value_1}}', '{{value_2}}' )
+`
+
+ **Null values**   
+There are no records with a NULL value in a given column.
+
+SQL
+
+`SELECT {{column}} 
+FROM   {{table}} 
+WHERE  {{column}} IS NULL
+`
+
+ **Empty strings**   
+There are no records with an empty string in a given column.
+
+SQL
+
+`SELECT {{column}} 
+FROM   {{table}} 
+WHERE  TRIM({{column}}) = ''
+`
+
+ **Minimum and maximum**   
+There are no values that exceed particular thresholds.
+
+SQL
+
+`SELECT {{column}} 
+FROM   {{table}} 
+WHERE  NOT( {{column}} > {{value_1}} 
+            AND {{column}} <= {{value_2}} )
+`
+
+ **Null-like strings**   
+No records contain the string "Null" or "None". 
+
+SQL
+
+`SELECT {{column}} 
+FROM   {{table}}
+WHERE  Lower({{column}}) LIKE 'null' 
+        OR Lower({{column}}) LIKE 'none'
+`
+
+ **Row count match**   
+Two tables have the same number of rows.
+
+SQL
+
+`WITH t1 
+     AS (SELECT Count(*) 
+         FROM   {{table_1}}), 
+     t2 
+     AS (SELECT Count(*) 
+         FROM   {{table_2}}), 
+     t3 
+     AS (SELECT (SELECT * 
+                 FROM   t1) - (SELECT * 
+                               FROM   t2) AS diff_count) 
+SELECT diff_count 
+FROM   t3 
+WHERE  diff_count != 0
+`
+
+ **Identical tables**   
+Two tables are identical record for record. 
+
+SQL
+
+`(SELECT * 
+ FROM   {{table_1}} 
+ {{except_operator}} 
+ SELECT * 
+ FROM   {{table_2}}) 
+UNION ALL 
+(SELECT * 
+ FROM   {{table_2}} 
+ {{except_operator}}  
+ SELECT * 
+ FROM   {{table_1}})
+`
+
+> 📘
+> 
+> What should I use for the except operator?
+> 
+> This operator varies per warehouse.
+> 
+> On BigQuery you can use `EXCEPT DISTINCT`, while ` EXCEPT` works for Redshift and Snowflake.
+
+ **More than one value**   
+A column has at least two distinct values.
+
+SQL
+
+`SELECT Count(DISTINCT {{column}}) c 
+FROM   {{table}}
+HAVING c = 1
+`
+
+ **Record validation**   
+A SQL expression holds true for all individual records in a table. 
+
+SQL
+
+`SELECT * 
+FROM   {{table}} 
+WHERE  NOT({{expression}})
+`
+
+> 📘
+> 
+> What is an example of an expression?
+> 
+> For instance, you can check that the sum of two columns is constant  
+> `{{expression}}` \= `{{column_1}} + {{column_2}} = {{value}}`
+
+ **String patterns**   
+All strings in column match a particular pattern, expressed as a regular expression. Can be used to validate common patterns like UUIDs, phone numbers, emails, numbers, escape characters, dates, etc.
+
+Please note:
+
+* `{{regex_function}}` will be the appropriate regex matching function for your use case and your data warehouse. For example, to fully match the string with a pattern on Snowflake you would use [REGEXP\_LIKE](https://docs.snowflake.com/en/sql-reference/functions/regexp%5Flike.html#regexp-like), whereas to partially match the string with a pattern on BigQuery, you would use [REGEXP\_CONTAINS](https://cloud.google.com/bigquery/docs/reference/standard-sql/string%5Ffunctions#regexp%5Fcontains).
+* `{{pattern}}` can be any regular expression. For example, to check for US zip codes, you might use `^[0-9]{5}(?:-[0-9]{4})?$`.
+
+SQL
+
+`SELECT * 
+FROM   {{table}} 
+WHERE  NOT({{regex_function}}({{column}}, {{pattern}}))
+`
+
+### SQL Rule Output Sampling
+
+Custom SQL rule output sampling stores the first 500 rows returned by each run of a custom SQL rule to aid with incident investigation. These output samples will only be stored on the data collector and are not sent to Monte Carlo's cloud service. Output sampling will not occur if any of the following are true:
+
+* The data collector version is too old to support output sampling (requires version `2307` or newer)
+* The customer has opted out of sampling for the warehouse
+* The custom SQL rule has a relative threshold
+* The custom SQL rule has a threshold of 500 or more
+
+Note for data lakes: output sampling for data lakes will add a `LIMIT 500` to the query, so the resulting metric will be capped at 500 rows. This means that if the UI displays a value of 500, the unwrapped query could return more than 500 rows. This does not affect rule breach evaluation. This limitation does not apply to custom SQL rules for data warehouses, which report the full row count even with sampling enabled.
+
+### Value-based Thresholds
+
+Value-based thresholds allow you to use a single numeric value returned by the custom SQL query as the metric instead of the row count of the query result. For example, if you want to trigger an incident when the sum of a specific column drops below a given value, you might want to use a value-based threshold.
+
+To use a value-based threshold, select the `Return Single Value` option when writing your query in the custom SQL rule creation wizard. Make sure that your query returns one row with one numeric column (e.g. `select avg(order_total) from orders`), otherwise the rule will fail to execute. Then set the thresholds against the numeric value returned by the query.
+
+Optionally, you can specify an additional custom SQL query to be used for sampling. This query will run when the rule breaches and the result will be displayed in Incident IQ to help with investigation. The results of this query are limited to 500 rows. If a value-based rule has no custom sampling query specified, no sampling will occur.
+
+![](/images/56cd67b-Screen_Shot_2022-08-02_at_4.39.39_PM.png "Screen Shot 2022-08-02 at 4.39.39 PM.png")
+
+When the `Return Single Value` option is selected, the raw return value of the custom SQL query will be sent to Monte Carlo’s cloud services instead of the result's row count. Please ensure you are only returning data that is safe to send out of your environment. If you would like to disable this option for a given warehouse, please contact your Monte Carlo representative or click on the chat bot in the lower right hand corner.
+
+This feature will not be available if any of the following are true:
+
+* The warehouse has been opted out of value ingestion
+* The warehouse has been opted out of data sampling
+* The data collector is below version `3563`
+
+### Tips for Rule Notes
+
+Contents of the **Notes** section of SQL rules will be passed through to notifications. This makes it a helpful place to explain what to do in case of a breach, how to interpret the results, link out to a runbook, @mention a user or user group, and more.
+
+You can use **{{query\_result:field\_name}}** to parameterize values from the SQL query into an alert, replacing **field\_name** with the desired column. 
+
+Parameterizing 1 field will result in a comma separated list. A maximum of 50 values or 1,000 characters will be displayed in the notification. For example, **{{query\_result:sale\_id}}** would display as:
+
+> abc123, def456, hij789
+
+You can parameterize up to 3 fields in sequence. A maximum of 50 rows or 1,000 characters will be displayed in the notification. For example **{{query\_result:date, price, sale\_id}}** would display as:
+
+> Jan 1, $100, abc123
+> 
+> Feb 1, $250, def456
+> 
+> Mar 1, $175, hij798
+
+If you're sending notifications to Slack, you can use their [formatting guide](https://api.slack.com/reference/surfaces/formatting#basics) to enrich the Notes. For example:
+
+* **Tag users:** use **<@W123>** and replace **W123** with a Slack member ID. The ID can be found in Slack by clicking More in a member's profile, then Copy member ID.
+* **Tag user groups:** use **<!subteam^G123>** and replace **G123** with a Slack user group ID. The ID is at the end of the URL in Slack when viewing the group’s profile.
+
+Some users have even incorporated Slack user IDs into their SQL results, and then parameterized them into their Slack alerts to dynamically @mention the appropriate users for different segments of data. Example:
+
+![](/images/0d712bc-Screenshot_2023-01-18_at_10_18_10_PM.png "Screenshot_2023-01-18_at_10_18_10_PM.png")

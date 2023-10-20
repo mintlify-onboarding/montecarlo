@@ -1,0 +1,46 @@
+---
+title: "Deploying the Collector"
+---
+
+To deploy the data collector in your AWS environment, you will:
+
+1. [Obtain your account's data collector template](/docs/deployment#obtaining-your-cloudformation-template) by signing up to Monte Carlo.
+2. [Create the data collector CloudFormation stack](/docs/deployment#creating-the-collectors-stack-in-your-aws-account) in your AWS account.
+
+If you do not wish to host the data collector in your environment, please contact your representative to deploy it in Monte Carlo's environment.
+
+### Obtaining your CloudFormation template
+
+1. Please create your Monte Carlo account by visiting the [sign up page](https://getmontecarlo.com/signup). If someone else on your team has already created an account, please reach out to them to obtain the template.
+2. Follow the onboarding steps to reach the "Install data collector" step, where you will have a link to your account's CloudFormation template. Please note: the link is specific to your account and cannot be shared across accounts.
+3. You can select the desired AWS region you want the Data Collector hosted in by using the combo-box in the upper right corner.
+
+![1846](/images/7c6dea5-Screen_Shot_2022-03-21_at_9.19.02_AM.png "Screen Shot 2022-03-21 at 9.19.02 AM.png")
+
+Obtaining a link to your account's data collector CloudFormation template
+
+### Creating the collector's stack in your AWS account
+
+1. Please make sure you are signed in to the AWS console for the account which will host the data collector.
+2. Copy the link provided by Monte Carlo and paste it in your browser. In the page that opens, please name the CloudFormation stack, configure [advanced options](/docs/deployment#advanced-options) if necessary and click "Create Stack" to deploy it.
+
+![2286](/images/9cedd10-Screen_Shot_2020-12-28_at_12.37.20.png "Screen Shot 2020-12-28 at 12.37.20.png")
+
+Creating the data collector stack
+
+### Advanced options
+
+The data collector defaults to the most common setup, and most customers will keep the pre-populated default parameter settings when deploying its stack.
+
+The following configurations are available for customized setups: 
+
+| Scenario                                                                                                                                                                                                                                                                                        | Template parameters to edit                                                                                                                                                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I need to peer the collector's VPC with a VPC that overlaps with 10.0.0.0/16                                                                                                                                                                                                                    | \- CIDR for VPC created by this stack\- CIDR for Subnets created by this stack                                                                                                              |
+| I need to deploy the collector into an existing VPC in my account                                                                                                                                                                                                                               | \- VPC ID\- Subnet IDs\- S3 VPC Endpoint ID (optional)                                                                                                                                      |
+| I need to remove the cross-account role / function that allows remote upgrades of data collector code                                                                                                                                                                                           | \- Allow remote upgrades                                                                                                                                                                    |
+| I want to enable access logging for the gatewayThis requires having an account-level IAM role in the same region as the collector, which allows writes to CloudWatch before enabling. See [here](/docs/advanced-configuration#api-gateway-access-logging) for details on how to setup the role. | \- Enable API gateway access logging                                                                                                                                                        |
+| I am going to integrate Monte Carlo with a Hive/Glue-based data lake                                                                                                                                                                                                                            | \- Enable Glue/Hive data lake integration                                                                                                                                                   |
+| I want to customize the default retention period for troubleshooting and temporary data in the data collector                                                                                                                                                                                   | \- Select the retention period for troubleshooting and temporary data                                                                                                                       |
+| I want to generate and use a KMS CMK (i.e. SSE-KMS instead of SSE-S3) for default encryption in the troubleshooting and temporary data bucket                                                                                                                                                   | \- Select the encryption type for troubleshooting and temporary data (SSE-KMS)                                                                                                              |
+| s3:PutBucketPublicAccessBlock is disabled for S3 buckets in my AWS account and I'm getting an error like: API: s3:PutPublicAccessBlock Access Denied                                                                                                                                            | \- Select Account in the option that configures PublicAccessBlock.When this option is selected public access won't be configured at the bucket level and the account settings will be used. |

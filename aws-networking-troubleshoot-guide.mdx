@@ -1,0 +1,78 @@
+---
+title: "AWS Networking Troubleshoot Guide"
+---
+
+> ❗️
+> 
+> This page is deprecated
+> 
+> See docs [here](/docs/aws-networking-troubleshoot-guide-2).
+
+This page outlines some networking basics for successfully setting up a Monte Carlo Data Collector.
+
+### Before Data Collector Deployment
+
+For any data source you plan to connect to Monte Carlo, determine if the resource is publicly or privately available. This is especially important if VPC peering is necessary, since the Data Collector VPC CIDR range cannot be changed without recreating the collector stack.
+
+Some resources like AWS Redshift have a boolean flag indicating if it is publicly available, but for others you would have to review the route table(s) associated with the subnets for the resource. Generally speaking, a public resource will have at least one route with destination `0.0.0.0/0` that has an internet gateway as a target (i.e. `igw-*`).
+
+You can also sometimes also tell if resource is private based on the IP address, though this is more of a convention. See [here](https://en.wikipedia.org/wiki/Private%5Fnetwork#Private%5FIPv4%5Faddresses) for details.
+
+### After Data Collector Deployment
+
+#### Public - Try IP filtering
+
+1. Retrieve the Collector’s public IP [](/docs/network-connectivity#identifying-your-collectors-ip-address)address. Details [here](/docs/network-connectivity#identifying-your-collectors-ip-address).
+2. Whitelist the IP address in the relevant firewall, security group, network policy etc. Details [here](/docs/network-connectivity#ip-filtering).
+
+#### Private - Try peering
+
+1. Check for any CIDR block overlaps between the Data Collector and your resource. VPC peering is not possible when the peered VPCs use overlapping CIDR blocks. If this is the case, you may choose to use a custom CIDR block for the collector. Details [here](/docs/deployment#advanced-options). A visual subnet calculator might be helpful here.
+2. Setup peering between the collector and resource using CloudFormation. Details [here](/docs/peering-templates).
+
+If curious, the following steps walk through an example of deploying a collector and setting up peering manually. This is mostly for information purposes, and we highly recommend using [CloudFormation templates for VPC peering](/docs/peering-templates) instead.
+
+1. Identify the following data source information:  
+   1. AWS account ID  
+   2. AWS account region  
+   3. VPC ID  
+   4. CIDR range of the VPC (and if there are any other existing peering connections)
+2. If the CIDR ranges overlap with the Monte Carlo default (10.0.0.0/16), the following parameters should be updated to a custom range:  
+   1. CIDR for VPC created by the Data Collector stack  
+   2. CIDR for Subnets created by the Data Collector stack
+3. Deploy the collector and wait for completion.
+4. Retrieve the following Data Collector stack outputs:  
+   1. PrivateRouteTable  
+   2. VpcId  
+   3. SecurityGroup
+5. Create a peering connection by following the steps outlined [here](https://docs.aws.amazon.com/vpc/latest/peering/create-vpc-peering-connection.html) using the values from step 1 and 4\. Specifically, the VPC from Step 4b is the requester.
+6. Update the route table from step 4a with the destination as the CIDR range given in 1d and target as the peering connection created in step 5.
+7. Accept the peering connection created in step 5 from the data source AWS account.
+8. Update any private route table(s) associated with the VPC of your data source with the destination as the VPC CIDR range specified in step 2a, and target as the accepted connection from step 7.
+9. Update the security group associated with the data source to accept inbound from the Data Collector's security group. If the your data source VPC is in a different region as the Data Collector, you will not be able to reference the security group by ID, and have to use the CIDR block of the peer VPC (i.e. the CIDR range from 2a).
+
+#### FAQs
+
+**What if we want to use a transit gateway instead of peering?**  
+There shouldn't be any issues.
+
+**What if we want to deploy in an existing VPC?**  
+That option is supported. See [here](/docs/network-connectivity#data-collector-deployment-into-an-existing-vpc). 
+
+**How can I debug network issues?**  
+Though each network configuration is unique, you can try the following to get started:
+
+1. Double check host, port, database, user for typos/omissions.
+2. Confirm that the service user you created works (e.g. you are able to log in as the service user).
+3. If using peering, confirm the request was accepted and the correct ranges are added to the route tables for the data source and Data Collector.
+4. Check security group rules attached to the data source allow inbound traffic from the correct range/security group on the proper port.
+5. Check the route table for the subnets associated with the data source to allow traffic.
+6. Confirm that the network access control list for subnet allows inbound and outbound traffic from the correct IP and proper port.
+7. Check to see where there is a firewall rule blocking access.
+8. Check the CPU load in the warehouse to ensure it is not overloaded and is still running.
+
+The network test utilities (telnet and tcp-open) can also be helpful here.
+
+These utilities are available during onboarding or in integration [settings](https://getmontecarlo.com/settings/integrations). 
+
+![3342](/images/881fe21-Screen_Shot_2022-01-26_at_2.47.15_PM.png "Screen Shot 2022-01-26 at 2.47.15 PM.png")

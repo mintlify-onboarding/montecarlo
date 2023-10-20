@@ -1,0 +1,242 @@
+---
+title: "Insights"
+description: "Access Monte Carlo generated metadata"
+---
+
+We offer multiple mechanisms to access the metadata Monte Carlo collects to support a range of analytical and tracking use cases. Many of our customers today access this data to define and track SLI performance, monitor data asset usage, determine the most important (or least important) data assets, and more. 
+
+The following document outlines the different options you have for accessing this data and provides a summary of the available inventory.
+
+## Mechanisms
+
+### Dashboard
+
+Users can easily download CSV reports right from the UI. Navigate to the "Dashboard" tab and click to download the CSV reports:
+
+![571](/images/9f06d9f-Screen_Shot_2022-04-14_at_6.34.42_PM.png "Screen Shot 2022-04-14 at 6.34.42 PM.png")
+
+Insight Reports
+
+### Snowflake Data Marketplace
+
+For Snowflake users, we offer the ability to get our Insights via [Snowflake's Data Sharing capabilities](https://docs.snowflake.com/en/user-guide/data-sharing-intro.html). This allows users to get their Insight reports synced directly into their Snowflake instance and use them in queries/dashboards.
+
+This is an opt-in feature, and is available in the following Snowflake data warehouse regions:
+
+* AWS: us-east-1, us-west-2, ca-central-1, eu-west-1, eu-central-1, ap-northeast-1, ap-southeast-2
+* Azure: us-east-2, eu-west, central-us
+
+The Insight reports refresh once a day.
+
+Reach out to your CSM or to [\[email protected\]](/cdn-cgi/l/email-protection#15666065657a676155787a7b6170767467797a717461743b767a78) to enable or learn more about this data share feature!
+
+### CLI
+
+> ❗️
+> 
+> These commands will overwrite a file if it exists in the path and create any missing directories or prefixes.
+
+Users can also leverage the CLI to programmatically download all CSV reports and/or upload directly to S3.
+
+Follow [this guide](/docs/using-the-cli) to install and configure the CLI. For reference, commands, and options see [here](https://clidocs.getmontecarlo.com/#montecarlo-insights).
+
+Supported schemas:
+
+* `file://` \- save insight locally.
+* `s3://` \- save insight to S3.
+
+> 👍
+> 
+> Use `get` to retrieve an arbitrary insight
+> 
+> For CLI v0.55.0 and greater you can now use [montecarlo insights get](https://clidocs.getmontecarlo.com/#montecarlo-insights-get) to fetch any available insight that doesn't have an explicit subcommand.
+
+Examples
+
+`# Save an insight locally to a directory called 'mc_data' with filename 'assets.csv'
+$ montecarlo insights get-key-assets file://mc_data/assets.csv
+
+# Save an insight to S3 bucket called 'bucket' with key 'mc_data/alerts.csv'
+$ montecarlo insights get-events s3://bucket/mc_data/alerts.csv
+
+# List all insights details and availability
+$ montecarlo insights list
+╒══════════════════════════════════════════════════════════════════╤══════════════════════════════════════════════════════════════════════════════════════════════════════╤═════════════╕
+│ Insight (Name)                                                   │ Description                                                                                          │ Available   │
+╞══════════════════════════════════════════════════════════════════╪══════════════════════════════════════════════════════════════════════════════════════════════════════╪═════════════╡
+│ Key Assets (key_assets)                                          │ Tables and views with a calculated Importance Score (based on # dependencies, avg. reads/writes,     │ True        │
+│                                                                  │ users, and more).                                                                                    │             │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Coverage Overview (monitors)                                     │ Active monitors that Monte Carlo is applying to your data, including all out-of-the-box and advanced │ True        │
+│                                                                  │ monitors.                                                                                            │             │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Table Cleanup Suggestions (cleanup_suggestions)                  │ Dormant tables and views with no recent query activity.                                              │ True        │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Field-level Cleanup Suggestions (field_cleanup_suggestions)      │ Dormant fields with no recent query activity.                                                        │ True        │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Field importance scores (field_importance_scores)                │ Fields with a calculated importance score based on BI usage, explicit and implicit lineage usage and │ True        │
+│                                                                  │ number of read queries.                                                                              │             │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Events (events)                                                  │ Details for all anomalies and schema changes detected by Monte Carlo, which then get grouped         │ True        │
+│                                                                  │ together into incidents.                                                                             │             │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Table Read/Write Activity (table_read_write_stats)               │ Table read and write counts by day/week/month for each table in your data warehouse or data lake.    │ True        │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Incident Query Changes (incident_query_changes)                  │ Shows changes in query patterns that may have led to an Incident on a table. Includes Incidents for  │ True        │
+│                                                                  │ the past two weeks and has a 36 hour delay.                                                          │             │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Deteriorating Queries (query_runtime_trends)                     │ Queries displaying a consistent increase in execution runtime over the past 30 days. This insight    │ False       │
+│                                                                  │ will be available only if Monte Carlo detects anomalies in query runtime.                            │             │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Rule Results (rule_and_sli_results)                              │ Log of query outputs and pass/breach results for SQL, Freshness and Volume Rules for the past 90     │ True        │
+│                                                                  │ days.                                                                                                │             │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Dimension Tracking Suggestions (insight_monitor_recom_dt_fields) │ Top 500 field recommendations for Dimension Tracking monitors, based on Table Importance Score (see  │ True        │
+│                                                                  │ Key Assets) and by using NLP on field names.                                                         │             │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Field Health Suggestions (insight_monitor_recom_fh_tables)       │ Top 100 table recommendations for Field Health monitors, based on Table Importance Score (see Key    │ True        │
+│                                                                  │ Assets). Note that we exclude external tables as they tend to consume more compute.                  │             │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Misconfigured Monitors (insight_monitor_issues_and_solutions)    │ Custom monitors (e.g. Field Health) that were configured in a way that won't result in meaningful    │ True        │
+│                                                                  │ anomaly detection, along with suggestions on how to fix them.                                        │             │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Inactive Table Monitors (insight_inactive_table_monitors)        │ Out-of-the-box monitors (e.g. Freshness) that were once active, but are now inactive.                │ True        │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ BI Dashboard Analytics (bi_dashboard_analytics)                  │ Usage data for Looker dashboards such as totals views and days since last view.                      │ True        │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Incident History (incident_history)                              │ All incidents detected by Monte Carlo over the last 6 months.                                        │ True        │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Heavy Queries (heavy_queries)                                    │ Queries from the last week with the longest runtime and most bytes scanned. The top 5 queries are    │ True        │
+│                                                                  │ shown for each warehouse and executor.                                                               │             │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Consumption by user (consumption_by_user)                        │ Measured in runtime seconds for Snowflake and Redshift, and bytes scanned for BigQuery and Athena.   │ True        │
+│                                                                  │ Last 7 day totals are shown (reads & writes) and compared to the 7 days prior.                       │             │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Notifications by Custom Monitor (custom_monitor_notifications)   │ Count of notifications each week, separated by the distinct custom monitors that generated them.     │ True        │
+├──────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+│ Unmonitored Tables (unmonitored_tables)                          │ Tables where some or all of MCs automated monitors will not alert because there is not enough        │ True        │
+│                                                                  │ consistent training data.                                                                            │             │
+╘══════════════════════════════════════════════════════════════════╧══════════════════════════════════════════════════════════════════════════════════════════════════════╧═════════════╛
+
+# Save an arbitary arbitrary insight locally to a directory called 'mc_data' with filename 'incident_history.csv
+$ montecarlo insights get --name incident_history --destination file://mc_data/incident_history.csv 
+`
+
+### API or SDK
+
+> 📝
+> 
+> Databricks and BigQuery users can use [these](https://github.com/monte-carlo-data/monte-carlo-python-sdk-examples#insights-reporting) cookbooks to help simplify importing insights!
+
+After following [this](/docs/creating-an-api-token#creating-an-api-key) guide to create an access key users can also leverage our API or SDK to retrieve insights:
+
+* Listing all insights: [https://apidocs.getmontecarlo.com/#query-getInsights](https://apidocs.getmontecarlo.com/#query-getInsights)
+* Retrieving an insight URL: [https://apidocs.getmontecarlo.com/#query-getReportUrl](https://apidocs.getmontecarlo.com/#query-getReportUrl)
+
+## Insights Inventory
+
+ **Key Assets**  
+Tables and views with a calculated Importance Score (based on # dependencies, avg. reads/writes, users, and more). The lookback window for this insight is 30 days.  
+Use this to:
+
+* Identify important tables to add custom monitors to
+* Communicate table/view usage to stakeholders
+* Prioritise datasets for refactoring or migrations
+
+ **Coverage Overview**  
+Active monitors that Monte Carlo is applying to your data, including all out-of-the-box and advanced monitors.  
+Use this to:
+
+* Quantify MC monitor coverage across schemas and tables
+* Report increase in custom monitor adoption over time
+
+ **Table Cleanup Suggestions**  
+Dormant tables and views with no recent query activity  
+Use this to:
+
+* Reduce storage costs by deleting unused tables
+* Deprioritize unused datasets and tables during migrations
+
+ **Field-level Cleanup Suggestions**  
+Dormant fields with no recent query activity.  
+Use this to:
+
+* Prioritize which tables are most ripe for cleanup
+* Simplify tables by removing unused fields
+
+ **Events**  
+Details for all anomalies and schema changes detected by Monte Carlo, which then get grouped together into incidents. The lookback window for this insight is 90 days.  
+Use this to:
+
+* Understand the threshold for what triggered an anomaly
+* See which tables or views are consistently changing or unreliable
+
+ **Table Read/Write Activity**  
+Table read and write counts by day/week/month for each table in your data warehouse or data lake.  
+Use this to:
+
+* Aggregate read/write query activity by schema, teams or other filter
+* Gauge importance and prioritise development on tables with the highest read/write activity
+
+ **Incident Query Changes**  
+Shows changes in query patterns that may have led to an Incident on a table. Includes Incidents for the past two weeks and has a 36 hour delay.  
+Use this to:
+
+* Identify if an Incident was caused by a new or updated query
+* Identify if an Incident was caused by a recurring query that ceased
+
+ **Deteriorating Queries**  
+Queries displaying a consistent increase in execution runtime over the past 30 days. This insight will be available only if Monte Carlo detects anomalies in query runtime.  
+Use this to:
+
+* Prevent data downtime by identifying queries that are at risk of timing out
+* Optimise queries that are not scaling well
+* Reduce cost by editing queries with increasing compute time
+
+ **Rule and SLI Results**  
+Log of query outputs and pass/breach results for SQL Rules and SLIs for the past 90 days  
+Use this to:
+
+* Track progress towards SLAs or SLOs by aggregating SLI results over time
+* Fine-tune Rules by understanding Rule results over time
+
+ **Dimension Tracking Suggestions**  
+Top 500 field recommendations for Dimension Tracking monitors, based on Table Importance Score (see Key Assets) and by using NLP on field names.  
+Use this to:
+
+* Identify fields for Dimension Tracking monitors
+
+ **Field Health Suggestions**  
+Top 100 table recommendations for Field Health monitors, based on Table Importance Score (see Key Assets). Note that we exclude external tables as they tend to consume more compute.  
+Use this to:
+
+* Identify tables for Field Health monitors
+
+ **Misconfigured Monitors**  
+Custom monitors (e.g. Field Health) that were configured in a way that won't result in meaningful anomaly detection, along with suggestions on how to fix them.  
+Use this to:
+
+* Ensure custom monitors are working as intended
+* Clean up outdated custom monitors
+
+ **BI Dashboard Analytics**  
+Usage data for Looker dashboards such as totals views and days since last view.  
+Use this to:
+
+* See which dashboards are safe to deprecate or delete
+* Prioritise heavily used dashboards in a migration
+
+ **Incident History**  
+All incidents detected by Monte Carlo over the last 6 months. The lookback window for this insight is 1 year.  
+Use this to:
+
+* Report on the statuses of your Incidents
+* Calculate Incident Response Rate and Time to First Response
+* See trends in your anomalies and schema changes
+
+ **Heavy Queries**  
+Queries from the last week with the longest runtime and most bytes scanned. The top 5 queries are shown for each warehouse and executor.  
+Use this to:
+
+* Find and optimise queries that are causing performance issues or stressing resources.
+* Identify irresponsible query behaviour

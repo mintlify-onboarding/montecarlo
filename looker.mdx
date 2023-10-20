@@ -1,0 +1,254 @@
+---
+title: "Looker"
+---
+
+Integrating Monte Carlo with Looker lets you track metadata and lineage for your dashboards, looks, dashboard-tiles, explores, and views.
+
+This guide explains how to create service accounts for Monte Carlo on Looker and on your LookML code repository.
+
+To review all steps necessary to integrate a BI tool with Monte Carlo, please see [here](/docs/bi-tools).
+
+> 📘
+> 
+> Admin credentials required
+> 
+> To make the read only role and key for Monte Carlo, you will need Looker admin credentials as well as admin privileges for the code repository that hosts your LookML code.
+
+There are two connections required to fully access Looker: the Looker API and the service hosting your LookML files. In this guide, you will:
+
+1. [Create an API key on Looker](/docs/looker#the-looker-integration---creating-a-looker-api-key), allowing Monte Carlo to access metadata about your Dashboards, Looks and other Looker objects.
+2. Connect Monte Carlo with your LookML code repository, allowing Monte Carlo to map dependencies between Looker objects and data warehouse tables. You have two options to connect: [private/public keys](/docs/looker#the-looker-git-ssh-integration---connecting-to-your-lookml-code-repository) which provides more granular control and connectivity, or [HTTPS](/docs/looker#the-looker-git-https-integration---connecting-to-your-lookml-code-repository) which is recommended if you have many repos to connect to MC.
+
+### The "Looker" Integration - Creating a Looker API Key
+
+The following steps are to connect to your Looker API, allowing Monte Carlo to access metadata about your Dashboards, Looks and other Looker objects.
+
+![466](/images/9a70d32-Screen_Shot_2021-09-24_at_5.11.18_PM.png "Screen Shot 2021-09-24 at 5.11.18 PM.png")
+
+Looker Integration
+
+To create a read-only Looker API key for Monte Carlo, please follow the steps below in Looker.
+
+First, create a permission set:
+
+1. In the top navigation bar, go to _Admin_ \> _Roles_ and click _New Permission Set_.
+2. Name your permission set "montecarlops".
+3. Check the necessary permissions (see list below), and click _New Permission Set_ to save.
+
+Text
+
+`see_datagroups
+access_data
+access_data.see_lookml_dashboards
+access_data.see_looks
+access_data.see_looks.see_user_dashboards
+access_data.see_looks.explore
+access_data.see_looks.see_lookml
+`
+
+Then, create a role:
+
+1. In the top navigation bar, go to _Admin_ \> _Roles_ and click _New Role_.
+2. Name your role "montecarlorole".
+3. Select the permission set you created ("montecarlops").
+4. Select the appropriate Model Set (typically, _All_).
+5. Click _New Role_ to save.
+
+Then, create a user:
+
+1. In the top navigation bar, go to _Admin_ \> _Users_ and click _Add Users_.
+2. Choose an email address, for example [\[email protected\].](/cdn-cgi/l/email-protection#64090b0a1001070516080b241d0b1116000b09050d0a4a070b094a) You are not required to use a valid email address.
+3. Uncheck the _Send setup emails_ option.
+4. Select the role you created ("montecarlorole").
+5. Click _Add Users_ to save.
+
+Then, set what content Folders the Monte Carlo User has access to see.
+
+1. In the top navigation bar, go to _Admin_ \> _Content Access_.
+2. Note: At this point, you can decide which folders to give access to Monte Carlo. Monte Carlo simply uses this content for Lineage and does not actually read the content in the Dashboards/Looks. We recommend starting with all Content (Shared + Users), as you can always revoke permissions to remove them from Lineage later on.
+3. With the _Shared_ folder selected, click _Manage Access_. If All Users does not already have View or Manage/Edit Access, add the Monte Carlo user you just created with _View_ access.
+4. Click _Save_.
+5. Repeat with the Users folder.
+
+Then, create an API key
+
+1. In the top navigation bar, go to _Admin_ \> _Users_ and click _Edit_ on the new user you created for Monte Carlo.
+2. Click _Edit Keys_ and then _New API3 Key_.
+3. Copy _Client ID_, and paste into Monte Carlo's integration wizard.
+4. Unhide and copy _Client Secret_, and paste into Monte Carlo's integration wizard.
+
+![](/images/b320cab-Screen_Shot_2021-09-24_at_5.13.39_PM.png "Screen Shot 2021-09-24 at 5.13.39 PM.png")
+
+Finally, get your Looker host URL:
+
+1. In the top navigation bar, go to _Admin_ \> _Settings_.
+2. Copy _Host URL_, and paste into Monte Carlo's integration wizard.
+3. Add the suffix _:19999_ to the URL, e.g. if your host is _[https://mydomain.looker.com](https://mydomain.looker.com)_, then you should provide the value _[https://mydomain.looker.com:19999](https://mydomain.looker.com:19999)_ on Monte Carlo's integration wizard.
+
+![](/images/67f4a82-Screen_Shot_2021-09-24_at_5.14.25_PM.png "Screen Shot 2021-09-24 at 5.14.25 PM.png")
+
+> 🚧
+> 
+> Port :19999
+> 
+> This is looker.com's port, so if you are cloud hosted or not located at looker.com, you should use your own port. That means the information you give Monte Carlo can look like: [https://looker.](https://looker.)<your\_domain>.com:443.
+
+Please note that if you use a self-signed certificate for Looker's SSL connection, you will need to uncheck the _Verify SSL_ on Monte Carlo's integration wizard:
+
+![](/images/8b8a39d-Screen_Shot_2021-09-24_at_5.15.50_PM.png "Screen Shot 2021-09-24 at 5.15.50 PM.png")
+
+Click the blue "CONNECT" button, and you should be all set! You will see a module pop up testing the connection. On successful connection, the module will show a green check mark saying the connection was successful; if there was an error connecting using the details provided, the error will surface for further debugging.
+
+> 📘
+> 
+> Need Debugging Help?
+> 
+> Please click on the Intercom chat bot in the lower right hand corner or contact us at [\[email protected\]](/cdn-cgi/l/email-protection#f2818782829d8086b29f9d9c86979193809e9d96938693dc919d9f).
+
+> 📘
+> 
+> Looker API usage frequency
+> 
+> In order to keep Looker API usage minimal, Monte Carlo will collect Looker metadata every 4 days. This means you may have to wait 4 days for your latest user permission changes to be reflected in Monte Carlo. For more details, please contact your Monte Carlo representative.
+
+### The "Looker Git SSH" Integration - Connecting to your LookML Code Repository
+
+The following steps are to connect to your repository hosting your LookML files, allowing Monte Carlo to map dependencies between Looker objects and data warehouse tables.
+
+![469](/images/1833ab8-Screen_Shot_2021-09-24_at_5.21.36_PM.png "Screen Shot 2021-09-24 at 5.21.36 PM.png")
+
+Looker Git SSH Integration
+
+> 🚧
+> 
+> Connect to Looker API First
+> 
+> You will need to complete setting up Looker's API key on Monte Carlo prior to performing this section.
+
+To enable LookML access to Monte Carlo, you will [create an SSH key](/docs/looker#creating-an-ssh-key) to access your LookML code repository.
+
+#### Creating an SSH key
+
+To enable Monte Carlo access to hosted Git repositories, you can provide a **read-only** SSH key.
+
+First, create an SSH key on your local machine:
+
+1. In your terminal, please use the following command, using your own email address.
+
+Shell
+
+`ssh-keygen -t rsa -b 4096 -C "[[email protected]](/cdn-cgi/l/email-protection)"
+`
+
+> 📘
+> 
+> Email Doesn't Matter
+> 
+> You do not have to be an admin or use an admin's email to generate this key. The email provided in the command is only for record keeping purposes on your own computer so it is recommended you use your own.
+
+1. Please follow the prompts and **do not provide a passphrase** (leave empty).
+
+This process saved two keys: one private and one public. During the process, you were asked to provide a file in which to save the keys; you can now find these keys under that file name in your main directory's `.ssh/id_rsa` folder. For example:
+
+PowerShell
+
+`work@Katies-MacBook-Pro % ssh-keygen -t rsa -b 4096 -C [[email protected]](/cdn-cgi/l/email-protection)
+Generating public/private rsa key pair.
+Enter file in which to save the key (/Users/work/.ssh/id_rsa): testing
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in testing.
+Your public key has been saved in testing.pub.
+The key fingerprint is:
+<revoked>
+The key's randomart image is:
+<revoked>
+work@Katies-MacBook-Pro % ls -a
+...			.ssh			...
+work@Katies-MacBook-Pro % cd .ssh
+work@Katies-MacBook-Pro .ssh % ls
+config	 testing	 testing.pub	 known_hosts
+`
+
+As you can see, there are two files: `testing` which contains the private key you will provide Monte Carlo with, and `testing.pub` which contains the public key you will give to Github. Once in the `.ssh` folder, you can run `open <file_name>` to access the key information:
+
+Shell
+
+`work@Katies-MacBook-Pro % cd .ssh
+work@Katies-MacBook-Pro .ssh % open testing
+`
+
+Next, use the public key (found within the _.pub_ file you generated earlier, called `testing.pub` in the above example) to configure read-only SSH access on your repo using the following instructions:
+
+* [Gitlab](https://docs.gitlab.com/ee/user/project/deploy%5Fkeys/#project-deploy-keys)
+* [Bitbucket](https://support.atlassian.com/bitbucket-cloud/docs/set-up-an-ssh-key/#Step-3.-Add-the-public-key-to-your-Account-settings)
+* [Github](https://developer.github.com/v3/guides/managing-deploy-keys/#deploy-keys)
+* Others: please consult with your Monte Carlo representative for assistance.
+
+Finally, provide the following details on Monte Carlo's integration wizard to validate and complete the integration:
+
+* Your private key (found within the file that has no extension you generated earlier, called `testing` in the above example).
+* Your repository URL. Most hosting services will provide the SSH cloning URL on the repository's main page. It typically looks like so: [\[email protected\]](/cdn-cgi/l/email-protection#edb28a8499ad8c8e8088c38e8280):USERNAME/REPOSITORY.git\_.
+
+![](/images/734e361-Screen_Shot_2021-09-24_at_5.23.43_PM.png "Screen Shot 2021-09-24 at 5.23.43 PM.png")
+
+Click the blue "CONNECT" button, and you should be all set! You will see a module pop up testing the connection. On successful connection, the module will show a green check mark saying the connection was successful; if there was an error connecting using the details provided, the error will surface for further debugging.
+
+> 🚧
+> 
+> Placeholder Values
+> 
+> The placeholder values are an exact formatting match to what the integration expects. If you have an error connecting, please verify what you put in the wizard looks similar to what the placeholder value shows. For example, your Private SSH Key should begin with `-----BEGIN OPENSSH PRIVATE KEY -----`.
+
+Repeat this process for **every repo you want Monte Carlo to read from.** Too many repos? See instructions below to [connect to Github using HTTPS](/docs/looker#the-looker-git-https-integration---connecting-to-your-lookml-code-repository).
+
+> 📘
+> 
+> Need Debugging Help?
+> 
+> Please click on the Intercom chat bot in the lower right hand corner or contact us at [\[email protected\]](/cdn-cgi/l/email-protection#35464045455a474175585a5b4150565447595a515441541b565a58)
+
+### The "Looker Git HTTPS" Integration - Connecting to your LookML Code Repository
+
+You can also connect to your repository hosting your LookML files using personal access tokens and Https, allowing Monte Carlo to map dependencies between Looker objects and data warehouse tables. Looker Git Https support is currently only available through our CLI.
+
+First, you will need to make a personal access token for your github account. See instructions here for information on how to do so: [creating a personal access token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#creating-a-personal-access-token-classic).
+
+**For Github repos, Monte Carlo needs `repo` access ([available scopes](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes)). This access is the only access that provides read privileges to your repos.**
+
+Then, follow [this guide](/docs/using-the-cli) to install and configure the CLI. For reference, see `--help` for this command:
+
+Looker Git Integration
+
+`Usage: montecarlo integrations add-looker-git [OPTIONS]
+
+  Setup a Looker ML (git) integration. For reports.
+
+Options:
+  --ssh-key FILE       The ssh key for git ssh integrations. This option
+                       cannot be used with 'username', and 'token'.
+
+  --repo-url TEXT      Repository URL as ssh://[user@]server/project.git or
+                       the shorter form [user@]server:project.git for ssh. For
+                       https, use https://server/project.git.  [required]
+
+  --token TEXT         Git Access Token to be used for Https instead of ssh
+                       key. This option cannot be used with 'ssh-key'.
+
+  --username TEXT      Git username to be used in conjunction with the access
+                       token. This is only required for BitBucket
+                       integrations. This option cannot be used with 'ssh-
+                       key'.
+
+  --collector-id UUID  ID for the data collector. To disambiguate accounts
+                       with multiple collectors.
+
+  --skip-validation    Skip all connection tests. This option cannot be used
+                       with 'validate-only'.
+
+  --validate-only      Run connection tests without adding. This option cannot
+                       be used with 'skip-validation'.
+
+  --auto-yes           Skip any interactive approval.  [default: False]
+  --help               Show this message and exit.
+`

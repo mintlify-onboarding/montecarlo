@@ -1,0 +1,100 @@
+---
+title: "Fivetran Integration"
+---
+
+## Overview
+
+The Monte Carlo-Fivetran integration retrieves information from all connectors and their synchronization status to bring visibility into the ingestion layer. Current features include:
+
+1. Display in lineage the upstream Fivetran sources of tables monitored by the Monte Carlo. These sources can include external systems such as Salesforce, S3, Google Sheets, or any other system supported by Fivetran.
+2. In Incident IQ, present sync context for each upstream Fivetran sources to assist with resolution workflow.
+3. Under Assets, present sync context for each upstream Fivetran sources.
+
+Follow the next steps to complete the integration.
+
+You will need access to Fivetran API to use the integration. Note that Fivetran Starter plan does not include API access.
+
+## Setting up your Fivetran integration
+
+To connect Monte Carlo to a Fivetran account, follow these steps:
+
+1. [Install the Monte Carlo CLI](/docs/using-the-cli)
+2. Check if the Data Collector version you have supports Fivetran
+3. Obtain a Fivetran API key and secret
+4. Create a Fivetran integration with the Monte Carlo UI or CLI
+
+Fivetran is supported for Data Collector versions equal or higher than 13175, so the first thing we need to do is to check the Data Collector version.
+
+### Install the Monte Carlo CLI
+
+Please follow [this guide](/docs/using-the-cli) to install and configure the CLI.
+
+If you already have the CLI installed, it is recommended to update it to the latest version. Fivetran support starts on CLI version `0.41.0` onwards.
+
+### Check the Data Collector version
+
+Fivetran supports starts in Data Collector version 13175, so we need to check if the Data Collector version is equals to that or higher. In order to do that we use the following CLI command:
+
+`montecarlo collectors list`
+
+This will retrieve the list of the Data Collectors configured for your account. Check the `Version` column of the Data Collector you are going to use for the Fivetran integration. If the version is lower than 13175 you will have to upgrade the Data Collector before proceeding.
+
+If you don't upgrade you will get an error as follows when setting up the integration: `Error - Integration 'fivetran' not supported.`
+
+To upgrade the Data Collector follow this instructions: [Upgrade Data Collector](/docs/upgrading-the-data-collector) 
+
+### Obtain a Fivetran API key and secret
+
+Please follow the instructions in Fivetran documentation to [create a Fivetran API key](https://fivetran.com/docs/rest-api/faq/access-rest-api)
+
+Write down the API key and secret as they will be used as input parameters when setting up the integration with the Monte Carlo CLI
+
+NOTE: Fivetran supports creating an API key per Administrator user and the API key will have all its permissions. It is a good practice to add another Administrator user for Monte Carlo and create the API key with that Fivetran user.
+
+Also they have just released in their Beta version the support of API Keys for users with less privileges. So, as a best practice request Fivetran access to this Beta feature and create a readonly user for Monte Carlo. Then generate the API key for this user which will be created with the same permissions as the user.
+
+### Create Fivetran integration with the Monte Carlo UI or CLI
+
+#### Monte Carlo UI
+
+1. As a Monte Carlo Account Owner, navigate to [Integrations](https://getmontecarlo.com/settings/integrations).
+2. Under ETL Tool Connections section, click "Create" and select "Fivetran".
+3. In the side modal, enter the respective details  
+   1. Name (optional) - the name you want to give to the Fivetran integration  
+   2. API Key - use the API key obtained from Fivetran  
+   3. API Secret - use the API secret obtained from Fivetran
+4. Click "Create"
+
+#### Monte Carlo CLI
+
+The CLI will take the following mandatory parameters to setup a Fivetran integration:
+
+1. `fivetran-api-key` \- use the API key obtained from Fivetran
+2. `fivetran-api-password` \- use the API secret obtained from Fivetran
+3. `fivetran-base-url` \- use `https://api.fivetran.com/v1/`
+4. `collector-id` \- use your collector uuid. If you do not know it you can use the CLI to obtain it by running `montecarlo collectors list`
+5. `name` \- the name you want to give to the Fivetran integration
+
+Once you have all these parameters using the CLI run `montecarlo integrations add-fivetran --fivetran-api-key {fivetran_api_key} --fivetran-api-password {fivetran_api_password} --fivetran-base-url https://api.fivetran.com/v1/ --collector-id {collector_id} --name {fivetran_integration_name}`
+
+You can see all the available options in the [CLI doc](https://clidocs.getmontecarlo.com/#montecarlo-integrations-add-fivetran) or by running `montecarlo integrations add-fivetran --help`
+
+![1264](/images/2bcd54e-Screenshot_2023-02-06_at_11.02.13.png "Screenshot 2023-02-06 at 11.02.13.png")
+
+CLI options for fivetran integration
+
+* Monte Carlo will perform a validation step to ensure that the Fivetran account can be successfully accessed. If validation passes, you will be prompted to create the Fivetran integration. If validation fails, please double-check that you provided the correct API key and API secret
+
+At this point, the integration has been created. By default, Monte Carlo will poll your Fivetran account hourly to import all the connectors and sync status.
+
+**Note**: Once the integration has been successfully created it may take up to one hour for connectors to initially appear. 
+
+### List all the integrations
+
+If you want to see the list of integrations run: `montecarlo integrations list`. Then you can verify that your Fivetran integration was created.
+
+Fivetran integrations will also show in the Monte Carlo UI under [Integrations](https://getmontecarlo.com/settings/integrations).
+
+### Removing an integration
+
+Reach out to [Monte Carlo Support](/cdn-cgi/l/email-protection#1665636666796462567b797862737577647a79727762773875797b) for assistance removing a Fivetran connection.

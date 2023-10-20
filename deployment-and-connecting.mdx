@@ -1,0 +1,69 @@
+---
+title: "Deployment & Connecting to Resources"
+---
+
+Review [Platform Architecture & Deployment Options](/docs/platform-architecture) for details on selecting the right deployment model. Each section below details how to deploy on the various models.
+
+## Cloud Deployment
+
+Simply follow the guide that is relevant to the integration you wish to connect:
+
+* [Warehouses (e.g. Snowflake, Redshift, BigQuery)](/docs/data-warehouses)
+* [Databricks](/docs/overview-databricks)
+* [Data Lakes (e.g. Glue, Athena, Presto, Hive, etc.)](/docs/data-lakes)
+* [BI Tools (e.g. Looker, Tableau, etc.)](bi-tools)
+* Other integrations like [Fivetran](/docs/fivetran-integration) and [Dbt Cloud](/docs/dbt-cloud)
+
+## Cloud with Customer-hosted Object Storage Deployment (AWS)
+
+1. Follow [this](/docs/direct-connection-with-an-aws-data-store) guide to create and register an AWS (S3) Data Store.
+2. Add your integration(s) by following the relevant guide:  
+   * [Warehouses (e.g. Snowflake, Redshift, BigQuery)](/docs/data-warehouses)  
+   * [Databricks](/docs/overview-databricks)  
+   * [Data Lakes (e.g. Glue, Athena, Presto, Hive, etc.)](/docs/data-lakes)  
+   * [BI Tools (e.g. Looker, Tableau, etc.)](bi-tools)  
+   * Other integrations like [Fivetran](/docs/fivetran-integration) and [Dbt Cloud](/docs/dbt-cloud)
+
+## Cloud with Customer-hosted Object Storage Deployment (GCP)
+
+1. Follow [this](/docs/direct-connection-with-a-gcp-data-store) guide to create and register a GCP (GCS) Data Store.
+2. Add your integration(s) by following the relevant guide:  
+   * [Warehouses (e.g. Snowflake, Redshift, BigQuery)](/docs/data-warehouses)  
+   * [Databricks](/docs/overview-databricks)  
+   * [Data Lakes (e.g. Glue, Athena, Presto, Hive, etc.)](/docs/data-lakes)  
+   * [BI Tools (e.g. Looker, Tableau, etc.)](bi-tools)  
+   * Other integrations like [Fivetran](/docs/fivetran-integration) and [Dbt Cloud](/docs/dbt-cloud)
+
+## Customer-hosted Agent & Object Storage Deployment (AWS)
+
+1. Follow [this](/docs/deployment) guide to deploy a Data Collector stack. Additional details can be found [here](/docs/hybrid-solution).
+2. Add your integration by following the relevant guide:  
+   * [Warehouses (e.g. Snowflake, Redshift, BigQuery)](/docs/data-warehouses)  
+   * [Databricks](/docs/overview-databricks)  
+   * [Data Lakes (e.g. Glue, Athena, Presto, Hive, etc.)](/docs/data-lakes)  
+   * [BI Tools (e.g. Looker, Tableau, etc.)](bi-tools)  
+   * Other integrations like [Fivetran](/docs/fivetran-integration) and [Dbt Cloud](/docs/dbt-cloud)
+
+## Customer-hosted Agent & Object Storage Deployment (GCP)
+
+Coming soon.
+
+## FAQs
+
+### What about other integrations like dbt core, Airflow, Alation, Atlan etc.?
+
+These connections either leverage our developer toolkit or are managed by a 3rd party. 
+
+Please see the details under the "OTHER INTEGRATIONS" subsection in our docs. 
+
+### How do I list all of my Data Stores or Remote Agents?
+
+All data stores and agents can be listed via the `montecarlo agents list` command. See the reference guide [here](https://clidocs.getmontecarlo.com/#montecarlo-agents-list).
+
+### How do I remove a Data Store or Remote Agent?
+
+A data store or remote agent can be deregistered with the `montecarlo agents deregister` agent command. See the reference guide [here](https://clidocs.getmontecarlo.com/#montecarlo-agents-deregister).
+
+Note that deregistering either a data store or agent does not remove any resources you may have provisioned, and replacing either will mean previous data (history) will no longer be accessible unless migrated.
+
+Importantly, jobs also might fail if you remove an agent or store without coordinating with our team. Please reach out to your Monte Carlo representative or support ([\[email protected\]](/cdn-cgi/l/email-protection#c7b4b2b7b7a8b5b387aaa8a9b3a2a4a6b5aba8a3a6b3a6e9a4a8aa)), and we'd be happy to help!

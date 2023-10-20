@@ -1,0 +1,149 @@
+---
+title: "Detectors Overview"
+---
+
+Monte Carlo supports two main methods of detecting anomalies:
+
+1. **Automatic, machine learning based detections**: these detections are made based on automatic and changing thresholds determined by our models based on historical data we have received from your data source.
+2. **User set detections**: these detections are made based on thresholds set by the user. They are either a hard threshold, for example: create an anomaly when my table hasn't updated in the past 10 hours, or they are a percentage based threshold, for example: create an anomaly when my table has loaded less than 25% of the average loaded rows from the past 7 days.
+
+The below sections will go into how we think about our **automatic, machine learning based detectors**, and various ways you can interpret and interact with them.
+
+### Out of the Box Automatic Detectors
+
+As part of its data observability platform MC provides automatic metadata based anomaly detection on all your tables. Note that these ML models will only be active for tables where metadata is available and where the table’s data follow some basic criteria for number of samples, period of the signal and a few more.
+
+**How do they work?**
+
+Monte Carlo has created a mix of time-series models with changes we introduce to make them work better with our specific problem and statistical models. Each type of detector model is unique and built specifically around that type of data (freshness, volume, unchanged size, etc.)
+
+In general our models set the thresholds based on:
+
+1. Pattern type classification (I.E streaming\_table / weekend\_pattern / multimodal\_update\_pattern / etc.)
+2. Historical trends and value distributions
+3. State change detection
+4. Some rules learned from user feedback over time  
+On top of all this sits a model which is a mix of of time-series models with changes we introduce to make them work better with our specific problem and statistical models based on historical distributions and probabilities.
+
+A note to make is that since these automated detectors run on ALL of your tables, we have made the choice to tune our models more towards **precision rather than recall in order to avoid alert fatigue**. For cases where a very strict threshold is required we usually suggest [using our SLOs](/docs/setting-up-freshness-slo-monitors).
+
+Another important note is that while we use large validation sets from 1000s of user feedback we have collected, our models train on your data alone and a specific model is trained for each of your tables. This allows us to learn from our large user base while not using your data to train models for other clients and giving each table the highest level of accuracy based on its own time series patterns.
+
+These automatic detectors are available for freshness data (when was the table updated) and volume data (when and how much data was added/removed from the table). For more details on each detector, please see below:
+
+* [Freshness](/docs/freshness-detector)
+* [Volume](/docs/volume-detector)
+* [Unchanged Size (volume with freshness)](/docs/unchanged-size-detector)
+
+### Detector Statuses
+
+Monte Carlo’s automatic detectors can be in one of three states:
+
+* Inactive
+* Training
+* Active
+
+These statuses can be seen in the catalog page when hovering over the icon at the top right of the freshness and volume charts:
+
+![1155](/images/1728a26-Untitled.png "Untitled.png")
+
+Detector Status Examples
+
+So what do each of these statuses mean?
+
+##### Active:
+
+The detector is live and working as expected.
+
+##### Inactive:
+
+The detector is not active due to the training data not passing some minimum requirements for our models. This reason should be available when hovering over the status tooltip and can be for example: “not enough samples”. 
+
+While the detector is “inactive” it does not mean it will _never_ alert but rather that it goes into a sort of low-confidence mode under which we will only alert you on very significant events.
+
+##### Training:
+
+This status usually appears during the first 2 weeks after onboarding or detecting a new table. It does not mean that the detector will not be active but rather that the anomalies might not be perfect since the model has had very little data to learn from.
+
+You can usually know if the detector is active during training based on whether or not you see a threshold in the MC app catalog page.
+
+### Sensitivity
+
+Monte Carlo allows you to change the sensitivity of our models to increase or decrease the likelihood of generating an incident based on anomalous behavior. High sensitivity will generate more incidents and is best for your most important tables. Low sensitivity will generate fewer incidents and is best for less important tables or tables that have generated historical noisy incidents (Note: submitting feedback using the Tune Model is also a great way to reduce noisy incidents). By default, all tables are set to Medium sensitivity. 
+
+Please see each out-of-the-box detector sections for more information about how to modify the sensitivity of each detector:
+
+* [Freshness](/docs/freshness-detector#fine-tuning-the-models)
+* [Volume](/docs/volume-detector#fine-tuning-the-models)
+* [Unchanged Size (volume with freshness)](/docs/unchanged-size-detector#fine-tuning-the-models)
+
+We also allow you to modify the sensitivity on advanced monitors, such as Field Health. The current thresholds for Monte Carlo's Field Health detector can be seen in the monitor page for each monitor as a dotted line on the values graph. The current sensitivity can be seen in the monitor configuration section.
+
+> 📘
+> 
+> Updates require 12 hours to implement
+> 
+> It may take up to 12 hours to propagate the sensitivity changes to our monitors.
+
+**What are the effects of each sensitivity level:**
+
+Changing sensitivity only changes what relative change from the historical distribution is required to generate an incident. Remember that regardless of sensitivity you set, our detectors set baseline thresholds based on the historical distribution values.
+
+* **High** \- The model will alert on changes greater than 1%, OR 0.01% if the historical variance is 0
+* **Medium (Default option)** \- The model will alert on medium changes greater than 5%, OR 1% if the historical variance is 0
+* **Low** \- The model will alert only on large changes greater than 15%, OR 5% if the historical variance is 0
+
+### Tuning the models with feedback
+
+> 📘
+> 
+> Please note, this functionality only exists for our OOTB box models: freshness, volume, and unchanged size.
+
+You can easily improve the quality of your incidents by providing feedback using the Tune Model ![:thumbsup:](/images/thumbsup.png ":thumbsup:") and ![:thumbsdown:](/images/thumbsdown.png ":thumbsdown:") icons. In the following we explain how the feedback will impact the detector model.
+
+![](/images/853c1af-Incidents_2023-05-30_at_12.24.50_PM.jpg)
+
+**👍 Good detection:**  Selecting this option on incidents that were useful will ensure we continue to generate similar incidents in the future. We do this by removing the anomalous metric data so that it does **not** change the forward looking breach thresholds.
+
+**👎 Bad detection:**  Selecting this option on incidents that were not useful will ensure you receive fewer similar incidents in the future. We do this by remembering the anomalous pattern so that we do **not** generate incidents when similar patterns occur in the future. Additionally, you can mute the table entirely or [change the model sensitivity for the impacted table](/docs/detectors-overview#sensitivity) directly from the pop-up module. Note that muting tables and changing sensitivity are more aggressive changes as they apply globally to the applicable object.
+
+#### Sharing feedback in Slack
+
+You can also share feedback for incidents in Slack by clicking on the three-dot overflow menu and selecting "Share F eedback". 
+
+![](/images/eb8cc8a-mcd-alerts_-_Monte_Carlo_-_23_new_items_-_Slack_2023-05-30_at_12.21.44_PM.jpg) 
+
+### Maintenance Windows
+
+While Monte Carlo's ML models know how to handle weird data patterns which can arise to some extent there is the known ML saying “garbage in, garbage out” and we are aware that sometimes issues occur, either on our side or yours.
+
+In order to handle these cases, Monte Carlo has developed the maintenance window feature which allows us to remove problematic data periods from the training window which allows our models to train only on relevant data.
+
+Some example use cases could be:
+
+* You performed a large backfill which you do not want to affect volume training.
+* There was a collection or permissions issues which caused metadata not to be collected or collected sparsely which you do not want to affect freshness training.
+* A large amount of NULLs accidentally entered a table and were removed and you do not want it to affect Field Health training.
+
+If you want Monte Carlo to designate a maintenance period for removal from model training contact our support team at [\[email protected\]](/cdn-cgi/l/email-protection#13606663637c6167537e7c7d67767072617f7c777267723d707c7e) or in the chat bot located in the lower right hand corner, and they will take care of all the required work!
+
+### SQL Rules Automatic ML Thresholds
+
+Monte Carlo supports SQL rule creation which allow you to set a custom SQL query to run on a schedule and alert you when the value returned crosses a pre defined threshold, either relative or absolute. It is possible to set the returned value to be either the number of rows return or an actual value calculation. In both cases it is also possible under the “Set Threshold” section to set an Automatic threshold.
+
+Choosing this option will cause the values returned by this SQL rules to be tracked by MC’s ML models.
+
+**Main advantages:**
+
+* Dynamic thresholds which update if your time series behavior changes.
+* Takes into account seasonality if present.
+* No need to know what the expected “anomalous” values are.
+
+**Main disadvantages:**
+
+* More conservative than manual thresholds and can miss small changes.
+* Takes around 2 weeks to train.
+
+![1836](/images/a34c90c-Untitled_2.png "Untitled (2).png")
+
+SQL Rule ML Threshold
