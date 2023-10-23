@@ -5,10 +5,15 @@ title: "🧑‍🎓 Monitors Overview"
 ### Monitor Types
 
 At Monte Carlo, we have:
-
-* Out of the box ML Monitors (Freshness, Volume and Schema Changes) which run hourly and check the metadata table for all tables.
-* Custom ML Monitors (Field Health, Dimension Tracking and JSON Schema) which run on a user defined schedule and use ML to catch anomalous data changes within fields.
-* Custom Rules Based Monitors (SQL, Field Quality, Referential Integrity and Comparison Rules which run on a user defined schedule and do not use Machine Learning. These are manual checks which can be used to validate ways in which you know data may break.
+<Card title="Out of the box ML Monitors" icon="box-open" iconType="duotone">
+  (Freshness, Volume and Schema Changes) which run hourly and check the metadata table for all tables.
+</Card>
+<Card title="Custom ML Monitors " icon="gauge" iconType="duotone">
+  (Field Health, Dimension Tracking and JSON Schema) which run on a user defined schedule and use ML to catch anomalous data changes within fields.
+</Card>
+<Card title="Custom Rules Based Monitors" icon="gavel" iconType="duotone">
+  (SQL, Field Quality, Referential Integrity and Comparison Rules which run on a user defined schedule and do not use Machine Learning. These are manual checks which can be used to validate ways in which you know
+</Card>
 
 This next section introduces these monitors at a high level and walks you through how to build each of the monitors for your own practical use case.
 
